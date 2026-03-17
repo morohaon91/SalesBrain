@@ -23,7 +23,7 @@
 **Dependencies:** None  
 
 **Decisions Needed:**
-- [ ] Frontend framework (Next.js, React, Vue, etc.)
+- [ X] Frontend framework (Next.js, React, Vue, etc.)
 - [ ] Backend approach (Next.js API routes vs separate backend)
 - [ ] Database choice (Supabase, PostgreSQL, MySQL, etc.)
 - [ ] Hosting platform (Vercel, Railway, AWS, etc.)
