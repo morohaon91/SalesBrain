@@ -1,0 +1,309 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  TrendingUp,
+  Users,
+  MessageSquare,
+  Zap,
+  AlertCircle,
+} from "lucide-react";
+
+// Mock data for charts
+const mockChartData = [
+  { date: "Mar 11", conversations: 12, leads: 3 },
+  { date: "Mar 12", conversations: 15, leads: 4 },
+  { date: "Mar 13", conversations: 8, leads: 2 },
+  { date: "Mar 14", conversations: 22, leads: 6 },
+  { date: "Mar 15", conversations: 18, leads: 5 },
+  { date: "Mar 16", conversations: 25, leads: 7 },
+  { date: "Mar 17", conversations: 16, leads: 4 },
+];
+
+const mockLeadFunnel = [
+  { stage: "Visitors", count: 340, percentage: 100 },
+  { stage: "Conversations", count: 87, percentage: 25.6 },
+  { stage: "Qualified", count: 23, percentage: 26.4 },
+];
+
+const mockTopQuestions = [
+  { question: "What's your pricing?", count: 34 },
+  { question: "How long does it take?", count: 28 },
+  { question: "Do you offer customization?", count: 19 },
+  { question: "What's included in the package?", count: 15 },
+];
+
+/**
+ * Simple bar chart component
+ */
+function SimpleBarChart({
+  data,
+  dataKey,
+  title,
+  color,
+}: {
+  data: any[];
+  dataKey: string;
+  title: string;
+  color: string;
+}) {
+  const max = Math.max(...data.map((d) => d[dataKey]));
+
+  return (
+    <div>
+      <h3 className="font-semibold text-gray-900 mb-4">{title}</h3>
+      <div className="space-y-3">
+        {data.map((item, idx) => (
+          <div key={idx}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-gray-600">
+                {item.date || item.stage}
+              </span>
+              <span className="text-sm font-bold text-gray-900">
+                {item[dataKey]}
+              </span>
+            </div>
+            <div className="w-full h-6 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full ${color}`}
+                style={{ width: `${(item[dataKey] / max) * 100}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Analytics page component
+ */
+export default function AnalyticsPage() {
+  const [period, setPeriod] = useState<string>("week");
+
+  // Calculate overview stats
+  const totalConversations = mockChartData.reduce((acc, d) => acc + d.conversations, 0);
+  const totalLeads = mockChartData.reduce((acc, d) => acc + d.leads, 0);
+  const avgLeadScore = 62.5;
+  const conversionRate = ((totalLeads / totalConversations) * 100).toFixed(1);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
+          <p className="text-gray-600 mt-1">
+            Performance metrics and insights
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {["week", "month", "year"].map((p) => (
+            <Button
+              key={p}
+              variant={period === p ? "default" : "outline"}
+              onClick={() => setPeriod(p)}
+              className="capitalize"
+            >
+              {p}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Overview Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Conversations</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">
+                {totalConversations}
+              </p>
+              <p className="text-xs text-success-600 mt-1">↑ 12% this week</p>
+            </div>
+            <MessageSquare className="w-10 h-10 text-primary-100" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Qualified Leads</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">
+                {totalLeads}
+              </p>
+              <p className="text-xs text-success-600 mt-1">↑ 8% this week</p>
+            </div>
+            <Users className="w-10 h-10 text-success-100" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Avg Lead Score</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">
+                {avgLeadScore}
+              </p>
+              <p className="text-xs text-success-600 mt-1">↑ 5% this week</p>
+            </div>
+            <TrendingUp className="w-10 h-10 text-accent-100" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Conversion Rate</p>
+              <p className="text-2xl font-bold text-gray-900 mt-2">
+                {conversionRate}%
+              </p>
+              <p className="text-xs text-success-600 mt-1">↑ 3% this week</p>
+            </div>
+            <Zap className="w-10 h-10 text-warning-100" />
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Conversations & Leads Chart */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <SimpleBarChart
+            data={mockChartData}
+            dataKey="conversations"
+            title="Conversations by Day"
+            color="bg-primary-500"
+          />
+        </div>
+
+        {/* Lead Funnel */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="font-semibold text-gray-900 mb-4">Lead Funnel</h3>
+          <div className="space-y-3">
+            {mockLeadFunnel.map((stage, idx) => (
+              <div key={idx}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-gray-600">
+                    {stage.stage}
+                  </span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {stage.count} ({stage.percentage}%)
+                  </span>
+                </div>
+                <div className="w-full h-6 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-success-500"
+                    style={{ width: `${stage.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* AI Performance & Top Questions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* AI Performance */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="font-semibold text-gray-900 mb-4">AI Performance</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Average Confidence</span>
+                <span className="font-bold text-gray-900">87%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-success-500" style={{ width: "87%" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Response Accuracy</span>
+                <span className="font-bold text-gray-900">82%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-success-500" style={{ width: "82%" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Escalation Rate</span>
+                <span className="font-bold text-gray-900">8%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-warning-500" style={{ width: "8%" }} />
+              </div>
+            </div>
+
+            <div className="bg-primary-50 border border-primary-200 rounded p-3 text-sm text-primary-900 mt-4">
+              <p className="font-medium mb-1">Avg Response Time: 1.2s</p>
+              <p className="text-xs">Optimal for real-time conversations</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Questions */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="font-semibold text-gray-900 mb-4">Top Questions</h3>
+          <div className="space-y-3">
+            {mockTopQuestions.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex items-start justify-between p-3 bg-gray-50 rounded-lg"
+              >
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.question}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Asked {item.count} times
+                  </p>
+                </div>
+                <span className="text-lg font-bold text-gray-900 ml-2">
+                  {item.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Export Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-gray-900">Export Data</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Download analytics reports as CSV or PDF
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline">Export CSV</Button>
+            <Button variant="outline">Export PDF</Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Quality Note */}
+      <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 flex gap-3">
+        <AlertCircle className="w-5 h-5 text-warning-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-medium text-warning-900">
+            Analytics based on mock data
+          </p>
+          <p className="text-xs text-warning-700 mt-1">
+            Real data will populate as conversations are created and simulations are
+            completed
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

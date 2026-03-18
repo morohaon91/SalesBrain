@@ -1,0 +1,622 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// TENANT & USER MANAGEMENT
+// ============================================
+
+model Tenant {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Business Information
+  businessName      String
+  industry          String?
+  website           String?
+  description       String?   @db.Text
+
+  // Subscription
+  subscriptionTier  SubscriptionTier @default(TRIAL)
+  subscriptionStatus SubscriptionStatus @default(ACTIVE)
+  trialEndsAt       DateTime?
+  subscriptionEndsAt DateTime?
+
+  // Usage Limits
+  conversationsThisMonth Int @default(0)
+  conversationsLimit     Int @default(100)
+
+  // Widget Configuration
+  widgetApiKey      String   @unique @default(uuid())
+  widgetEnabled     Boolean  @default(false)
+  widgetColor       String   @default("#000000")
+  widgetPosition    String   @default("bottom-right")
+  widgetGreeting    String   @default("Hi! How can I help you today?")
+
+  // Settings
+  aiTransparency    Boolean  @default(true)
+  leadHandoffMethod String   @default("email")
+  emailNotifications Boolean @default(true)
+  notificationEmail String?
+
+  // Relations
+  users             User[]
+  profiles          BusinessProfile[]
+  conversations     Conversation[]
+  simulations       Simulation[]
+  leads             Lead[]
+  notifications     Notification[]
+
+  @@index([subscriptionTier])
+  @@index([subscriptionStatus])
+}
+
+model User {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Authentication
+  email             String   @unique
+  emailVerified     Boolean  @default(false)
+  password          String
+
+  // Profile
+  name              String
+  role              UserRole @default(OWNER)
+
+  // Session Management
+  lastLoginAt       DateTime?
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  VIEWER
+}
+
+enum SubscriptionTier {
+  TRIAL
+  BASIC
+  PRO
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PAST_DUE
+}
+
+// ============================================
+// BUSINESS PROFILE & KNOWLEDGE BASE
+// ============================================
+
+model BusinessProfile {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Profile Status
+  isComplete        Boolean  @default(false)
+  completionScore   Int      @default(0)
+
+  // Extracted Patterns
+  communicationStyle Json?   @db.JsonB
+  pricingLogic      Json?    @db.JsonB
+  qualificationCriteria Json? @db.JsonB
+  objectionHandling Json?    @db.JsonB
+  decisionMakingPatterns Json? @db.JsonB
+
+  // Knowledge Base
+  knowledgeBase     Json?    @db.JsonB
+
+  // Vector Store Reference
+  pineconeNamespace String?
+  embeddingsCount   Int      @default(0)
+
+  @@index([tenantId])
+  @@unique([tenantId])
+}
+
+// ============================================
+// SIMULATION SYSTEM
+// ============================================
+
+model Simulation {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  completedAt       DateTime?
+
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Simulation Configuration
+  scenarioType      ScenarioType
+  duration          Int      @default(0)
+  status            SimulationStatus @default(IN_PROGRESS)
+
+  // AI Configuration
+  aiPersona         Json     @db.JsonB
+
+  // Messages
+  messages          SimulationMessage[]
+
+  // Analysis Results
+  extractedPatterns Json?    @db.JsonB
+  qualityScore      Int?
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([scenarioType])
+}
+
+model SimulationMessage {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+
+  simulationId      String
+  simulation        Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+
+  role              MessageRole
+  content           String   @db.Text
+
+  // AI Metadata
+  tokensUsed        Int?
+  latencyMs         Int?
+
+  @@index([simulationId])
+}
+
+enum ScenarioType {
+  PRICE_SENSITIVE
+  INDECISIVE
+  DEMANDING
+  TIME_PRESSURED
+  HIGH_BUDGET
+}
+
+enum SimulationStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum MessageRole {
+  BUSINESS_OWNER
+  AI_CLIENT
+  SYSTEM
+}
+
+// ============================================
+// LIVE LEAD CONVERSATIONS
+// ============================================
+
+model Conversation {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  endedAt           DateTime?
+
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Lead Information
+  leadId            String?
+  lead              Lead?    @relation(fields: [leadId], references: [id])
+
+  // Session Tracking
+  sessionId         String   @unique
+  ipAddress         String?
+  userAgent         String?  @db.Text
+  referrer          String?  @db.Text
+
+  // Conversation State
+  status            ConversationStatus @default(ACTIVE)
+  lastActivityAt    DateTime @default(now())
+
+  // Messages
+  messages          ConversationMessage[]
+
+  // Analysis & Scoring
+  leadScore         Int?
+  qualificationStatus LeadQualificationStatus @default(UNKNOWN)
+  sentiment         String?
+
+  // AI Confidence
+  aiConfidence      Float?
+  humanInterventionNeeded Boolean @default(false)
+
+  // Summary
+  summary           String?  @db.Text
+  keyTopics         String[]
+  nextSteps         String?  @db.Text
+
+  @@index([tenantId])
+  @@index([leadId])
+  @@index([status])
+  @@index([qualificationStatus])
+  @@index([createdAt])
+}
+
+model ConversationMessage {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+
+  conversationId    String
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role              ConversationRole
+  content           String   @db.Text
+
+  // AI Metadata
+  tokensUsed        Int?
+  latencyMs         Int?
+  confidenceScore   Float?
+
+  // Intent Detection
+  detectedIntent    String?
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ENDED
+  ABANDONED
+  ESCALATED
+}
+
+enum ConversationRole {
+  LEAD
+  AI
+  SYSTEM
+}
+
+enum LeadQualificationStatus {
+  UNKNOWN
+  QUALIFIED
+  UNQUALIFIED
+  MAYBE
+  BOOKED
+}
+
+// ============================================
+// LEAD MANAGEMENT
+// ============================================
+
+model Lead {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Contact Information
+  name              String?
+  email             String?
+  phone             String?
+  company           String?
+
+  // Lead Details
+  source            String?
+  status            LeadStatus @default(NEW)
+  qualificationScore Int?
+
+  // Business Context
+  budget            String?
+  timeline          String?
+  painPoints        String[] @default([])
+  notes             String?  @db.Text
+
+  // Tracking
+  firstContactAt    DateTime @default(now())
+  lastContactAt     DateTime @default(now())
+  conversations     Conversation[]
+
+  // Owner Actions
+  ownerViewed       Boolean  @default(false)
+  ownerContacted    Boolean  @default(false)
+  ownerNotes        String?  @db.Text
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([email])
+  @@index([qualificationScore])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  MEETING_SCHEDULED
+  CUSTOMER
+  LOST
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  type              NotificationType
+  title             String
+  message           String   @db.Text
+
+  // Related Entities
+  conversationId    String?
+  leadId            String?
+
+  // Status
+  read              Boolean  @default(false)
+  emailSent         Boolean  @default(false)
+  emailSentAt       DateTime?
+
+  @@index([tenantId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  WARM_LEAD_DETECTED
+  CONVERSATION_ENDED
+  AI_UNCERTAIN
+  DAILY_SUMMARY
+  SUBSCRIPTION_ENDING
+  LIMIT_REACHED
+}
+
+// ============================================
+// ANALYTICS & METRICS
+// ============================================
+
+model ConversationMetrics {
+  id                String   @id @default(uuid())
+  date              DateTime @db.Date
+
+  tenantId          String
+
+  // Daily Aggregates
+  totalConversations Int     @default(0)
+  qualifiedLeads    Int      @default(0)
+  unqualifiedLeads  Int      @default(0)
+  averageScore      Float?
+  averageDuration   Int?
+
+  // Engagement
+  avgMessagesPerConvo Int?
+  uniqueVisitors    Int      @default(0)
+  conversionRate    Float?
+
+  // AI Performance
+  avgConfidence     Float?
+  escalationRate    Float?
+
+  @@unique([tenantId, date])
+  @@index([tenantId])
+  @@index([date])
+}
+
+// ============================================
+// SYSTEM TABLES
+// ============================================
+
+model AuditLog {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+
+  tenantId          String?
+  userId            String?
+
+  action            String
+  entityType        String?
+  entityId          String?
+
+  metadata          Json?    @db.JsonB
+  ipAddress         String?
+  userAgent         String?  @db.Text
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model ApiUsage {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+
+  tenantId          String
+
+  // API Call Details
+  provider          String
+  model             String?
+  operation         String
+
+  // Usage
+  tokensUsed        Int
+  cost              Float
+  latencyMs         Int
+
+  // Context
+  conversationId    String?
+  simulationId      String?
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([provider])
+}
+
+// ============================================
+// PLATFORM ADMIN (Separate from Tenant Users)
+// ============================================
+
+model PlatformAdmin {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Authentication
+  email             String   @unique
+  password          String   // bcrypt hashed
+  emailVerified     Boolean  @default(false)
+
+  // Profile
+  name              String
+
+  // Role & Permissions
+  role              PlatformAdminRole @default(ADMIN)
+  permissions       Json     @db.JsonB
+  // Example permissions:
+  // {
+  //   canViewAllTenants: true,
+  //   canManageSubscriptions: true,
+  //   canImpersonate: true,
+  //   canBanTenants: true,
+  //   canViewAnalytics: true,
+  //   canManageBilling: true,
+  //   canAccessSupport: true
+  // }
+
+  // Status
+  isActive          Boolean  @default(true)
+  lastLoginAt       DateTime?
+
+  // Relations
+  auditLogs         PlatformAuditLog[]
+
+  @@index([email])
+  @@index([isActive])
+}
+
+enum PlatformAdminRole {
+  SUPER_ADMIN    // Full access to everything
+  ADMIN          // Standard admin access
+  SUPPORT        // Customer support only
+  BILLING        // Billing and subscriptions only
+  DEVELOPER      // Technical access, analytics
+  VIEWER         // Read-only access
+}
+
+model PlatformAuditLog {
+  id                String   @id @default(uuid())
+  createdAt         DateTime @default(now())
+
+  // Who performed the action
+  adminId           String
+  admin             PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  // What action
+  action            PlatformAdminAction
+  description       String?  @db.Text
+
+  // What was affected
+  targetType        String?  // 'tenant', 'user', 'subscription', 'system'
+  targetId          String?
+
+  // Context
+  metadata          Json?    @db.JsonB
+  // {
+  //   tenantName: "Acme Corp",
+  //   oldValue: {...},
+  //   newValue: {...},
+  //   reason: "Customer request",
+  //   ipAddress: "1.2.3.4"
+  // }
+
+  ipAddress         String?
+  userAgent         String?  @db.Text
+
+  @@index([adminId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+enum PlatformAdminAction {
+  // Tenant Management
+  VIEWED_TENANT
+  VIEWED_ALL_TENANTS
+  SUSPENDED_TENANT
+  ACTIVATED_TENANT
+  DELETED_TENANT
+  UPDATED_TENANT_SETTINGS
+
+  // User Management
+  IMPERSONATED_USER
+  VIEWED_USER
+  RESET_USER_PASSWORD
+  DELETED_USER
+
+  // Subscription Management
+  UPDATED_SUBSCRIPTION
+  APPLIED_DISCOUNT
+  REFUNDED_PAYMENT
+  CANCELLED_SUBSCRIPTION
+
+  // System
+  VIEWED_ANALYTICS
+  EXPORTED_DATA
+  UPDATED_PLATFORM_SETTINGS
+  RAN_MIGRATION
+
+  // Security
+  LOGGED_IN
+  LOGGED_OUT
+  FAILED_LOGIN
+  CHANGED_PASSWORD
+}
+
+// ============================================
+// Platform-Wide Settings (Optional)
+// ============================================
+
+model PlatformSettings {
+  id                String   @id @default(uuid())
+  updatedAt         DateTime @updatedAt
+  updatedBy         String?  // PlatformAdmin ID
+
+  // Feature Flags
+  maintenanceMode   Boolean  @default(false)
+  signupsEnabled    Boolean  @default(true)
+
+  // Pricing
+  defaultTrialDays  Int      @default(14)
+
+  // AI Limits
+  aiCostBudget      Float    @default(1000.00) // Monthly budget alert
+
+  // Email
+  supportEmail      String   @default("support@yourplatform.com")
+
+  // Other settings as JSON
+  settings          Json?    @db.JsonB
+
+  @@index([updatedAt])
+}
