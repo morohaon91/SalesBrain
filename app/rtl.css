@@ -1,0 +1,248 @@
+/* RTL Support with CSS Logical Properties */
+/* This stylesheet ensures proper bidirectional layout support */
+
+:root[dir='rtl'] {
+  --direction: rtl;
+  --opposite-direction: ltr;
+  --start: end;
+  --end: start;
+}
+
+:root[dir='ltr'] {
+  --direction: ltr;
+  --opposite-direction: rtl;
+  --start: start;
+  --end: end;
+}
+
+/* Sidebar RTL Support */
+[dir='rtl'] .fixed.inset-y-0.left-0 {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+}
+
+[dir='rtl'] .fixed.inset-y-0.left-0.-translate-x-full {
+  transform: translateX(0);
+}
+
+[dir='rtl'] .fixed.inset-y-0.left-0.translate-x-0 {
+  transform: translateX(0);
+}
+
+/* Flexbox RTL */
+[dir='rtl'] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir='rtl'] .flex-col {
+  flex-direction: column;
+}
+
+/* Text alignment RTL */
+[dir='rtl'] .text-start {
+  text-align: end;
+}
+
+[dir='rtl'] .text-end {
+  text-align: start;
+}
+
+[dir='rtl'] .text-left {
+  text-align: right;
+}
+
+[dir='rtl'] .text-right {
+  text-align: left;
+}
+
+/* Border radius RTL */
+[dir='rtl'] .rounded-l-lg,
+[dir='rtl'] .rounded-l {
+  border-radius: 0 var(--tw-rounded-lg) var(--tw-rounded-lg) 0;
+}
+
+[dir='rtl'] .rounded-r-lg,
+[dir='rtl'] .rounded-r {
+  border-radius: var(--tw-rounded-lg) 0 0 var(--tw-rounded-lg);
+}
+
+/* Padding/Margin RTL using logical properties */
+[dir='rtl'] .pl-4 {
+  padding-inline-end: 1rem;
+  padding-inline-start: 0;
+}
+
+[dir='rtl'] .pr-4 {
+  padding-inline-start: 1rem;
+  padding-inline-end: 0;
+}
+
+[dir='rtl'] .ml-4 {
+  margin-inline-end: 1rem;
+  margin-inline-start: 0;
+}
+
+[dir='rtl'] .mr-4 {
+  margin-inline-start: 1rem;
+  margin-inline-end: 0;
+}
+
+/* Icon flipping for RTL */
+[dir='rtl'] svg.flip-rtl {
+  transform: scaleX(-1);
+}
+
+/* Dropdown positioning RTL */
+[dir='rtl'] .absolute.right-0 {
+  right: auto;
+  left: 0;
+}
+
+[dir='rtl'] .absolute.left-0 {
+  left: auto;
+  right: 0;
+}
+
+/* Border left/right RTL */
+[dir='rtl'] .border-l {
+  border-right: 1px solid;
+  border-left: none;
+}
+
+[dir='rtl'] .border-r {
+  border-left: 1px solid;
+  border-right: none;
+}
+
+[dir='rtl'] .border-l-2 {
+  border-right: 2px solid;
+  border-left: none;
+}
+
+/* Hover states */
+[dir='rtl'] .hover\:bg-gray-50:hover {
+  background-color: rgb(249 250 251);
+}
+
+/* Animation direction RTL */
+[dir='rtl'] .transition-transform {
+  transition-property: transform;
+}
+
+/* Utility classes for RTL handling */
+[dir='rtl'] .ltr\:hidden {
+  display: none;
+}
+
+[dir='ltr'] .rtl\:hidden {
+  display: none;
+}
+
+[dir='rtl'] .ltr\:flex {
+  display: none;
+}
+
+[dir='rtl'] .rtl\:flex {
+  display: flex;
+}
+
+[dir='rtl'] .ltr\:block {
+  display: none;
+}
+
+[dir='rtl'] .rtl\:block {
+  display: block;
+}
+
+/* Text input RTL */
+[dir='rtl'] input[type='text'],
+[dir='rtl'] input[type='email'],
+[dir='rtl'] input[type='password'],
+[dir='rtl'] textarea {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir='rtl'] input[type='text']::placeholder,
+[dir='rtl'] input[type='email']::placeholder,
+[dir='rtl'] input[type='password']::placeholder,
+[dir='rtl'] textarea::placeholder {
+  text-align: right;
+}
+
+/* List items RTL */
+[dir='rtl'] li {
+  text-align: right;
+}
+
+/* Menu items RTL - flip icon position */
+[dir='rtl'] .flex.items-center.gap-3 {
+  flex-direction: row-reverse;
+}
+
+/* Chevron rotation RTL */
+[dir='rtl'] .rotate-180 {
+  transform: scaleX(-1);
+}
+
+/* Dialog/Modal RTL */
+[dir='rtl'] .fixed.inset-0 {
+  direction: rtl;
+}
+
+[dir='rtl'] .absolute.right-0.mt-2 {
+  right: auto;
+  left: 0;
+  direction: rtl;
+}
+
+/* Sidebar menu items RTL */
+[dir='rtl'] .sidebar nav {
+  text-align: right;
+}
+
+[dir='rtl'] .sidebar nav a {
+  justify-content: flex-end;
+}
+
+[dir='rtl'] .sidebar nav svg {
+  order: 2;
+}
+
+[dir='rtl'] .sidebar nav span {
+  order: 1;
+}
+
+/* Header RTL */
+[dir='rtl'] header {
+  direction: rtl;
+}
+
+[dir='rtl'] .flex.items-center.justify-between {
+  direction: rtl;
+}
+
+/* User avatar RTL */
+[dir='rtl'] .w-8.h-8.bg-primary-600 {
+  order: 1;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* Notification bell RTL */
+[dir='rtl'] .absolute.top-1.right-1 {
+  right: auto;
+  left: 0.25rem;
+}
+
+[dir='rtl'] .absolute.top-1.left-1 {
+  left: auto;
+  right: 0.25rem;
+}
+
+/* Truncate RTL */
+[dir='rtl'] .truncate {
+  text-align: right;
+  unicode-bidi: plaintext;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useI18n } from "@/lib/hooks/useI18n";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ function ActivityItem({
  */
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useI18n('dashboard');
 
   // Fetch analytics data
   const { data: analyticsResponse, isLoading } = useQuery({
@@ -69,9 +71,9 @@ export default function DashboardPage() {
 
   // Get current hour for greeting
   const hour = new Date().getHours();
-  let greeting = "Good morning";
-  if (hour >= 12 && hour < 18) greeting = "Good afternoon";
-  if (hour >= 18) greeting = "Good evening";
+  let greeting = t('welcome');
+  if (hour >= 12 && hour < 18) greeting = t('welcome'); // You can add time-specific greetings to translation files
+  if (hour >= 18) greeting = t('welcome');
 
   return (
     <div className="space-y-8">
@@ -81,7 +83,7 @@ export default function DashboardPage() {
           {greeting}, {user?.name}! 👋
         </h1>
         <p className="text-gray-600">
-          Here's what's happening with your lead qualification AI.
+          {t('overview')}
         </p>
       </div>
 
@@ -89,17 +91,17 @@ export default function DashboardPage() {
       <div className="flex flex-wrap gap-3">
         <Link href="/simulations/new">
           <Button className="bg-primary-600 hover:bg-primary-700 text-white">
-            Start Simulation
+            {t('actions.newSimulation')}
           </Button>
         </Link>
         <Link href="/conversations">
           <Button variant="outline">
-            View Conversations
+            {t('sections.recentActivity')}
           </Button>
         </Link>
         <Link href="/settings/widget">
           <Button variant="outline">
-            Setup Widget
+            {t('sections.recentActivity')}
           </Button>
         </Link>
       </div>
@@ -107,27 +109,27 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
-          label="Total Conversations"
+          label={t('stats.totalConversations')}
           value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : totalConversations}
           icon={MessageSquare}
           iconVariant="primary"
           trend={{ value: "0%", positive: true }}
         />
         <StatsCard
-          label="Qualified Leads"
+          label={t('stats.qualifiedLeads')}
           value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : qualifiedLeads}
           icon={Users}
           iconVariant="success"
           trend={{ value: "0%", positive: true }}
         />
         <StatsCard
-          label="Avg. Lead Score"
+          label={t('stats.activeSimulations')}
           value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (averageScore > 0 ? averageScore : "—")}
           icon={TrendingUp}
           iconVariant="primary"
         />
         <StatsCard
-          label="Leads Created"
+          label={t('stats.totalLeads')}
           value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (qualifiedLeads + (analyticsData?.unqualifiedLeads ?? 0) + (analyticsData?.contactedLeads ?? 0))}
           icon={AlertCircle}
           iconVariant="warning"
@@ -141,10 +143,10 @@ export default function DashboardPage() {
           {/* Getting Started Card */}
           <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-5 sm:p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Welcome to Your Business Brain
+              {t('welcome')}
             </h2>
             <p className="text-gray-700 mb-6">
-              Your AI-powered lead qualification system is ready. Here's how to get started:
+              {t('sections.recentActivity')}
             </p>
 
             <div className="space-y-4">
@@ -154,12 +156,12 @@ export default function DashboardPage() {
                   1
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Run Practice Simulations</h3>
+                  <h3 className="font-semibold text-gray-900">{t('actions.newSimulation')}</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Have conversations with AI clients to train your profile
+                    {t('actions.newSimulation')}
                   </p>
                   <Link href="/simulations/new" className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2 inline-flex items-center gap-1">
-                    Start simulation <ArrowRight className="w-3 h-3" />
+                    {t('actions.newSimulation')} <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </div>
@@ -170,12 +172,12 @@ export default function DashboardPage() {
                   2
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Setup Your Widget</h3>
+                  <h3 className="font-semibold text-gray-900">{t('actions.viewAnalytics')}</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Configure and embed the chat widget on your website
+                    {t('actions.viewAnalytics')}
                   </p>
                   <Link href="/settings/widget" className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2 inline-flex items-center gap-1">
-                    Configure widget <ArrowRight className="w-3 h-3" />
+                    {t('actions.viewAnalytics')} <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </div>
@@ -186,12 +188,12 @@ export default function DashboardPage() {
                   3
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Review Qualified Leads</h3>
+                  <h3 className="font-semibold text-gray-900">{t('sections.recentActivity')}</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    AI will automatically qualify incoming leads
+                    {t('sections.recentActivity')}
                   </p>
                   <Link href="/leads" className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2 inline-flex items-center gap-1">
-                    View leads <ArrowRight className="w-3 h-3" />
+                    {t('actions.viewAll')} <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </div>
@@ -201,15 +203,15 @@ export default function DashboardPage() {
           {/* Analytics Preview */}
           <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              This Week's Activity
+              {t('sections.recentActivity')}
             </h3>
 
             <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-100">
               <div className="text-center">
                 <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No data yet</p>
+                <p className="text-gray-500 font-medium">{t('messages.noData')}</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  Start simulations to see analytics
+                  {t('messages.loading')}
                 </p>
               </div>
             </div>
@@ -221,32 +223,32 @@ export default function DashboardPage() {
           {/* Recent Activity */}
           <div className="bg-white border border-gray-100 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Recent Activity
+              {t('sections.recentActivity')}
             </h3>
 
             {totalConversations === 0 ? (
               <div className="text-center py-8">
                 <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No activity yet</p>
-                <p className="text-xs text-gray-400 mt-1">Start simulations to see activity</p>
+                <p className="text-sm text-gray-500">{t('messages.noData')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('messages.loading')}</p>
               </div>
             ) : (
               <div className="space-y-2">
                 <ActivityItem
-                  title="Conversations Started"
+                  title={t('stats.totalConversations')}
                   description={`${totalConversations} conversation${totalConversations !== 1 ? 's' : ''} in progress`}
                   time="Today"
                   type="conversation"
                 />
                 <ActivityItem
-                  title="Leads Qualified"
+                  title={t('stats.qualifiedLeads')}
                   description={`${qualifiedLeads} lead${qualifiedLeads !== 1 ? 's' : ''} qualified`}
                   time="Today"
                   type="lead"
                 />
                 {analyticsData?.contactedLeads > 0 && (
                   <ActivityItem
-                    title="Leads Contacted"
+                    title={t('stats.qualifiedLeads')}
                     description={`${analyticsData.contactedLeads} lead${analyticsData.contactedLeads !== 1 ? 's' : ''} contacted`}
                     time="Today"
                     type="simulation"
@@ -257,7 +259,7 @@ export default function DashboardPage() {
 
             <Link href="/analytics">
               <Button variant="outline" className="w-full mt-4">
-                View all activity
+                {t('actions.viewAll')}
               </Button>
             </Link>
           </div>
@@ -265,7 +267,7 @@ export default function DashboardPage() {
           {/* Quick Links */}
           <div className="bg-white border border-gray-100 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Links
+              {t('actions.viewAll')}
             </h3>
 
             <div className="space-y-2">
@@ -273,19 +275,19 @@ export default function DashboardPage() {
                 href="/settings/widget"
                 className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
-                → Get Widget Code
+                → {t('actions.viewAll')}
               </Link>
               <Link
                 href="/settings/subscription"
                 className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
-                → Upgrade Plan
+                → {t('buttons.upgrade')}
               </Link>
               <Link
                 href="/settings"
                 className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
-                → Account Settings
+                → {t('actions.viewAll')}
               </Link>
               <a
                 href="https://docs.yourbusinessbrain.com"
@@ -293,7 +295,7 @@ export default function DashboardPage() {
                 rel="noopener noreferrer"
                 className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
-                → Documentation
+                → {t('actions.viewAll')}
               </a>
             </div>
           </div>
@@ -301,13 +303,13 @@ export default function DashboardPage() {
           {/* Trial Banner */}
           <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-4">
             <p className="text-sm font-semibold text-primary-900">
-              ✨ 14-day trial active
+              ✨ {t('sidebar.trialPlan')}
             </p>
             <p className="text-xs text-primary-700 mt-1">
-              Upgrade anytime to unlock advanced features
+              {t('buttons.upgrade')}
             </p>
             <Button className="w-full mt-3 bg-primary-600 hover:bg-primary-700 text-white">
-              Explore Plans
+              {t('buttons.upgrade')}
             </Button>
           </div>
         </div>

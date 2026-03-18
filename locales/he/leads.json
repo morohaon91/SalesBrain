@@ -1,0 +1,39 @@
+{
+  "title": "לידים",
+  "subtitle": "צפה וניהול לידים מוסמכים",
+  "list": {
+    "empty": "לא נמצאו לידים",
+    "search": "חיפוש לידים",
+    "filter": "סנן לפי סטטוס"
+  },
+  "columns": {
+    "name": "שם",
+    "email": "דוא\"ל",
+    "company": "חברה",
+    "score": "ניקוד",
+    "status": "סטטוס",
+    "date": "תאריך",
+    "actions": "פעולות"
+  },
+  "status": {
+    "qualified": "מוסמך",
+    "pending": "בהמתנה",
+    "rejected": "נדחה",
+    "contacted": "יצור קשר"
+  },
+  "actions": {
+    "view": "צפה",
+    "contact": "יצור קשר",
+    "edit": "עריכה",
+    "export": "ייצוא"
+  },
+  "detail": {
+    "information": "מידע על ליד",
+    "history": "היסטוריית הסמכה",
+    "interactions": "אינטראקציות"
+  },
+  "messages": {
+    "noLeads": "אין לידים זמינים עדיין",
+    "loading": "טעינת לידים..."
+  }
+}

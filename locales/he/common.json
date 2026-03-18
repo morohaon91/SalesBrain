@@ -1,0 +1,77 @@
+{
+  "appName": "SalesBrain",
+  "appDescription": "הסמכה של לידים מאוד על ידי AI לעצמאים וסוכנויות",
+  "navigation": {
+    "dashboard": "לוח בקרה",
+    "conversations": "שיחות",
+    "leads": "לידים",
+    "simulations": "סימולציות",
+    "analytics": "אנליטיקה",
+    "profile": "פרופיל",
+    "settings": "הגדרות"
+  },
+  "buttons": {
+    "submit": "שליחה",
+    "cancel": "ביטול",
+    "save": "שמור",
+    "delete": "מחק",
+    "edit": "עריכה",
+    "create": "יצירה",
+    "update": "עדכון",
+    "close": "סגור",
+    "open": "פתח",
+    "apply": "החל",
+    "reset": "איפוס",
+    "next": "הבא",
+    "previous": "הקודם",
+    "back": "חזור",
+    "continue": "המשך",
+    "confirm": "אישור",
+    "upgrade": "שדרג תוכנית",
+    "startSimulation": "התחל סימולציה",
+    "viewConversations": "צפה בשיחות",
+    "search": "חיפוש"
+  },
+  "user": {
+    "profile": "פרופיל",
+    "settings": "הגדרות",
+    "language": "שפה",
+    "signOut": "התנתק",
+    "role": "בעלים",
+    "demoUser": "משתמש דמו"
+  },
+  "menu": {
+    "profile": "פרופיל",
+    "settings": "הגדרות",
+    "language": "שפה",
+    "signOut": "התנתק"
+  },
+  "sidebar": {
+    "closeMenu": "סגור תפריט",
+    "trialPlan": "תוכנית ניסיון",
+    "daysRemaining": "ימים נותרים",
+    "upgradePlan": "שדרג תוכנית"
+  },
+  "header": {
+    "notifications": "התראות",
+    "openMenu": "פתח תפריט"
+  },
+  "status": {
+    "loading": "טעינה...",
+    "success": "הצלחה",
+    "error": "שגיאה",
+    "warning": "אזהרה",
+    "info": "מידע"
+  },
+  "time": {
+    "days": "ימים",
+    "hours": "שעות",
+    "minutes": "דקות",
+    "seconds": "שניות"
+  },
+  "empty": {
+    "noData": "אין נתונים עדיין",
+    "noResults": "לא נמצאו תוצאות",
+    "tryAgain": "נסה שוב"
+  }
+}

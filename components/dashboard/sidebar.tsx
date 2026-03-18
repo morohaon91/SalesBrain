@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/hooks/useI18n";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -17,39 +18,39 @@ import {
 /**
  * Navigation items for sidebar
  */
-const navigation = [
+const getNavigation = (t: any) => [
   {
-    name: "Dashboard",
+    name: t('navigation.dashboard'),
     href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    name: "Conversations",
+    name: t('navigation.conversations'),
     href: "/conversations",
     icon: MessageSquare,
   },
   {
-    name: "Leads",
+    name: t('navigation.leads'),
     href: "/leads",
     icon: Users,
   },
   {
-    name: "Simulations",
+    name: t('navigation.simulations'),
     href: "/simulations",
     icon: BrainCircuit,
   },
   {
-    name: "Analytics",
+    name: t('navigation.analytics'),
     href: "/analytics",
     icon: BarChart3,
   },
   {
-    name: "Profile",
+    name: t('navigation.profile'),
     href: "/profile",
     icon: User,
   },
   {
-    name: "Settings",
+    name: t('navigation.settings'),
     href: "/settings",
     icon: Settings,
   },
@@ -66,6 +67,8 @@ interface SidebarProps {
  */
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useI18n('common');
+  const navigation = getNavigation(t);
 
   return (
     <>
@@ -99,7 +102,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <button
             onClick={onClose}
             className="lg:hidden p-1 hover:bg-slate-800 rounded transition-colors"
-            aria-label="Close sidebar"
+            aria-label={t('sidebar.closeMenu')}
           >
             <X className="w-5 h-5 text-white" />
           </button>
@@ -133,12 +136,12 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         {/* Footer Section */}
         <div className="p-4 border-t border-slate-800 space-y-3">
           <div className="px-3 py-2.5 bg-slate-800 rounded-lg">
-            <p className="text-xs font-semibold text-slate-200">Trial Plan</p>
-            <p className="text-xs text-slate-400 mt-1">14 days remaining</p>
+            <p className="text-xs font-semibold text-slate-200">{t('sidebar.trialPlan')}</p>
+            <p className="text-xs text-slate-400 mt-1">14 {t('sidebar.daysRemaining')}</p>
           </div>
 
           <button className="w-full px-4 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
-            Upgrade Plan
+            {t('buttons.upgrade')}
           </button>
         </div>
       </aside>

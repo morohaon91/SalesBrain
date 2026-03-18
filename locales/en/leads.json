@@ -1,0 +1,39 @@
+{
+  "title": "Leads",
+  "subtitle": "View and manage qualified leads",
+  "list": {
+    "empty": "No leads found",
+    "search": "Search leads",
+    "filter": "Filter by status"
+  },
+  "columns": {
+    "name": "Name",
+    "email": "Email",
+    "company": "Company",
+    "score": "Score",
+    "status": "Status",
+    "date": "Date",
+    "actions": "Actions"
+  },
+  "status": {
+    "qualified": "Qualified",
+    "pending": "Pending",
+    "rejected": "Rejected",
+    "contacted": "Contacted"
+  },
+  "actions": {
+    "view": "View",
+    "contact": "Contact",
+    "edit": "Edit",
+    "export": "Export"
+  },
+  "detail": {
+    "information": "Lead Information",
+    "history": "Qualification History",
+    "interactions": "Interactions"
+  },
+  "messages": {
+    "noLeads": "No leads available yet",
+    "loading": "Loading leads..."
+  }
+}

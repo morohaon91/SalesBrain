@@ -1,0 +1,36 @@
+{
+  "404": {
+    "title": "Page Not Found",
+    "message": "The page you're looking for doesn't exist.",
+    "backHome": "Back to Home"
+  },
+  "500": {
+    "title": "Server Error",
+    "message": "Something went wrong on our end. Please try again later.",
+    "contact": "Contact Support"
+  },
+  "unauthorized": {
+    "title": "Unauthorized",
+    "message": "You don't have permission to access this resource."
+  },
+  "forbidden": {
+    "title": "Forbidden",
+    "message": "Access to this resource is forbidden."
+  },
+  "networkError": {
+    "title": "Network Error",
+    "message": "Unable to connect. Please check your internet connection."
+  },
+  "timeoutError": {
+    "title": "Request Timeout",
+    "message": "The request took too long. Please try again."
+  },
+  "validationError": {
+    "title": "Validation Error",
+    "message": "Please check your input and try again."
+  },
+  "generic": {
+    "title": "Error",
+    "message": "An unexpected error occurred. Please try again."
+  }
+}

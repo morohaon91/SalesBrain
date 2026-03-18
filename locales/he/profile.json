@@ -1,0 +1,45 @@
+{
+  "title": "פרופיל",
+  "subtitle": "ניהול מידע החשבון שלך",
+  "personalInfo": {
+    "title": "מידע אישי",
+    "firstName": "שם פרטי",
+    "lastName": "שם משפחה",
+    "email": "כתובת דוא\"ל",
+    "phone": "מספר טלפון",
+    "company": "שם החברה",
+    "role": "תפקיד"
+  },
+  "account": {
+    "title": "חשבון",
+    "accountType": "סוג חשבון",
+    "joinDate": "תאריך הצטרפות",
+    "subscription": "מנוי",
+    "status": "סטטוס"
+  },
+  "security": {
+    "title": "אבטחה",
+    "password": "שינוי סיסמה",
+    "twoFactor": "אימות דו-שלבי",
+    "sessions": "סשנים פעילים",
+    "lastLogin": "כניסה אחרונה"
+  },
+  "notifications": {
+    "title": "התראות",
+    "email": "התראות דוא\"ל",
+    "updates": "עדכוני מוצר",
+    "marketing": "דוא\"לי שיווק"
+  },
+  "actions": {
+    "save": "שמור שינויים",
+    "cancel": "ביטול",
+    "changePassword": "שינוי סיסמה",
+    "logout": "התנתק",
+    "deleteAccount": "מחק חשבון"
+  },
+  "messages": {
+    "updateSuccess": "הפרופיל עודכן בהצלחה",
+    "updateError": "נכשל בעדכון הפרופיל",
+    "passwordChangeSuccess": "הסיסמה השתנתה בהצלחה"
+  }
+}

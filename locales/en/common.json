@@ -1,0 +1,77 @@
+{
+  "appName": "SalesBrain",
+  "appDescription": "AI-powered lead qualification for freelancers and agencies",
+  "navigation": {
+    "dashboard": "Dashboard",
+    "conversations": "Conversations",
+    "leads": "Leads",
+    "simulations": "Simulations",
+    "analytics": "Analytics",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "buttons": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "close": "Close",
+    "open": "Open",
+    "apply": "Apply",
+    "reset": "Reset",
+    "next": "Next",
+    "previous": "Previous",
+    "back": "Back",
+    "continue": "Continue",
+    "confirm": "Confirm",
+    "upgrade": "Upgrade Plan",
+    "startSimulation": "Start Simulation",
+    "viewConversations": "View Conversations",
+    "search": "Search"
+  },
+  "user": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "signOut": "Sign out",
+    "role": "OWNER",
+    "demoUser": "Demo User"
+  },
+  "menu": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "signOut": "Sign out"
+  },
+  "sidebar": {
+    "closeMenu": "Close sidebar",
+    "trialPlan": "Trial Plan",
+    "daysRemaining": "days remaining",
+    "upgradePlan": "Upgrade Plan"
+  },
+  "header": {
+    "notifications": "Notifications",
+    "openMenu": "Open menu"
+  },
+  "status": {
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "time": {
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds"
+  },
+  "empty": {
+    "noData": "No data yet",
+    "noResults": "No results found",
+    "tryAgain": "Try again"
+  }
+}

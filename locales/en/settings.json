@@ -1,0 +1,53 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your preferences",
+  "general": {
+    "title": "General Settings",
+    "language": "Language",
+    "timezone": "Timezone",
+    "theme": "Theme",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "autoMode": "Auto"
+  },
+  "privacy": {
+    "title": "Privacy & Security",
+    "dataSharing": "Allow data sharing",
+    "analytics": "Analytics",
+    "cookies": "Cookies",
+    "cookieDetails": "Essential cookies are always enabled"
+  },
+  "integrations": {
+    "title": "Integrations",
+    "slack": "Slack",
+    "salesforce": "Salesforce",
+    "hubspot": "HubSpot",
+    "disconnect": "Disconnect",
+    "connect": "Connect"
+  },
+  "api": {
+    "title": "API Keys",
+    "key": "API Key",
+    "secret": "Secret Key",
+    "generate": "Generate New Key",
+    "revoke": "Revoke Key",
+    "created": "Created"
+  },
+  "billing": {
+    "title": "Billing",
+    "plan": "Current Plan",
+    "usage": "Usage",
+    "nextBilling": "Next Billing Date",
+    "viewInvoices": "View Invoices",
+    "upgradePlan": "Upgrade Plan"
+  },
+  "actions": {
+    "save": "Save Settings",
+    "cancel": "Cancel",
+    "reset": "Reset to Defaults"
+  },
+  "messages": {
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings"
+  }
+}

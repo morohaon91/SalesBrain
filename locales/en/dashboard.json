@@ -1,0 +1,27 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome back",
+  "overview": "Overview",
+  "stats": {
+    "totalLeads": "Total Leads",
+    "qualifiedLeads": "Qualified Leads",
+    "conversionRate": "Conversion Rate",
+    "activeSimulations": "Active Simulations",
+    "totalConversations": "Total Conversations"
+  },
+  "sections": {
+    "recentActivity": "Recent Activity",
+    "upcomingSimulations": "Upcoming Simulations",
+    "topPerformers": "Top Performers",
+    "quickActions": "Quick Actions"
+  },
+  "messages": {
+    "noData": "No data available",
+    "loading": "Loading dashboard data..."
+  },
+  "actions": {
+    "viewAll": "View All",
+    "newSimulation": "New Simulation",
+    "viewAnalytics": "View Analytics"
+  }
+}

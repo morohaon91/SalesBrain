@@ -1,0 +1,27 @@
+{
+  "title": "לוח בקרה",
+  "welcome": "ברוכים הבאים חזרה",
+  "overview": "סקירה",
+  "stats": {
+    "totalLeads": "סה\"כ לידים",
+    "qualifiedLeads": "לידים מוסמכים",
+    "conversionRate": "שיעור ההמרה",
+    "activeSimulations": "סימולציות פעילות",
+    "totalConversations": "סה\"כ שיחות"
+  },
+  "sections": {
+    "recentActivity": "פעילות אחרונה",
+    "upcomingSimulations": "סימולציות קרובות",
+    "topPerformers": "המבצעים הטובים ביותר",
+    "quickActions": "פעולות מהירות"
+  },
+  "messages": {
+    "noData": "אין נתונים זמינים",
+    "loading": "טעינת נתוני לוח הבקרה..."
+  },
+  "actions": {
+    "viewAll": "צפה בהכל",
+    "newSimulation": "סימולציה חדשה",
+    "viewAnalytics": "צפה באנליטיקה"
+  }
+}

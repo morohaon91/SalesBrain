@@ -1,0 +1,34 @@
+{
+  "title": "Analytics",
+  "subtitle": "View detailed performance metrics",
+  "overview": "Overview",
+  "metrics": {
+    "totalLeads": "Total Leads",
+    "qualifiedLeads": "Qualified Leads",
+    "conversionRate": "Conversion Rate",
+    "avgScore": "Average Score",
+    "topPerformingSimulation": "Top Performing Simulation",
+    "recentActivity": "Recent Activity"
+  },
+  "charts": {
+    "leadQualification": "Lead Qualification Trend",
+    "conversionBySimulation": "Conversion by Simulation",
+    "leadDistribution": "Lead Distribution",
+    "timeSeriesAnalysis": "Time Series Analysis"
+  },
+  "filters": {
+    "dateRange": "Date Range",
+    "simulation": "Simulation",
+    "status": "Status",
+    "apply": "Apply Filters"
+  },
+  "export": {
+    "csv": "Export as CSV",
+    "pdf": "Export as PDF",
+    "excel": "Export as Excel"
+  },
+  "messages": {
+    "noData": "No analytics data available",
+    "loading": "Loading analytics..."
+  }
+}

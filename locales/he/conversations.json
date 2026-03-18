@@ -1,0 +1,32 @@
+{
+  "title": "שיחות",
+  "subtitle": "צפה וניהול כל השיחות",
+  "list": {
+    "empty": "אין שיחות עדיין",
+    "search": "חיפוש שיחות",
+    "filter": "סנן לפי סטטוס"
+  },
+  "columns": {
+    "participant": "משתתף",
+    "message": "הודעה אחרונה",
+    "date": "תאריך",
+    "status": "סטטוס",
+    "actions": "פעולות"
+  },
+  "status": {
+    "active": "פעיל",
+    "archived": "בארכיון",
+    "completed": "הושלם"
+  },
+  "actions": {
+    "view": "צפה",
+    "archive": "שמור בארכיון",
+    "delete": "מחק",
+    "export": "ייצוא"
+  },
+  "messages": {
+    "deleteConfirm": "האם אתה בטוח שברצונך למחוק שיחה זו?",
+    "deleteSuccess": "השיחה נמחקה בהצלחה",
+    "deleteError": "נכשל מחיקת השיחה"
+  }
+}

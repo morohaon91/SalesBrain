@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useI18n } from "@/lib/hooks/useI18n";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
   LogOut,
   Settings,
@@ -48,6 +50,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t } = useI18n('common');
 
   const pageTitle = getTitleFromPathname(pathname)
     .split("-")
@@ -82,7 +85,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
         <button
           onClick={onMenuToggle}
           className="lg:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-          aria-label="Open menu"
+          aria-label={t('header.openMenu')}
         >
           <Menu className="w-5 h-5 text-gray-600" />
         </button>
@@ -94,7 +97,10 @@ export function Header({ onMenuToggle }: HeaderProps) {
       {/* Right Section */}
       <div className="flex items-center gap-4">
         {/* Notifications */}
-        <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+        <button
+          className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label={t('header.notifications')}
+        >
           <Bell className="w-5 h-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-danger-500 rounded-full" />
         </button>
@@ -138,7 +144,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <User className="w-4 h-4" />
-                  Profile
+                  {t('menu.profile')}
                 </button>
 
                 <button
@@ -146,8 +152,11 @@ export function Header({ onMenuToggle }: HeaderProps) {
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <Settings className="w-4 h-4" />
-                  Settings
+                  {t('menu.settings')}
                 </button>
+
+                {/* Language Switcher */}
+                <LanguageSwitcher isOpen={true} onSelect={() => setIsMenuOpen(false)} />
               </div>
 
               {/* Divider */}
@@ -157,7 +166,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sign out
+                  {t('menu.signOut')}
                 </button>
               </div>
             </div>

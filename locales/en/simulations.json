@@ -1,0 +1,49 @@
+{
+  "title": "Simulations",
+  "subtitle": "Create and manage AI simulations",
+  "list": {
+    "empty": "No simulations yet",
+    "search": "Search simulations",
+    "filter": "Filter by status"
+  },
+  "columns": {
+    "name": "Name",
+    "type": "Type",
+    "leads": "Leads",
+    "status": "Status",
+    "created": "Created",
+    "actions": "Actions"
+  },
+  "status": {
+    "active": "Active",
+    "completed": "Completed",
+    "paused": "Paused",
+    "draft": "Draft"
+  },
+  "actions": {
+    "start": "Start Simulation",
+    "view": "View Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "duplicate": "Duplicate"
+  },
+  "create": {
+    "title": "Create New Simulation",
+    "name": "Simulation Name",
+    "description": "Description",
+    "script": "AI Script",
+    "leads": "Select Leads",
+    "submit": "Create Simulation"
+  },
+  "detail": {
+    "overview": "Overview",
+    "progress": "Progress",
+    "results": "Results",
+    "transcript": "Transcript"
+  },
+  "messages": {
+    "createSuccess": "Simulation created successfully",
+    "startSuccess": "Simulation started",
+    "deleteConfirm": "Are you sure you want to delete this simulation?"
+  }
+}

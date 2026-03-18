@@ -1,0 +1,34 @@
+{
+  "title": "אנליטיקה",
+  "subtitle": "צפה במדדי ביצוע מפורטים",
+  "overview": "סקירה",
+  "metrics": {
+    "totalLeads": "סה\"כ לידים",
+    "qualifiedLeads": "לידים מוסמכים",
+    "conversionRate": "שיעור ההמרה",
+    "avgScore": "ניקוד ממוצע",
+    "topPerformingSimulation": "סימולציה מביצעת הטובה ביותר",
+    "recentActivity": "פעילות אחרונה"
+  },
+  "charts": {
+    "leadQualification": "מגמת הסמכת ליד",
+    "conversionBySimulation": "המרה לפי סימולציה",
+    "leadDistribution": "הפצת ליד",
+    "timeSeriesAnalysis": "ניתוח סדרות זמן"
+  },
+  "filters": {
+    "dateRange": "טווח תאריכים",
+    "simulation": "סימולציה",
+    "status": "סטטוס",
+    "apply": "החל סננים"
+  },
+  "export": {
+    "csv": "ייצוא כ-CSV",
+    "pdf": "ייצוא כ-PDF",
+    "excel": "ייצוא כ-Excel"
+  },
+  "messages": {
+    "noData": "אין נתוני אנליטיקה זמינים",
+    "loading": "טעינת אנליטיקה..."
+  }
+}

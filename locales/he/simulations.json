@@ -1,0 +1,49 @@
+{
+  "title": "סימולציות",
+  "subtitle": "יצירה וניהול סימולציות AI",
+  "list": {
+    "empty": "אין סימולציות עדיין",
+    "search": "חיפוש סימולציות",
+    "filter": "סנן לפי סטטוס"
+  },
+  "columns": {
+    "name": "שם",
+    "type": "סוג",
+    "leads": "לידים",
+    "status": "סטטוס",
+    "created": "נוצרה",
+    "actions": "פעולות"
+  },
+  "status": {
+    "active": "פעיל",
+    "completed": "הושלם",
+    "paused": "מושהה",
+    "draft": "טיוטה"
+  },
+  "actions": {
+    "start": "התחל סימולציה",
+    "view": "צפה בפרטים",
+    "edit": "עריכה",
+    "delete": "מחק",
+    "duplicate": "שכפול"
+  },
+  "create": {
+    "title": "יצירת סימולציה חדשה",
+    "name": "שם סימולציה",
+    "description": "תיאור",
+    "script": "תסריט AI",
+    "leads": "בחר לידים",
+    "submit": "יצירת סימולציה"
+  },
+  "detail": {
+    "overview": "סקירה",
+    "progress": "התקדמות",
+    "results": "תוצאות",
+    "transcript": "תמלול"
+  },
+  "messages": {
+    "createSuccess": "הסימולציה נוצרה בהצלחה",
+    "startSuccess": "הסימולציה התחילה",
+    "deleteConfirm": "האם אתה בטוח שברצונך למחוק סימולציה זו?"
+  }
+}

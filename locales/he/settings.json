@@ -1,0 +1,53 @@
+{
+  "title": "הגדרות",
+  "subtitle": "ניהול ההעדפות שלך",
+  "general": {
+    "title": "הגדרות כלליות",
+    "language": "שפה",
+    "timezone": "אזור זמן",
+    "theme": "ערכת נושא",
+    "lightMode": "בהיר",
+    "darkMode": "אפל",
+    "autoMode": "אוטומטי"
+  },
+  "privacy": {
+    "title": "פרטיות ואבטחה",
+    "dataSharing": "אפשר שיתוף נתונים",
+    "analytics": "אנליטיקה",
+    "cookies": "עוגיות",
+    "cookieDetails": "עוגיות חיוניות מופעלות תמיד"
+  },
+  "integrations": {
+    "title": "אינטגרציות",
+    "slack": "Slack",
+    "salesforce": "Salesforce",
+    "hubspot": "HubSpot",
+    "disconnect": "התנתק",
+    "connect": "התחבר"
+  },
+  "api": {
+    "title": "מפתחות API",
+    "key": "מפתח API",
+    "secret": "מפתח סודי",
+    "generate": "יצור מפתח חדש",
+    "revoke": "בטל מפתח",
+    "created": "נוצרה"
+  },
+  "billing": {
+    "title": "חיוב",
+    "plan": "תוכנית נוכחית",
+    "usage": "שימוש",
+    "nextBilling": "תאריך החיוב הבא",
+    "viewInvoices": "צפה בחשבוניות",
+    "upgradePlan": "שדרג תוכנית"
+  },
+  "actions": {
+    "save": "שמור הגדרות",
+    "cancel": "ביטול",
+    "reset": "אפס לברירות מחדל"
+  },
+  "messages": {
+    "saveSuccess": "ההגדרות נשמרו בהצלחה",
+    "saveError": "נכשל בשמירת ההגדרות"
+  }
+}

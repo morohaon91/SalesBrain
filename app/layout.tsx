@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/hooks/useAuth";
 import { Providers } from "@/components/providers";
+import { I18nProvider } from "@/components/i18n/I18nProvider";
 
 export const metadata: Metadata = {
   title: "SalesBrain - Lead Qualification AI",
@@ -14,11 +15,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr">
       <body>
-        <Providers>
-          <AuthProvider>{children}</AuthProvider>
-        </Providers>
+        <I18nProvider>
+          <Providers>
+            <AuthProvider>{children}</AuthProvider>
+          </Providers>
+        </I18nProvider>
       </body>
     </html>
   );

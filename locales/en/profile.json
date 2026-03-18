@@ -1,0 +1,45 @@
+{
+  "title": "Profile",
+  "subtitle": "Manage your account information",
+  "personalInfo": {
+    "title": "Personal Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "company": "Company Name",
+    "role": "Role"
+  },
+  "account": {
+    "title": "Account",
+    "accountType": "Account Type",
+    "joinDate": "Join Date",
+    "subscription": "Subscription",
+    "status": "Status"
+  },
+  "security": {
+    "title": "Security",
+    "password": "Change Password",
+    "twoFactor": "Two-Factor Authentication",
+    "sessions": "Active Sessions",
+    "lastLogin": "Last Login"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "email": "Email Notifications",
+    "updates": "Product Updates",
+    "marketing": "Marketing Emails"
+  },
+  "actions": {
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "changePassword": "Change Password",
+    "logout": "Sign Out",
+    "deleteAccount": "Delete Account"
+  },
+  "messages": {
+    "updateSuccess": "Profile updated successfully",
+    "updateError": "Failed to update profile",
+    "passwordChangeSuccess": "Password changed successfully"
+  }
+}
