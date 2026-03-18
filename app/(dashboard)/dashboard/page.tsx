@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { StatsCard } from "@/components/shared/stats-card";
 import {
@@ -9,6 +11,7 @@ import {
   TrendingUp,
   AlertCircle,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -52,6 +55,18 @@ function ActivityItem({
 export default function DashboardPage() {
   const { user } = useAuth();
 
+  // Fetch analytics data
+  const { data: analyticsResponse, isLoading } = useQuery({
+    queryKey: ["analytics"],
+    queryFn: () => api.analytics.getOverview(),
+    enabled: !!user,
+  });
+
+  const analyticsData = analyticsResponse?.data as any;
+  const totalConversations = analyticsData?.totalConversations ?? 0;
+  const qualifiedLeads = analyticsData?.qualifiedLeads ?? 0;
+  const averageScore = analyticsData?.averageScore ?? 0;
+
   // Get current hour for greeting
   const hour = new Date().getHours();
   let greeting = "Good morning";
@@ -93,27 +108,27 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           label="Total Conversations"
-          value={0}
+          value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : totalConversations}
           icon={MessageSquare}
           iconVariant="primary"
           trend={{ value: "0%", positive: true }}
         />
         <StatsCard
           label="Qualified Leads"
-          value={0}
+          value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : qualifiedLeads}
           icon={Users}
           iconVariant="success"
           trend={{ value: "0%", positive: true }}
         />
         <StatsCard
           label="Avg. Lead Score"
-          value="—"
+          value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (averageScore > 0 ? averageScore : "—")}
           icon={TrendingUp}
           iconVariant="primary"
         />
         <StatsCard
-          label="Needs Review"
-          value={0}
+          label="Leads Created"
+          value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (qualifiedLeads + (analyticsData?.unqualifiedLeads ?? 0) + (analyticsData?.contactedLeads ?? 0))}
           icon={AlertCircle}
           iconVariant="warning"
         />
@@ -209,26 +224,36 @@ export default function DashboardPage() {
               Recent Activity
             </h3>
 
-            <div className="space-y-2">
-              <ActivityItem
-                title="Account Created"
-                description="Your account has been successfully created"
-                time="Just now"
-                type="conversation"
-              />
-              <ActivityItem
-                title="Welcome Email Sent"
-                description="Check your email for setup instructions"
-                time="5 min ago"
-                type="lead"
-              />
-              <ActivityItem
-                title="Dashboard Accessed"
-                description="First time logging into the dashboard"
-                time="2 min ago"
-                type="simulation"
-              />
-            </div>
+            {totalConversations === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">No activity yet</p>
+                <p className="text-xs text-gray-400 mt-1">Start simulations to see activity</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <ActivityItem
+                  title="Conversations Started"
+                  description={`${totalConversations} conversation${totalConversations !== 1 ? 's' : ''} in progress`}
+                  time="Today"
+                  type="conversation"
+                />
+                <ActivityItem
+                  title="Leads Qualified"
+                  description={`${qualifiedLeads} lead${qualifiedLeads !== 1 ? 's' : ''} qualified`}
+                  time="Today"
+                  type="lead"
+                />
+                {analyticsData?.contactedLeads > 0 && (
+                  <ActivityItem
+                    title="Leads Contacted"
+                    description={`${analyticsData.contactedLeads} lead${analyticsData.contactedLeads !== 1 ? 's' : ''} contacted`}
+                    time="Today"
+                    type="simulation"
+                  />
+                )}
+              </div>
+            )}
 
             <Link href="/analytics">
               <Button variant="outline" className="w-full mt-4">
