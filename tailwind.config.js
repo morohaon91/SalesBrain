@@ -4,6 +4,10 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  // RTL support - direction selector for CSS variable usage
+  corePlugins: {
+    direction: true,
+  },
   theme: {
     extend: {
       fontFamily: {
@@ -75,7 +79,63 @@ module.exports = {
           900: '#581c87',
         },
       },
+      // RTL-aware utilities
+      spacing: {
+        'sidebar-width': '16rem',
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    // RTL direction plugin
+    function ({ addBase, addComponents, addUtilities, e, theme }) {
+      addUtilities({
+        // Logical properties utilities for RTL
+        '.start-0': {
+          'inset-inline-start': '0',
+        },
+        '.end-0': {
+          'inset-inline-end': '0',
+        },
+        '.ps-0': {
+          'padding-inline-start': '0',
+        },
+        '.ps-2': {
+          'padding-inline-start': '0.5rem',
+        },
+        '.ps-3': {
+          'padding-inline-start': '0.75rem',
+        },
+        '.ps-4': {
+          'padding-inline-start': '1rem',
+        },
+        '.pe-0': {
+          'padding-inline-end': '0',
+        },
+        '.pe-2': {
+          'padding-inline-end': '0.5rem',
+        },
+        '.pe-3': {
+          'padding-inline-end': '0.75rem',
+        },
+        '.pe-4': {
+          'padding-inline-end': '1rem',
+        },
+        '.ms-0': {
+          'margin-inline-start': '0',
+        },
+        '.ms-auto': {
+          'margin-inline-start': 'auto',
+        },
+        '.me-0': {
+          'margin-inline-end': '0',
+        },
+        '.me-auto': {
+          'margin-inline-end': 'auto',
+        },
+        '.flip-rtl': {
+          'transform': 'scaleX(-1)',
+        },
+      });
+    },
+  ],
 };

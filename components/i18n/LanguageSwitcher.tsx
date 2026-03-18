@@ -55,8 +55,8 @@ export function LanguageSwitcher({ isOpen = false, onSelect }: LanguageSwitcherP
         onClick={() => setShowDropdown(!showDropdown)}
         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
       >
-        <Globe className="w-4 h-4" />
-        <span>{t('user.language')}</span>
+        <Globe className="w-4 h-4 flex-shrink-0" />
+        <span className="flex-1">{t('user.language')}</span>
         <span className="ms-auto text-xs font-medium text-gray-500">
           {language === 'en' ? 'EN' : 'HE'}
         </span>
