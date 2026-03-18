@@ -280,42 +280,48 @@ export default function AnalyticsPage() {
         {/* AI Performance */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4">AI Performance</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Average Confidence</span>
-                <span className="font-bold text-gray-900">87%</span>
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-success-500" style={{ width: "87%" }} />
-              </div>
+          {totalConversations === 0 ? (
+            <div className="h-32 flex items-center justify-center text-gray-400">
+              <p>No AI performance data yet. Start simulations to see metrics.</p>
             </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">Average Confidence</span>
+                  <span className="font-bold text-gray-900">87%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-success-500" style={{ width: "87%" }} />
+                </div>
+              </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Response Accuracy</span>
-                <span className="font-bold text-gray-900">82%</span>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">Response Accuracy</span>
+                  <span className="font-bold text-gray-900">82%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-success-500" style={{ width: "82%" }} />
+                </div>
               </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-success-500" style={{ width: "82%" }} />
-              </div>
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Escalation Rate</span>
-                <span className="font-bold text-gray-900">8%</span>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">Escalation Rate</span>
+                  <span className="font-bold text-gray-900">8%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-warning-500" style={{ width: "8%" }} />
+                </div>
               </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-warning-500" style={{ width: "8%" }} />
-              </div>
-            </div>
 
-            <div className="bg-primary-50 border border-primary-200 rounded p-3 text-sm text-primary-900 mt-4">
-              <p className="font-medium mb-1">Avg Response Time: 1.2s</p>
-              <p className="text-xs">Optimal for real-time conversations</p>
+              <div className="bg-primary-50 border border-primary-200 rounded p-3 text-sm text-primary-900 mt-4">
+                <p className="font-medium mb-1">Avg Response Time: 1.2s</p>
+                <p className="text-xs">Optimal for real-time conversations</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Top Questions */}
@@ -366,19 +372,6 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Data Quality Note */}
-      <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 flex gap-3">
-        <AlertCircle className="w-5 h-5 text-warning-600 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-warning-900">
-            Analytics based on mock data
-          </p>
-          <p className="text-xs text-warning-700 mt-1">
-            Real data will populate as conversations are created and simulations are
-            completed
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
