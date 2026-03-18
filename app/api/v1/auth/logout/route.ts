@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { verifyAccessToken } from "@/lib/auth/jwt";
 
 /**
  * POST /api/v1/auth/logout
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Verify token (doesn't matter if it's expired, we're logging out)
     try {
-      verifyToken(token);
+      verifyAccessToken(token);
     } catch {
       // Token might be expired or invalid, but that's OK for logout
       // User is logging out anyway

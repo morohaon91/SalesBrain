@@ -126,14 +126,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       await api.auth.logout();
       setUser(null);
-      router.push("/login");
+      // Use window.location for guaranteed redirect (bypasses router race condition)
+      window.location.href = "/login";
     } catch (err: unknown) {
       const errorMsg =
         err instanceof Error ? err.message : "Logout failed. Please try again.";
       setError(errorMsg);
+      // Still redirect on error to clear the user session
+      window.location.href = "/login";
       throw err;
     }
-  }, [router]);
+  }, []);
 
   /**
    * Register new user
