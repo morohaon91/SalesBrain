@@ -1,8 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useAuth } from "@/lib/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { api } from '@/lib/api/client';
+import { Button } from '@/components/ui/button';
 import {
   BrainCircuit,
   Plus,
@@ -12,8 +14,10 @@ import {
   TrendingUp,
   ChevronRight,
   Zap,
-} from "lucide-react";
-import Link from "next/link";
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import Link from 'next/link';
 
 // Mock data - replace with API calls
 const mockSimulations = [
@@ -98,21 +102,40 @@ function StatusBadge({ status }: { status: "COMPLETED" | "IN_PROGRESS" }) {
  */
 export default function SimulationsPage() {
   const { user } = useAuth();
-  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
-  // Filter simulations
-  const filteredSimulations = mockSimulations.filter((sim) => {
-    return filterStatus === "ALL" || sim.status === filterStatus;
+  // Fetch simulations from API
+  const {
+    data: response,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['simulations', filterStatus],
+    queryFn: () =>
+      api.simulations.list({
+        status: filterStatus !== 'ALL' ? filterStatus : undefined,
+      }),
+    enabled: !!user,
   });
 
-  const completedCount = mockSimulations.filter((s) => s.status === "COMPLETED").length;
-  const totalMessages = mockSimulations.reduce((acc, s) => acc + s.messageCount, 0);
-  const avgQuality = Math.round(
-    mockSimulations
-      .filter((s) => s.qualityScore)
-      .reduce((acc, s) => acc + (s.qualityScore || 0), 0) /
-      mockSimulations.filter((s) => s.qualityScore).length
-  );
+  const simulations = (response?.data as any[]) || mockSimulations;
+
+  // Filter simulations
+  const filteredSimulations = simulations.filter((sim) => {
+    return filterStatus === 'ALL' || sim.status === filterStatus;
+  });
+
+  const completedCount = simulations.filter((s) => s.status === 'COMPLETED').length;
+  const totalMessages = simulations.reduce((acc, s) => acc + s.messageCount, 0);
+  const avgQuality =
+    simulations.filter((s) => s.qualityScore).length > 0
+      ? Math.round(
+          simulations
+            .filter((s) => s.qualityScore)
+            .reduce((acc, s) => acc + (s.qualityScore || 0), 0) /
+            simulations.filter((s) => s.qualityScore).length
+        )
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -132,31 +155,60 @@ export default function SimulationsPage() {
         </Link>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-danger-900">Failed to load simulations</p>
+            <p className="text-sm text-danger-700 mt-1">
+              {error instanceof Error ? error.message : 'Please try again'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Total</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">
-            {mockSimulations.length}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {simulations.length}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Completed</p>
-          <p className="text-2xl font-bold text-success-600 mt-2">
-            {completedCount}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-success-600 mt-2">
+              {completedCount}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Messages</p>
-          <p className="text-2xl font-bold text-primary-600 mt-2">
-            {totalMessages}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-primary-600 mt-2">
+              {totalMessages}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Avg Quality</p>
-          <p className="text-2xl font-bold text-accent-600 mt-2">
-            {avgQuality}%
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-accent-600 mt-2">
+              {avgQuality}%
+            </p>
+          )}
         </div>
       </div>
 

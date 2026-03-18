@@ -1,8 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useAuth } from "@/lib/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { api } from '@/lib/api/client';
+import { Button } from '@/components/ui/button';
 import {
   Search,
   Users,
@@ -12,11 +14,30 @@ import {
   Calendar,
   TrendingUp,
   ChevronRight,
-} from "lucide-react";
-import Link from "next/link";
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import Link from 'next/link';
 
-// Mock data - replace with API calls
-const mockLeads = [
+// Type definition
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  status: string;
+  qualificationScore: number;
+  conversationsCount: number;
+  firstContactAt?: string;
+  ownerViewed: boolean;
+  budget?: string;
+  timeline?: string;
+  ownerNotes?: string;
+}
+
+// Fallback mock data
+const mockLeads: Lead[] = [
   {
     id: "lead-001",
     name: "Sarah Johnson",
@@ -109,32 +130,48 @@ function ScoreIndicator({ score }: { score: number }) {
  */
 export default function LeadsPage() {
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("ALL");
-  const [sortBy, setSortBy] = useState<string>("score");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState<string>('score');
+
+  // Fetch leads from API
+  const {
+    data: response,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['leads', filterStatus],
+    queryFn: () =>
+      api.leads.list({
+        status: filterStatus !== 'ALL' ? filterStatus : undefined,
+      }),
+    enabled: !!user,
+  });
+
+  const leads = (response?.data as Lead[]) || mockLeads;
 
   // Filter and sort leads
-  let filteredLeads = mockLeads.filter((lead) => {
+  let filteredLeads = leads.filter((lead) => {
     const matchesSearch =
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.company.toLowerCase().includes(searchTerm.toLowerCase());
+      (lead.company?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
 
-    const matchesStatus = filterStatus === "ALL" || lead.status === filterStatus;
+    const matchesStatus = filterStatus === 'ALL' || lead.status === filterStatus;
 
     return matchesSearch && matchesStatus;
   });
 
   // Sort leads
-  if (sortBy === "score") {
+  if (sortBy === 'score') {
     filteredLeads.sort((a, b) => b.qualificationScore - a.qualificationScore);
-  } else if (sortBy === "date") {
+  } else if (sortBy === 'date') {
     filteredLeads.sort(
       (a, b) =>
-        new Date(b.firstContactAt).getTime() -
-        new Date(a.firstContactAt).getTime()
+        new Date(b.firstContactAt || 0).getTime() -
+        new Date(a.firstContactAt || 0).getTime()
     );
-  } else if (sortBy === "name") {
+  } else if (sortBy === 'name') {
     filteredLeads.sort((a, b) => a.name.localeCompare(b.name));
   }
 
@@ -148,34 +185,63 @@ export default function LeadsPage() {
         </p>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-danger-900">Failed to load leads</p>
+            <p className="text-sm text-danger-700 mt-1">
+              {error instanceof Error ? error.message : 'Please try again'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Total Leads</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">
-            {mockLeads.length}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-gray-900 mt-2">{leads.length}</p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">New</p>
-          <p className="text-2xl font-bold text-primary-600 mt-2">
-            {mockLeads.filter((l) => l.status === "NEW").length}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-primary-600 mt-2">
+              {leads.filter((l) => l.status === 'NEW').length}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Contacted</p>
-          <p className="text-2xl font-bold text-warning-600 mt-2">
-            {mockLeads.filter((l) => l.status === "CONTACTED").length}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-warning-600 mt-2">
+              {leads.filter((l) => l.status === 'CONTACTED').length}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Avg Score</p>
-          <p className="text-2xl font-bold text-success-600 mt-2">
-            {Math.round(
-              mockLeads.reduce((acc, l) => acc + l.qualificationScore, 0) /
-                mockLeads.length
-            )}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-success-600 mt-2">
+              {leads.length > 0
+                ? Math.round(
+                    leads.reduce((acc, l) => acc + l.qualificationScore, 0) /
+                      leads.length
+                  )
+                : 0}
+            </p>
+          )}
         </div>
       </div>
 

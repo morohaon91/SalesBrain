@@ -1,46 +1,35 @@
-"use client";
+'use client';
 
-import { useAuth } from "@/lib/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Download, Edit } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { api } from '@/lib/api/client';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, Download, Edit, Loader2, AlertCircle } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Mock business profile data
-  const profile = {
-    tenantId: user?.tenantId,
-    extractedAt: "2026-03-17T10:30:00Z",
-    confidence: 87,
-    simulationCount: 5,
-    pricingRules: {
-      currency: "USD",
-      basePrice: 5000,
-      minimumPrice: 3500,
-      discountThreshold: 5000,
-      annualDiscount: "15%",
+  // Fetch business profile from API
+  const {
+    data: response,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => api.profile.get(),
+    enabled: !!user,
+  });
+
+  const profile = response?.data as any;
+
+  // Mutation for refreshing profile
+  const refreshProfile = useMutation({
+    mutationFn: () => api.profile.refresh(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
-    toneProfile: {
-      formality: "Professional but friendly",
-      responseTime: "Within 2 hours",
-      negotiationStyle: "Collaborative, value-focused",
-    },
-    dealBreakers: [
-      "Clients outside US/Canada",
-      "Request for >50% discount",
-      "Companies with <10 employees",
-    ],
-    strengths: [
-      "Strong ROI focus",
-      "Excellent negotiation skills",
-      "Quick decision-making",
-    ],
-    improvements: [
-      "Build more rapport early",
-      "Ask qualifying questions sooner",
-      "Handle budget objections better",
-    ],
-  };
+  });
 
   return (
     <div className="space-y-6">
@@ -66,170 +55,179 @@ export default function ProfilePage() {
       </div>
 
       {/* Confidence Score */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Profile Confidence</h2>
-          <span className="text-3xl font-bold text-primary-600">
-            {profile.confidence}%
-          </span>
+      {isLoading ? (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
         </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Profile Completion</h2>
+            <span className="text-3xl font-bold text-primary-600">
+              {profile?.completionScore || 0}%
+            </span>
+          </div>
 
-        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
-          <div
-            className="h-full bg-primary-600"
-            style={{ width: `${profile.confidence}%` }}
-          />
+          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
+            <div
+              className="h-full bg-primary-600"
+              style={{ width: `${profile?.completionScore || 0}%` }}
+            />
+          </div>
+
+          <p className="text-sm text-gray-600">
+            {profile && profile.completionScore > 0
+              ? 'Your profile is being built from simulations. Run more simulations to improve accuracy.'
+              : 'Complete simulations to build your profile.'}
+          </p>
         </div>
-
-        <p className="text-sm text-gray-600">
-          Based on {profile.simulationCount} simulations. Run more simulations to improve accuracy.
-        </p>
-      </div>
+      )}
 
       {/* Main Profile Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pricing Rules */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            💰 Pricing Rules
-          </h2>
+      {!profile || profile.completionScore === 0 ? (
+        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Not Yet Built</h3>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Complete simulations to train your AI and build your business profile. The system will extract your:
+          </p>
+          <ul className="text-sm text-gray-600 mt-4 space-y-1">
+            <li>• Pricing logic and negotiation style</li>
+            <li>• Communication tone and preferences</li>
+            <li>• Ideal client characteristics</li>
+            <li>• Deal breakers and requirements</li>
+          </ul>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Pricing Rules */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                💰 Pricing Logic
+              </h2>
 
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Base Price</p>
-              <p className="text-2xl font-bold text-primary-600 mt-1">
-                ${profile.pricingRules.basePrice.toLocaleString()}
-              </p>
+              {profile?.pricingLogic ? (
+                <div className="space-y-3">
+                  {profile.pricingLogic.minBudget && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Minimum Budget</p>
+                      <p className="text-lg font-bold text-primary-600 mt-1">
+                        ${profile.pricingLogic.minBudget.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {profile.pricingLogic.maxBudget && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Maximum Budget</p>
+                      <p className="text-lg font-bold text-primary-600">
+                        ${profile.pricingLogic.maxBudget.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500">No pricing logic extracted yet</p>
+              )}
             </div>
 
-            <div className="border-t border-gray-200 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Minimum</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">
-                    ${profile.pricingRules.minimumPrice.toLocaleString()}
-                  </p>
+            {/* Communication Style */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                🎤 Communication Style
+              </h2>
+
+              {profile?.communicationStyle ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-gray-600">Tone</p>
+                    <p className="text-sm font-semibold text-gray-900">{profile.communicationStyle.tone}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600">Formality Level</p>
+                    <p className="text-sm font-semibold text-gray-900">{profile.communicationStyle.formality}/5</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600">
-                    Discount Threshold
-                  </p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">
-                    ${profile.pricingRules.discountThreshold.toLocaleString()}
-                  </p>
-                </div>
+              ) : (
+                <p className="text-gray-500">No communication style extracted yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Deal Breakers */}
+          {profile?.pricingLogic?.dealBreakers && profile.pricingLogic.dealBreakers.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                🚫 Deal Breakers
+              </h2>
+
+              <div className="space-y-2">
+                {profile.pricingLogic.dealBreakers.map((breaker, idx) => (
+                  <div key={idx} className="p-3 bg-danger-50 border border-danger-200 rounded">
+                    <p className="text-sm text-danger-900 font-medium">{breaker}</p>
+                  </div>
+                ))}
               </div>
             </div>
+          )}
 
-            <div className="border-t border-gray-200 pt-4">
-              <p className="text-xs font-medium text-gray-600">Annual Discount</p>
-              <p className="text-lg font-semibold text-gray-900 mt-1">
-                {profile.pricingRules.annualDiscount}
-              </p>
+          {/* Qualification Criteria */}
+          {profile?.qualificationCriteria && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                ✅ Qualification Criteria
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Must Haves */}
+                {profile.qualificationCriteria.mustHaves && profile.qualificationCriteria.mustHaves.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-3">Must Haves</h3>
+                    <ul className="space-y-2">
+                      {profile.qualificationCriteria.mustHaves.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-success-600 font-bold">✓</span>
+                          <span className="text-sm text-gray-600">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Ideal Clients */}
+                {profile.qualificationCriteria.idealClient && profile.qualificationCriteria.idealClient.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-3">Ideal Clients</h3>
+                    <ul className="space-y-2">
+                      {profile.qualificationCriteria.idealClient.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-primary-600 font-bold">★</span>
+                          <span className="text-sm text-gray-600">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
+      )}
 
-        {/* Tone Profile */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            🎤 Tone Profile
-          </h2>
-
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-medium text-gray-600">Formality</p>
-              <p className="text-sm font-semibold text-gray-900 mt-1">
-                {profile.toneProfile.formality}
-              </p>
-            </div>
-
-            <div className="border-t border-gray-200 pt-4">
-              <p className="text-xs font-medium text-gray-600">Response Time</p>
-              <p className="text-sm font-semibold text-gray-900 mt-1">
-                {profile.toneProfile.responseTime}
-              </p>
-            </div>
-
-            <div className="border-t border-gray-200 pt-4">
-              <p className="text-xs font-medium text-gray-600">Negotiation Style</p>
-              <p className="text-sm font-semibold text-gray-900 mt-1">
-                {profile.toneProfile.negotiationStyle}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Deal Breakers */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-          🚫 Deal Breakers
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {profile.dealBreakers.map((breaker, idx) => (
-            <div
-              key={idx}
-              className="p-4 bg-danger-50 border border-danger-200 rounded-lg"
-            >
-              <p className="text-sm text-danger-900 font-medium">{breaker}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Strengths & Improvements */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Strengths */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            ⭐ Strengths
-          </h2>
-
-          <ul className="space-y-3">
-            {profile.strengths.map((strength, idx) => (
-              <li
-                key={idx}
-                className="flex items-start gap-3 p-3 bg-success-50 border border-success-200 rounded-lg"
-              >
-                <span className="text-success-600 font-bold mt-0.5">✓</span>
-                <span className="text-sm text-gray-900">{strength}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Improvements */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            📈 Areas to Improve
-          </h2>
-
-          <ul className="space-y-3">
-            {profile.improvements.map((improvement, idx) => (
-              <li
-                key={idx}
-                className="flex items-start gap-3 p-3 bg-warning-50 border border-warning-200 rounded-lg"
-              >
-                <span className="text-warning-600 font-bold mt-0.5">→</span>
-                <span className="text-sm text-gray-900">{improvement}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Help Section */}
+      {/* Info Section */}
       <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
         <h3 className="font-semibold text-primary-900 mb-2">💡 How Profile Works</h3>
-        <p className="text-sm text-primary-700 mb-3">
-          Your business profile is automatically extracted from your simulations. Each
-          conversation helps the AI understand your pricing, tone, and negotiation style.
+        <p className="text-sm text-primary-700 mb-4">
+          Your business profile is automatically built from your simulations. Each conversation helps the system understand:
         </p>
-        <Button variant="outline" className="border-primary-300 text-primary-700">
-          Learn More
-        </Button>
+        <ul className="text-sm text-primary-700 space-y-1">
+          <li>• Your pricing logic and budget constraints</li>
+          <li>• Your communication style and tone</li>
+          <li>• Deal-breakers and requirements</li>
+          <li>• Ideal client characteristics</li>
+        </ul>
+        <p className="text-sm text-primary-700 mt-4">
+          Complete more simulations to improve accuracy and build a comprehensive profile.
+        </p>
       </div>
     </div>
   );

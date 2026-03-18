@@ -1,46 +1,72 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, BrainCircuit } from "lucide-react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { api } from '@/lib/api/client';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, BrainCircuit, AlertCircle } from 'lucide-react';
 
 const scenarios = [
   {
-    id: "PRICE_SENSITIVE",
-    name: "Price Sensitive Client",
+    id: 'PRICE_SENSITIVE',
+    name: 'Price-Sensitive Client',
     description:
-      "Client is cost-conscious and always looking for deals. Tests your pricing flexibility and value proposition.",
+      'Client is cost-conscious and always looking for deals. Tests your pricing flexibility and value proposition.',
     characteristics: [
-      "Asks about discounts",
-      "Compares prices with competitors",
-      "Wants payment terms",
-      "Budget-focused questions",
+      'Asks about discounts',
+      'Compares prices with competitors',
+      'Wants payment terms',
+      'Budget-focused questions',
     ],
   },
   {
-    id: "TIME_CONSTRAINED",
-    name: "Time Constrained Client",
+    id: 'INDECISIVE',
+    name: 'Indecisive Client',
     description:
-      "Client is in a hurry and needs quick results. Tests your ability to handle urgency and deliver fast.",
+      'Client struggles with decision-making and needs reassurance. Tests your ability to build confidence and guide decisions.',
     characteristics: [
-      "Needs immediate solutions",
-      "Tight deadlines",
-      "Fast decision-making",
-      "Quick implementation",
+      'Asks many "what if" questions',
+      'Requests multiple options',
+      'Seeks external validation',
+      'Fear of commitment',
     ],
   },
   {
-    id: "BUDGET_FOCUSED",
-    name: "Budget Focused Client",
+    id: 'DEMANDING',
+    name: 'Demanding Client',
     description:
-      "Client has a fixed budget and wants maximum value. Tests your ability to work within constraints.",
+      'Client has high expectations and needs constant reassurance. Tests your ability to set boundaries and manage expectations.',
     characteristics: [
-      "Fixed budget constraints",
-      "ROI-focused questions",
-      "Value for money",
-      "Cost-benefit analysis",
+      'Wants custom solutions',
+      'Questions everything',
+      'Requires frequent updates',
+      'High maintenance',
+    ],
+  },
+  {
+    id: 'TIME_CONSTRAINED',
+    name: 'Time-Pressured Client',
+    description:
+      'Client is in a hurry and needs quick results. Tests your ability to handle urgency and deliver fast.',
+    characteristics: [
+      'Needs immediate solutions',
+      'Tight deadlines',
+      'Fast decision-making',
+      'Quick implementation',
+    ],
+  },
+  {
+    id: 'BUDGET_FOCUSED',
+    name: 'High-Budget Client',
+    description:
+      'Client has significant budget but wants maximum ROI. Tests your ability to deliver premium value and manage expectations.',
+    characteristics: [
+      'Expects premium service',
+      'ROI-focused questions',
+      'Higher expectations',
+      'Detailed requirements',
     ],
   },
 ];
@@ -51,10 +77,12 @@ const scenarios = [
 function ScenarioCard({
   scenario,
   isSelected,
+  isLoading,
   onSelect,
 }: {
   scenario: (typeof scenarios)[0];
   isSelected: boolean;
+  isLoading: boolean;
   onSelect: () => void;
 }) {
   return (
@@ -62,9 +90,9 @@ function ScenarioCard({
       onClick={onSelect}
       className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
         isSelected
-          ? "border-primary-600 bg-primary-50 shadow-md"
-          : "border-gray-200 bg-white hover:border-primary-300"
-      }`}
+          ? 'border-primary-600 bg-primary-50 shadow-md'
+          : 'border-gray-200 bg-white hover:border-primary-300'
+      } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <h3 className="text-lg font-semibold text-gray-900">{scenario.name}</h3>
       <p className="text-sm text-gray-600 mt-2">{scenario.description}</p>
@@ -94,14 +122,34 @@ function ScenarioCard({
  * New Simulation page
  */
 export default function NewSimulationPage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Start simulation mutation
+  const startSimulation = useMutation({
+    mutationFn: (scenarioType: string) =>
+      api.simulations.start({ scenarioType }),
+    onSuccess: (data: any) => {
+      const simulationId = data.data?.simulationId || data.data?.id;
+      if (simulationId) {
+        router.push(`/simulations/${simulationId}`);
+      }
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.error?.message ||
+        error.message ||
+        'Failed to start simulation';
+      setError(message);
+    },
+  });
 
   const handleStartSimulation = () => {
     if (selectedScenario) {
-      // In a real app, this would create the simulation
-      router.push(`/simulations/new-session`);
+      setError(null);
+      startSimulation.mutate(selectedScenario);
     }
   };
 
@@ -124,14 +172,30 @@ export default function NewSimulationPage() {
         </p>
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-danger-900">Failed to start simulation</p>
+            <p className="text-sm text-danger-700 mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Scenario Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {scenarios.map((scenario) => (
           <ScenarioCard
             key={scenario.id}
             scenario={scenario}
             isSelected={selectedScenario === scenario.id}
-            onSelect={() => setSelectedScenario(scenario.id)}
+            isLoading={startSimulation.isPending}
+            onSelect={() => {
+              if (!startSimulation.isPending) {
+                setSelectedScenario(scenario.id);
+              }
+            }}
           />
         ))}
       </div>
@@ -140,12 +204,21 @@ export default function NewSimulationPage() {
       <div className="flex justify-center">
         <Button
           onClick={handleStartSimulation}
-          disabled={!selectedScenario}
+          disabled={!selectedScenario || startSimulation.isPending}
           className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 text-base h-auto"
         >
-          <BrainCircuit className="w-5 h-5 mr-2" />
-          Start Simulation
-          <ArrowRight className="w-5 h-5 ml-2" />
+          {startSimulation.isPending ? (
+            <>
+              <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Starting...
+            </>
+          ) : (
+            <>
+              <BrainCircuit className="w-5 h-5 mr-2" />
+              Start Simulation
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </>
+          )}
         </Button>
       </div>
 

@@ -1,14 +1,18 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { api } from '@/lib/api/client';
+import { Button } from '@/components/ui/button';
 import {
   TrendingUp,
   Users,
   MessageSquare,
   Zap,
   AlertCircle,
-} from "lucide-react";
+  Loader2,
+} from 'lucide-react';
 
 // Mock data for charts
 const mockChartData = [
@@ -81,13 +85,29 @@ function SimpleBarChart({
  * Analytics page component
  */
 export default function AnalyticsPage() {
-  const [period, setPeriod] = useState<string>("week");
+  const { user } = useAuth();
+  const [period, setPeriod] = useState<string>('week');
 
-  // Calculate overview stats
-  const totalConversations = mockChartData.reduce((acc, d) => acc + d.conversations, 0);
-  const totalLeads = mockChartData.reduce((acc, d) => acc + d.leads, 0);
-  const avgLeadScore = 62.5;
-  const conversionRate = ((totalLeads / totalConversations) * 100).toFixed(1);
+  // Fetch analytics from API
+  const {
+    data: response,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['analytics', 'overview'],
+    queryFn: () => api.analytics.getOverview({ period }),
+    enabled: !!user,
+  });
+
+  const analyticsData = response?.data as any;
+
+  // Use real data if available, otherwise defaults
+  const totalConversations = analyticsData?.totalConversations ?? 0;
+  const totalLeads = analyticsData?.qualifiedLeads ?? 0;
+  const avgLeadScore = Math.round((analyticsData?.averageScore ?? 0) * 10) / 10;
+  const conversionRate = analyticsData?.conversionRate
+    ? (analyticsData.conversionRate * 100).toFixed(1)
+    : '0';
 
   return (
     <div className="space-y-6">
@@ -113,16 +133,35 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-danger-900">Failed to load analytics</p>
+            <p className="text-sm text-danger-700 mt-1">
+              {error instanceof Error ? error.message : 'Please try again'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-600">Conversations</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {totalConversations}
-              </p>
-              <p className="text-xs text-success-600 mt-1">↑ 12% this week</p>
+              {isLoading ? (
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                    {totalConversations}
+                  </p>
+                  <p className="text-xs text-success-600 mt-1">↑ 12% this week</p>
+                </>
+              )}
             </div>
             <MessageSquare className="w-10 h-10 text-primary-100" />
           </div>
@@ -132,10 +171,16 @@ export default function AnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-600">Qualified Leads</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {totalLeads}
-              </p>
-              <p className="text-xs text-success-600 mt-1">↑ 8% this week</p>
+              {isLoading ? (
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                    {totalLeads}
+                  </p>
+                  <p className="text-xs text-success-600 mt-1">↑ 8% this week</p>
+                </>
+              )}
             </div>
             <Users className="w-10 h-10 text-success-100" />
           </div>
@@ -145,10 +190,16 @@ export default function AnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-600">Avg Lead Score</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {avgLeadScore}
-              </p>
-              <p className="text-xs text-success-600 mt-1">↑ 5% this week</p>
+              {isLoading ? (
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                    {avgLeadScore}
+                  </p>
+                  <p className="text-xs text-success-600 mt-1">↑ 5% this week</p>
+                </>
+              )}
             </div>
             <TrendingUp className="w-10 h-10 text-accent-100" />
           </div>
@@ -158,10 +209,16 @@ export default function AnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-600">Conversion Rate</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {conversionRate}%
-              </p>
-              <p className="text-xs text-success-600 mt-1">↑ 3% this week</p>
+              {isLoading ? (
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                    {conversionRate}%
+                  </p>
+                  <p className="text-xs text-success-600 mt-1">↑ 3% this week</p>
+                </>
+              )}
             </div>
             <Zap className="w-10 h-10 text-warning-100" />
           </div>

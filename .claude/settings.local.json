@@ -22,7 +22,13 @@
       "Bash(1)",
       "Bash(grep -E '\\(error|Error|✓ Compiled|Route \\\\\\(app\\\\\\)|^$\\)')",
       "Bash(curl -s http://localhost:3000/dashboard)",
-      "Bash(__NEW_LINE_e22a2109a88496ce__ curl:*)"
+      "Bash(__NEW_LINE_e22a2109a88496ce__ curl:*)",
+      "Bash(head:*)",
+      "Bash(xargs grep:*)",
+      "Bash(ls -la app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

@@ -72,18 +72,29 @@ export async function createChatCompletion(
     };
   } catch (error) {
     const latencyMs = Date.now() - startTime;
-    console.error("AI API error:", error);
+
+    // Handle authentication errors
+    if (error instanceof Anthropic.AuthenticationError) {
+      console.error("AI Authentication error:", error.message);
+      throw new Error(
+        "AI service authentication failed. Please check your API key configuration."
+      );
+    }
 
     // Handle rate limiting with exponential backoff
     if (error instanceof Anthropic.RateLimitError) {
-      console.warn("Rate limit hit, consider implementing retry with backoff");
+      console.warn("AI rate limit hit, consider implementing retry with backoff");
       throw new Error("AI service rate limited, please try again");
     }
 
+    // Handle other API errors
     if (error instanceof Anthropic.APIError) {
-      throw new Error(`AI API error: ${error.message}`);
+      console.error(`AI API error (${error.status}):`, error.message);
+      throw new Error(`AI service error: ${error.message}`);
     }
 
+    // Handle any other errors
+    console.error("Unexpected AI error:", error);
     throw error;
   }
 }

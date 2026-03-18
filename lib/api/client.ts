@@ -62,17 +62,26 @@ instance.interceptors.response.use(
 
       try {
         // Try to refresh token
-        await axios.post(
+        const refreshResponse = await axios.post<ApiResponse<{ token: string }>>(
           `${process.env.NEXT_PUBLIC_API_URL || "/api/v1"}/auth/refresh`,
           {},
           { withCredentials: true }
         );
 
-        // Token refresh successful, retry original request
+        // Extract and store new access token
+        const newToken = refreshResponse.data.data?.token;
+        if (newToken && typeof window !== "undefined") {
+          localStorage.setItem("token", newToken);
+        }
+
+        // Token refresh successful, notify queued requests
         onRefreshed();
         isRefreshing = false;
 
-        // Retry original request
+        // Retry original request with new token
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
         return instance(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear auth and redirect to login (only if not already on auth page)
@@ -82,7 +91,11 @@ instance.interceptors.response.use(
         if (typeof window !== "undefined") {
           localStorage.removeItem("token");
           // Only redirect if we're not already on an auth page to prevent redirect loops
-          if (!window.location.pathname.startsWith("/auth") && !window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/register")) {
+          if (
+            !window.location.pathname.startsWith("/auth") &&
+            !window.location.pathname.startsWith("/login") &&
+            !window.location.pathname.startsWith("/register")
+          ) {
             window.location.href = "/login";
           }
         }
@@ -215,7 +228,14 @@ export const api = {
    */
   simulations: {
     start: async (data: { scenarioType: string }) => {
-      const response = await instance.post<ApiResponse<unknown>>("/simulations/start", data);
+      const response = await instance.post<ApiResponse<unknown>>('/simulations/start', data);
+      return response.data;
+    },
+
+    list: async (params?: Record<string, unknown>) => {
+      const response = await instance.get<ApiResponse<unknown>>('/simulations/list', {
+        params,
+      });
       return response.data;
     },
 
@@ -280,16 +300,36 @@ export const api = {
   },
 
   /**
+   * Business Profile endpoints
+   */
+  profile: {
+    get: async () => {
+      const response = await instance.get<ApiResponse<unknown>>('/profile');
+      return response.data;
+    },
+
+    update: async (data: Record<string, unknown>) => {
+      const response = await instance.put<ApiResponse<unknown>>('/profile', data);
+      return response.data;
+    },
+
+    refresh: async () => {
+      const response = await instance.post<ApiResponse<unknown>>('/profile/refresh');
+      return response.data;
+    },
+  },
+
+  /**
    * Tenant endpoints
    */
   tenant: {
     get: async () => {
-      const response = await instance.get<ApiResponse<unknown>>("/tenant");
+      const response = await instance.get<ApiResponse<unknown>>('/tenant');
       return response.data;
     },
 
     updateSettings: async (data: Record<string, unknown>) => {
-      const response = await instance.put<ApiResponse<unknown>>("/tenant/settings", data);
+      const response = await instance.put<ApiResponse<unknown>>('/tenant/settings', data);
       return response.data;
     },
   },

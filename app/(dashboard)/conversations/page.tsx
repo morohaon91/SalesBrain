@@ -1,8 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useAuth } from "@/lib/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { api } from '@/lib/api/client';
+import { Button } from '@/components/ui/button';
 import {
   Search,
   MessageSquare,
@@ -12,11 +14,26 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-} from "lucide-react";
-import Link from "next/link";
+  Loader2,
+} from 'lucide-react';
+import Link from 'next/link';
 
-// Mock data - replace with API calls
-const mockConversations = [
+// Type definition
+interface Conversation {
+  id: string;
+  leadName: string;
+  leadEmail: string;
+  status: string;
+  qualificationStatus: string;
+  leadScore: number;
+  messageCount: number;
+  duration: number;
+  createdAt: string;
+  summary: string;
+}
+
+// Fallback mock data
+const mockConversations: Conversation[] = [
   {
     id: "conv-001",
     leadName: "Sarah Johnson",
@@ -121,12 +138,29 @@ function QualificationBadge({
  */
 export default function ConversationsPage() {
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("ALL");
-  const [filterQualification, setFilterQualification] = useState<string>("ALL");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterQualification, setFilterQualification] = useState<string>('ALL');
 
-  // Filter conversations
-  const filteredConversations = mockConversations.filter((conv) => {
+  // Fetch conversations from API
+  const {
+    data: response,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['conversations', filterStatus, filterQualification],
+    queryFn: () =>
+      api.conversations.list({
+        status: filterStatus !== 'ALL' ? filterStatus : undefined,
+        qualificationStatus: filterQualification !== 'ALL' ? filterQualification : undefined,
+      }),
+    enabled: !!user, // Only fetch when user is authenticated
+  });
+
+  const conversations = (response?.data as Conversation[]) || mockConversations;
+
+  // Filter conversations client-side by search
+  const filteredConversations = conversations.filter((conv) => {
     const matchesSearch =
       conv.leadName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       conv.leadEmail.toLowerCase().includes(searchTerm.toLowerCase());
@@ -141,6 +175,22 @@ export default function ConversationsPage() {
     return matchesSearch && matchesStatus && matchesQualification;
   });
 
+  // Calculate stats
+  const totalConversations = conversations.length;
+  const activeConversations = conversations.filter(
+    (c) => c.status === 'ACTIVE'
+  ).length;
+  const qualifiedConversations = conversations.filter(
+    (c) => c.qualificationStatus === 'QUALIFIED'
+  ).length;
+  const avgScore =
+    conversations.length > 0
+      ? Math.round(
+          conversations.reduce((acc, c) => acc + c.leadScore, 0) /
+            conversations.length
+        )
+      : 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,34 +201,58 @@ export default function ConversationsPage() {
         </p>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-danger-900">Failed to load conversations</p>
+            <p className="text-sm text-danger-700 mt-1">
+              {error instanceof Error ? error.message : 'Please try again'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Total</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">
-            {mockConversations.length}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {totalConversations}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Active</p>
-          <p className="text-2xl font-bold text-success-600 mt-2">
-            {mockConversations.filter((c) => c.status === "ACTIVE").length}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-success-600 mt-2">
+              {activeConversations}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Qualified</p>
-          <p className="text-2xl font-bold text-primary-600 mt-2">
-            {mockConversations.filter((c) => c.qualificationStatus === "QUALIFIED").length}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-primary-600 mt-2">
+              {qualifiedConversations}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Avg Score</p>
-          <p className="text-2xl font-bold text-accent-600 mt-2">
-            {Math.round(
-              mockConversations.reduce((acc, c) => acc + c.leadScore, 0) /
-                mockConversations.length
-            )}
-          </p>
+          {isLoading ? (
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-accent-600 mt-2">{avgScore}</p>
+          )}
         </div>
       </div>
 
