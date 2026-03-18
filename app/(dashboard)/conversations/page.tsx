@@ -195,8 +195,8 @@ export default function ConversationsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Conversations</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Conversations</h1>
+        <p className="text-gray-600 text-sm sm:text-base mt-1">
           All lead conversations and interactions
         </p>
       </div>
@@ -215,7 +215,7 @@ export default function ConversationsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-600">Total</p>
           {isLoading ? (
@@ -257,8 +257,8 @@ export default function ConversationsPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-        <div className="flex gap-4 flex-col md:flex-row">
+      <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
+        <div className="flex gap-3 sm:gap-4 flex-col md:flex-row">
           {/* Search */}
           <div className="flex-1 relative">
             <input
@@ -266,16 +266,16 @@ export default function ConversationsPage() {
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
           </div>
 
           {/* Status Filter */}
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="ALL">All Status</option>
             <option value="ACTIVE">Active</option>
@@ -287,7 +287,7 @@ export default function ConversationsPage() {
           <select
             value={filterQualification}
             onChange={(e) => setFilterQualification(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="ALL">All Qualifications</option>
             <option value="QUALIFIED">Qualified</option>

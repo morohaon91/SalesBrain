@@ -42,15 +42,15 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
+        <p className="text-gray-600 text-sm sm:text-base mt-1">
           Manage your account, subscription, and preferences
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <div className="flex gap-8 px-0">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <div className="flex gap-4 sm:gap-8 px-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -72,7 +72,7 @@ export default function SettingsPage() {
         {/* Account Tab */}
         {activeTab === "account" && (
           <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 space-y-6">
               <h3 className="text-lg font-semibold text-gray-900">
                 Account Information
               </h3>
@@ -205,7 +205,7 @@ export default function SettingsPage() {
         {activeTab === "widget" && (
           <div className="space-y-6">
             {/* Widget Settings */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 space-y-6">
               <h3 className="text-lg font-semibold text-gray-900">
                 Widget Configuration
               </h3>
@@ -360,7 +360,7 @@ export default function SettingsPage() {
                       Chrome on Windows • Active now
                     </p>
                   </div>
-                  <span className="text-xs text-gray-500">192.168.1.100</span>
+                  <span className="text-xs text-gray-500 truncate ml-2">192.168.1.100</span>
                 </div>
               </div>
               <Button variant="outline" className="mt-4">

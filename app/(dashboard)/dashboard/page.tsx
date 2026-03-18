@@ -139,7 +139,7 @@ export default function DashboardPage() {
         {/* Get Started Section */}
         <div className="lg:col-span-2 space-y-6">
           {/* Getting Started Card */}
-          <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-8">
+          <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-5 sm:p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Welcome to Your Business Brain
             </h2>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Analytics Preview */}
-          <div className="bg-white border border-gray-100 rounded-xl p-6">
+          <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               This Week's Activity
             </h3>

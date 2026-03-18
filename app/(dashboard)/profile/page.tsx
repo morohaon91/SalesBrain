@@ -34,20 +34,21 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Business Profile</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Business Profile</h1>
+          <p className="text-gray-600 text-sm sm:text-base mt-1">
             Your extracted business rules and communication style
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
+        <div className="flex gap-2 flex-wrap flex-shrink-0">
+          <Button variant="outline" className="flex items-center gap-2 text-sm whitespace-nowrap">
             <RefreshCw className="w-4 h-4" />
-            Re-extract
+            <span className="hidden sm:inline">Re-extract</span>
+            <span className="sm:hidden">Refresh</span>
           </Button>
-          <Button className="bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-2">
+          <Button className="bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-2 text-sm whitespace-nowrap">
             <Download className="w-4 h-4" />
             Export
           </Button>
@@ -56,11 +57,11 @@ export default function ProfilePage() {
 
       {/* Confidence Score */}
       {isLoading ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
           <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Profile Completion</h2>
             <span className="text-3xl font-bold text-primary-600">
@@ -102,7 +103,7 @@ export default function ProfilePage() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pricing Rules */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 💰 Pricing Logic
               </h2>
@@ -132,7 +133,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Communication Style */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 🎤 Communication Style
               </h2>
@@ -156,7 +157,7 @@ export default function ProfilePage() {
 
           {/* Deal Breakers */}
           {profile?.pricingLogic?.dealBreakers && profile.pricingLogic.dealBreakers.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 🚫 Deal Breakers
               </h2>
@@ -173,7 +174,7 @@ export default function ProfilePage() {
 
           {/* Qualification Criteria */}
           {profile?.qualificationCriteria && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 ✅ Qualification Criteria
               </h2>
@@ -214,7 +215,7 @@ export default function ProfilePage() {
       )}
 
       {/* Info Section */}
-      <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
+      <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 sm:p-6">
         <h3 className="font-semibold text-primary-900 mb-2">💡 How Profile Works</h3>
         <p className="text-sm text-primary-700 mb-4">
           Your business profile is automatically built from your simulations. Each conversation helps the system understand:

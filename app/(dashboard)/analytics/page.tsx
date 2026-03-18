@@ -228,7 +228,7 @@ export default function AnalyticsPage() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Conversations & Leads Chart */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
           {totalConversations === 0 ? (
             <div className="h-64 flex items-center justify-center text-gray-400">
               <p>No conversation data yet. Start simulations to see activity.</p>
@@ -244,7 +244,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Lead Funnel */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Lead Funnel</h3>
           {totalLeads === 0 ? (
             <div className="h-32 flex items-center justify-center text-gray-400">
