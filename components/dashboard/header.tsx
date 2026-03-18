@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import {
   LogOut,
@@ -40,6 +40,7 @@ function getTitleFromPathname(pathname: string): string {
 export function Header() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const pageTitle = getTitleFromPathname(pathname)
@@ -47,11 +48,23 @@ export function Header() {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
+  const handleProfileClick = () => {
+    router.push("/profile");
+    setIsMenuOpen(false);
+  };
+
+  const handleSettingsClick = () => {
+    router.push("/settings");
+    setIsMenuOpen(false);
+  };
+
   const handleLogout = async () => {
     try {
+      setIsMenuOpen(false);
       await logout();
     } catch (error) {
       console.error("Logout error:", error);
+      router.push("/login");
     }
   };
 
@@ -105,12 +118,18 @@ export function Header() {
 
               {/* Menu Items */}
               <div className="py-2">
-                <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={handleProfileClick}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
                   <User className="w-4 h-4" />
                   Profile
                 </button>
 
-                <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={handleSettingsClick}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
                   <Settings className="w-4 h-4" />
                   Settings
                 </button>
