@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Bell,
   Search,
+  Menu,
 } from "lucide-react";
 
 /**
@@ -34,10 +35,15 @@ function getTitleFromPathname(pathname: string): string {
   return lastSegment;
 }
 
+interface HeaderProps {
+  onMenuToggle?: () => void;
+}
+
 /**
  * Header component with page title and user menu
+ * Includes mobile hamburger menu toggle
  */
-export function Header() {
+export function Header({ onMenuToggle }: HeaderProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -69,11 +75,20 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+    <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex items-center justify-between">
       {/* Left Section */}
-      <div className="flex items-center gap-6 flex-1">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={onMenuToggle}
+          className="lg:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5 text-gray-600" />
+        </button>
+
         {/* Page Title */}
-        <h2 className="text-xl font-semibold text-gray-900">{pageTitle}</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{pageTitle}</h2>
       </div>
 
       {/* Right Section */}

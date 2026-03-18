@@ -46,23 +46,23 @@ export default function LeadDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3 min-w-0">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{lead.name}</h1>
-            <p className="text-gray-600 mt-1">{lead.company}</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">{lead.name}</h1>
+            <p className="text-gray-600 text-sm sm:text-base mt-1 break-words">{lead.company}</p>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline">Send Email</Button>
-          <Button className="bg-primary-600 hover:bg-primary-700 text-white">
+        <div className="flex gap-2 flex-wrap flex-shrink-0">
+          <Button variant="outline" className="text-sm whitespace-nowrap">Send Email</Button>
+          <Button className="bg-primary-600 hover:bg-primary-700 text-white text-sm whitespace-nowrap">
             Contact
           </Button>
         </div>

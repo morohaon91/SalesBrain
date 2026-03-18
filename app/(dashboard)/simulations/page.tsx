@@ -140,17 +140,18 @@ export default function SimulationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Simulations</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Simulations</h1>
+          <p className="text-gray-600 text-sm sm:text-base mt-1">
             Practice conversations to train your AI
           </p>
         </div>
         <Link href="/simulations/new">
-          <Button className="bg-primary-600 hover:bg-primary-700 text-white">
+          <Button className="bg-primary-600 hover:bg-primary-700 text-white whitespace-nowrap">
             <Plus className="w-4 h-4 mr-2" />
-            New Simulation
+            <span className="hidden sm:inline">New Simulation</span>
+            <span className="sm:hidden">New</span>
           </Button>
         </Link>
       </div>
@@ -262,14 +263,14 @@ export default function SimulationsPage() {
                     </div>
 
                     {/* Stats Row */}
-                    <div className="flex items-center gap-6 text-sm">
+                    <div className="flex items-center gap-4 text-xs sm:text-sm flex-wrap">
                       <span className="flex items-center gap-2 text-gray-600">
                         <Clock className="w-4 h-4" />
                         {Math.round(sim.duration / 60)} min
                       </span>
                       <span className="flex items-center gap-2 text-gray-600">
                         <MessageSquare className="w-4 h-4" />
-                        {sim.messageCount} messages
+                        {sim.messageCount} msgs
                       </span>
                       {sim.qualityScore !== null && (
                         <span className="flex items-center gap-2">

@@ -74,29 +74,30 @@ export default function ConversationDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3 min-w-0">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
               {conversation.leadName}
             </h1>
-            <p className="text-gray-600 mt-1">{conversation.leadEmail}</p>
+            <p className="text-gray-600 text-sm sm:text-base mt-1 break-all">{conversation.leadEmail}</p>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline">
+        <div className="flex gap-2 flex-wrap flex-shrink-0">
+          <Button variant="outline" className="text-sm">
             <Flag className="w-4 h-4 mr-2" />
-            Flag
+            <span className="hidden sm:inline">Flag</span>
           </Button>
-          <Button className="bg-primary-600 hover:bg-primary-700 text-white">
-            Add to CRM
+          <Button className="bg-primary-600 hover:bg-primary-700 text-white text-sm whitespace-nowrap">
+            <span className="hidden sm:inline">Add to CRM</span>
+            <span className="sm:hidden">Add CRM</span>
           </Button>
         </div>
       </div>
@@ -106,18 +107,18 @@ export default function ConversationDetailPage() {
         {/* Conversation Transcript */}
         <div className="lg:col-span-2 space-y-6">
           {/* Conversation Info */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
               <div>
                 <p className="text-xs font-medium text-gray-600">Status</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">
+                <p className="text-sm font-semibold text-gray-900 mt-1 break-words">
                   {conversation.status}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-600">Duration</p>
                 <p className="text-sm font-semibold text-gray-900 mt-1">
-                  {Math.round(conversation.duration / 60)} minutes
+                  {Math.round(conversation.duration / 60)} min
                 </p>
               </div>
               <div>

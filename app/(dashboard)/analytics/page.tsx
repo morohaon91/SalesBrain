@@ -112,20 +112,20 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Analytics</h1>
+          <p className="text-gray-600 text-sm sm:text-base mt-1">
             Performance metrics and insights
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {["week", "month", "year"].map((p) => (
             <Button
               key={p}
               variant={period === p ? "default" : "outline"}
               onClick={() => setPeriod(p)}
-              className="capitalize"
+              className="capitalize text-sm"
             >
               {p}
             </Button>
@@ -147,7 +147,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -358,16 +358,16 @@ export default function AnalyticsPage() {
 
       {/* Export Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-semibold text-gray-900">Export Data</h3>
             <p className="text-sm text-gray-600 mt-1">
               Download analytics reports as CSV or PDF
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">Export CSV</Button>
-            <Button variant="outline">Export PDF</Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" className="text-sm">Export CSV</Button>
+            <Button variant="outline" className="text-sm">Export PDF</Button>
           </div>
         </div>
       </div>
