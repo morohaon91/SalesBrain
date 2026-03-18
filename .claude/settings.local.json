@@ -28,7 +28,8 @@
       "Bash(ls -la app/\\\\\\(dashboard\\\\\\)/)",
       "Bash(ls:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(DATABASE_URL=\"postgresql://root:Vasker0408%24%25@192.168.50.3:5436/salesbrain\" npm run db:push)"
     ]
   }
 }

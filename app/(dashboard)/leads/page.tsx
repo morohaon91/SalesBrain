@@ -148,7 +148,7 @@ export default function LeadsPage() {
     enabled: !!user,
   });
 
-  const leads = (response?.data as Lead[]) || mockLeads;
+  const leads = (response?.data as Lead[]) || [];
 
   // Filter and sort leads
   let filteredLeads = leads.filter((lead) => {

@@ -157,7 +157,7 @@ export default function ConversationsPage() {
     enabled: !!user, // Only fetch when user is authenticated
   });
 
-  const conversations = (response?.data as Conversation[]) || mockConversations;
+  const conversations = (response?.data as Conversation[]) || [];
 
   // Filter conversations client-side by search
   const filteredConversations = conversations.filter((conv) => {

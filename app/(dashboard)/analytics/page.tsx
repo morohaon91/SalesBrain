@@ -229,37 +229,49 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Conversations & Leads Chart */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <SimpleBarChart
-            data={mockChartData}
-            dataKey="conversations"
-            title="Conversations by Day"
-            color="bg-primary-500"
-          />
+          {totalConversations === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-400">
+              <p>No conversation data yet. Start simulations to see activity.</p>
+            </div>
+          ) : (
+            <SimpleBarChart
+              data={mockChartData}
+              dataKey="conversations"
+              title="Conversations by Day"
+              color="bg-primary-500"
+            />
+          )}
         </div>
 
         {/* Lead Funnel */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Lead Funnel</h3>
-          <div className="space-y-3">
-            {mockLeadFunnel.map((stage, idx) => (
-              <div key={idx}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-600">
-                    {stage.stage}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {stage.count} ({stage.percentage}%)
-                  </span>
+          {totalLeads === 0 ? (
+            <div className="h-32 flex items-center justify-center text-gray-400">
+              <p>No lead data yet. Complete conversations to generate leads.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mockLeadFunnel.map((stage, idx) => (
+                <div key={idx}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-gray-600">
+                      {stage.stage}
+                    </span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {stage.count} ({stage.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-6 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-success-500"
+                      style={{ width: `${stage.percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-6 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-success-500"
-                    style={{ width: `${stage.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -309,26 +321,32 @@ export default function AnalyticsPage() {
         {/* Top Questions */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Top Questions</h3>
-          <div className="space-y-3">
-            {mockTopQuestions.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-start justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    {item.question}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Asked {item.count} times
-                  </p>
+          {totalConversations === 0 ? (
+            <div className="h-32 flex items-center justify-center text-gray-400">
+              <p>No questions yet. Conversations will show top questions here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mockTopQuestions.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {item.question}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Asked {item.count} times
+                    </p>
+                  </div>
+                  <span className="text-lg font-bold text-gray-900 ml-2">
+                    {item.count}
+                  </span>
                 </div>
-                <span className="text-lg font-bold text-gray-900 ml-2">
-                  {item.count}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

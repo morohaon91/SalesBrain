@@ -118,7 +118,7 @@ export default function SimulationsPage() {
     enabled: !!user,
   });
 
-  const simulations = (response?.data as any[]) || mockSimulations;
+  const simulations = (response?.data as any[]) || [];
 
   // Filter simulations
   const filteredSimulations = simulations.filter((sim) => {
