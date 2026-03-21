@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { withAuth, AuthenticatedRequest } from "@/lib/auth/middleware";
 import { createChatCompletion } from "@/lib/ai/client";
 import {
-  getScenarioConfig,
-  generateSimulationClientPrompt,
+  generateSimulationPrompt,
   generateUserPrompt,
 } from "@/lib/ai/prompts/simulation";
 import { v4 as uuidv4 } from "uuid";
@@ -50,6 +49,7 @@ interface SendMessageResponse {
 /**
  * POST /api/v1/simulations/{id}/message
  * Send a message in simulation and get AI response
+ * CRITICAL: Includes tenant and businessProfile to maintain industry context
  */
 export const POST = withAuth(async (req: AuthenticatedRequest) => {
   const requestId = uuidv4();
@@ -86,12 +86,18 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 
     const data = validation.data as MessageRequest;
 
-    // Fetch simulation
+    // FIX 1: Fetch simulation WITH tenant and profiles relationships
+    // This ensures we have industry context for prompt generation
     const simulation = await prisma.simulation.findUnique({
       where: { id: simulationId },
       include: {
         messages: {
           orderBy: { createdAt: "asc" },
+        },
+        tenant: {
+          include: {
+            profiles: true,
+          },
         },
       },
     });
@@ -140,6 +146,22 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
+    // Verify businessProfile exists (should be the first profile)
+    const businessProfile = simulation.tenant.profiles?.[0];
+    if (!businessProfile) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "PROFILE_NOT_FOUND",
+            message: "Business profile not found",
+          },
+          meta: { timestamp, requestId },
+        },
+        { status: 404 }
+      );
+    }
+
     // Store business owner's message
     const userMessage = await prisma.simulationMessage.create({
       data: {
@@ -149,9 +171,12 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       },
     });
 
-    // Get scenario config for AI prompt
-    const scenarioConfig = getScenarioConfig(simulation.scenarioType);
-    const systemPrompt = generateSimulationClientPrompt(scenarioConfig);
+    // FIX 2: Pass businessProfile to prompt generator instead of tenantId
+    // This provides industry context so AI stays in correct persona
+    const systemPrompt = await generateSimulationPrompt(
+      simulation.scenarioType as any,
+      businessProfile
+    );
 
     // Build conversation history for API
     const conversationHistory = simulation.messages.map((msg) => ({
@@ -165,13 +190,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       content: data.content,
     });
 
-    // Generate AI response
-    const userPrompt = generateUserPrompt(
-      data.content,
-      simulation.scenarioType,
-      scenarioConfig.clientType
-    );
-
+    // FIX 3: Include system prompt in EVERY API call
+    // This is critical - without it, the AI loses industry context mid-conversation
     const aiResponse = await createChatCompletion(
       conversationHistory,
       systemPrompt,

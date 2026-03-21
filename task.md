@@ -1,152 +1,220 @@
-claude chat -p /mnt/skills/public/frontend-design/SKILL.md
+I need to fix a critical bug in my AI simulation system where the AI is switching personas mid-conversation.
+
+PROBLEM:
+The AI starts as the correct industry persona (e.g., Real Estate homebuyer) but then switches to a different industry (e.g., Business Consulting startup founder) in the second message. This is because the simulation message endpoint is not fetching the tenant's industry and business profile, so the AI prompt generation has no context about what industry to use.
+
+CURRENT BROKEN BEHAVIOR:
+Message 1: "Hi, I'm looking to buy my first home..." ✅ Correct (Real Estate)
+Message 2: "Wait, I'm actually a startup founder looking for consulting..." ❌ WRONG!
+
+ROOT CAUSE IDENTIFIED:
+Looking at the Prisma query logs, the simulation message endpoint is only fetching the Simulation table without including the Tenant or BusinessProfile relationships. This means generateSimulationPrompt() has no access to the industry field.
+
+REQUIRED FIXES:
+
+═══════════════════════════════════════════════════════════════
+FIX 1: Update Simulation Message Endpoint Query
+═══════════════════════════════════════════════════════════════
+
+File: app/api/v1/simulations/[id]/message/route.ts
+
+CURRENT CODE (BROKEN):
+```typescript
+const simulation = await prisma.simulation.findUnique({
+  where: { id: simulationId }
+});
 ```
 
-Then use this prompt:
+CHANGE TO:
+```typescript
+const simulation = await prisma.simulation.findUnique({
+  where: { id: simulationId },
+  include: {
+    tenant: {
+      include: {
+        businessProfile: true
+      }
+    }
+  }
+});
 ```
-Implement COMPLETE internationalization (i18n) with Hebrew translation and expert-level RTL support across the ENTIRE codebase.
 
-**CRITICAL REQUIREMENTS - DO NOT MISS ANYTHING:**
+THEN UPDATE THE PROMPT GENERATION CALL:
 
-1. **i18n Infrastructure Setup**
-   - Install and configure react-i18next (or next-i18next if Next.js)
-   - Create proper folder structure with ORGANIZED translation files:
+CURRENT (BROKEN):
+```typescript
+const systemPrompt = await generateSimulationPrompt(
+  simulation.scenarioType,
+  simulation.tenantId
+);
 ```
-     /locales/en/
-       - common.json (shared: buttons, actions, navigation)
-       - dashboard.json
-       - conversations.json
-       - leads.json
-       - simulations.json
-       - analytics.json
-       - profile.json
-       - settings.json
-       - auth.json
-       - errors.json
-       - validation.json
-     /locales/he/
-       - (same structure)
+
+CHANGE TO:
+```typescript
+const systemPrompt = await generateSimulationPrompt(
+  simulation.scenarioType,
+  simulation.tenant.businessProfile
+);
 ```
-   - **IMPORTANT:** Split translation files by feature/page categories for maintainability
-   - Set up language detection and switching mechanism
-   - Configure fallback language handling
-   - Configure namespace loading for split files
-   - **Add language switcher INSIDE the user dropdown menu (see screenshot) - between Settings and Sign out**
 
-2. **Language Switcher in User Dropdown**
-   - Add language toggle option in the user dropdown menu (Profile → Settings → **Language [EN/HE]** → Sign out)
-   - Design should match the existing menu items style
-   - Show current language with toggle or selection UI
-   - Options: "English" / "עברית"
-   - Persist language preference in localStorage
-   - Immediately apply RTL/LTR changes when switched
-   - Update all UI text instantly on language change
+FULL CORRECTED ENDPOINT:
+Provide the complete, working app/api/v1/simulations/[id]/message/route.ts file with:
+- Proper Prisma query including tenant and businessProfile
+- Save business owner's message
+- Fetch conversation history
+- Format messages for Claude API
+- Generate system prompt with full profile context
+- Call Anthropic API with system prompt included
+- Save AI response
+- Return response to frontend
+- Proper error handling
+- TypeScript types
 
-3. **Translation Coverage - 100% REQUIRED**
-   Scan and wrap EVERY piece of user-facing text:
-   - All page titles, headings, paragraphs
-   - All button labels and CTAs ("Start Simulation", "View Conversations", etc.)
-   - All navigation items ("Dashboard", "Conversations", "Leads", etc.)
-   - All form labels, placeholders, validation messages
-   - All empty states ("No data yet")
-   - All status messages, tooltips, aria-labels
-   - All time/date displays with proper formatting
-   - Numbers with proper locale formatting
-   - **User dropdown menu items:** "Profile", "Settings", "Language", "Sign out"
-   - User info: "Demo User", "OWNER", email display
+═══════════════════════════════════════════════════════════════
+FIX 2: Update generateSimulationPrompt Function Signature
+═══════════════════════════════════════════════════════════════
+
+File: lib/ai/prompts/simulation.ts
+
+CURRENT SIGNATURE (BROKEN):
+```typescript
+export async function generateSimulationPrompt(
+  scenarioType: ScenarioType,
+  tenantId: string
+): Promise<string>
+```
+
+CHANGE TO:
+```typescript
+export async function generateSimulationPrompt(
+  scenarioType: ScenarioType,
+  businessProfile: any
+): Promise<string>
+```
+
+IMPLEMENTATION REQUIREMENTS:
+1. Accept businessProfile object instead of tenantId
+2. Extract industry from businessProfile.industry
+3. Get the correct industry template using INDUSTRY_TEMPLATES[industry]
+4. Get the scenario persona for this specific scenario type
+5. Build comprehensive system prompt that includes:
+   - Clear role definition for the AI
+   - Client type, budget, personality from template
+   - Pain points specific to this scenario
+   - Behavioral instructions to stay in character
+   - Typical objections to raise
+   - Business context (service description, target client, budget range)
+   - CRITICAL WARNING: Explicit instruction to NEVER break character or switch industries
+6. Use businessProfile data if customized, otherwise fall back to template defaults
+7. Return complete system prompt string
+
+CRITICAL: Add explicit instruction in the system prompt like:
+"CRITICAL: You are a [client type] in the [industry] industry. 
+Stay in this role for the ENTIRE conversation. Do not switch industries or personas under any circumstances."
+
+═══════════════════════════════════════════════════════════════
+FIX 3: Update Simulation Start Endpoint
+═══════════════════════════════════════════════════════════════
+
+File: app/api/v1/simulations/start/route.ts
+
+CURRENT (BROKEN):
+```typescript
+const systemPrompt = await generateSimulationPrompt(
+  scenarioType,
+  tenantId
+);
+```
+
+CHANGE TO:
+```typescript
+// First, fetch business profile
+const businessProfile = await prisma.businessProfile.findUnique({
+  where: { tenantId }
+});
+
+if (!businessProfile) {
+  return NextResponse.json(
+    { success: false, error: { code: 'PROFILE_NOT_FOUND' } },
+    { status: 404 }
+  );
+}
+
+// Then pass profile to prompt generator
+const systemPrompt = await generateSimulationPrompt(
+  scenarioType,
+  businessProfile
+);
+```
+
+FULL CORRECTED ENDPOINT:
+Provide the complete, working app/api/v1/simulations/start/route.ts file with:
+- Fetch business profile
+- Handle missing profile error
+- Generate system prompt with profile
+- Create simulation record
+- Call Anthropic API with system prompt
+- Save first AI message
+- Return simulation ID and first message
+- Proper error handling
+- TypeScript types
+
+═══════════════════════════════════════════════════════════════
+DELIVERABLES
+═══════════════════════════════════════════════════════════════
+
+Provide complete, working code for:
+
+1. ✅ app/api/v1/simulations/[id]/message/route.ts
+   - Complete file with all fixes
+   - Include proper Prisma query with relationships
+   - Pass businessProfile to prompt generator
+   - Include system prompt in every Anthropic API call
    
-   **Create comprehensive translation files with ALL strings organized by context/page/feature**
+2. ✅ lib/ai/prompts/simulation.ts
+   - Updated function signature accepting businessProfile
+   - Extract industry from profile
+   - Use INDUSTRY_TEMPLATES to get correct persona
+   - Build comprehensive system prompt
+   - Add explicit "stay in character" warnings
+   
+3. ✅ app/api/v1/simulations/start/route.ts
+   - Fetch businessProfile before generating prompt
+   - Pass profile to prompt generator
+   - Include system prompt in API call
 
-4. **Translation File Organization**
-   - Analyze the codebase structure and intelligently categorize translations
-   - If there are many translations (50+ keys), SPLIT into multiple category files
-   - Use clear namespacing: `t('dashboard:welcome')` or `t('common:buttons.submit')`
-   - Keep common/shared strings in common.json
-   - Put page-specific content in dedicated files
-   - Document the namespace structure clearly
+REQUIREMENTS:
+- Use TypeScript with proper types
+- Include comprehensive error handling
+- Add comments explaining critical sections
+- Ensure system prompt is included in EVERY Anthropic API call
+- Make sure industry context is never lost between messages
+- Follow existing code patterns and conventions
 
-5. **Hebrew Translation - Professional Quality**
-   - Translate ALL English strings to natural, professional Hebrew
-   - Use proper Hebrew terminology for SaaS/business terms:
-     - "Dashboard" → "לוח בקרה"
-     - "Conversations" → "שיחות"
-     - "Leads" → "לידים" (or "פניות")
-     - "Simulations" → "סימולציות"
-     - "Analytics" → "אנליטיקה"
-     - "Qualified Leads" → "לידים מוסמכים"
-     - "Profile" → "פרופיל"
-     - "Settings" → "הגדרות"
-     - "Language" → "שפה"
-     - "Sign out" → "התנתק"
-     - "OWNER" → "בעלים"
-   - Ensure formal/professional tone (not casual)
-   - Handle pluralization correctly in Hebrew
-   - Format numbers, dates, percentages in Hebrew locale
+TESTING CHECKLIST:
+After implementation, this should work:
+- [ ] Start Real Estate simulation
+- [ ] AI starts as homebuyer talking about houses
+- [ ] Send message about houses
+- [ ] AI responds still as homebuyer (no persona switch!)
+- [ ] Continue conversation for 5+ messages
+- [ ] AI NEVER switches to different industry
+- [ ] Test with different industries (Mortgage Advisory, Interior Design)
+- [ ] All maintain persona consistency
 
-6. **RTL Implementation - EXPERT LEVEL**
-   - Add `dir="rtl"` and `lang="he"` to <html> tag dynamically
-   - Review and fix EVERY layout for RTL:
-     - Flex/Grid direction reversals (flex-row-reverse when needed)
-     - Padding/margin logical properties (use padding-inline-start instead of padding-left)
-     - Text alignment (text-start instead of text-left)
-     - Icons/arrows that need flipping (use transform: scaleX(-1) for RTL)
-     - Border radius adjustments (border-top-left → border-top-right in RTL)
-     - Box shadows direction
-     - Animations/transitions that move horizontally
-   - Ensure sidebar flips to RIGHT side in Hebrew
-   - Fix all absolute positioning for RTL (left/right swaps)
-   - **User dropdown menu:** should anchor to LEFT in RTL (currently anchors right in screenshot)
-   - Test dropdowns, modals, tooltips positioning in RTL
-   - Ensure proper text input cursor direction
-   - Icons in menu items should flip sides in RTL (icon on right, text on left)
+SUCCESS CRITERIA:
+- Simulation message endpoint includes tenant + businessProfile in query
+- generateSimulationPrompt receives full profile object
+- System prompt explicitly tells AI to stay in character
+- System prompt is included in every Anthropic API call
+- AI maintains consistent persona throughout entire conversation
+- No industry/persona switching occurs
 
-7. **Design System RTL Integration**
-   - Update design system to use logical properties everywhere:
-     - margin-left → margin-inline-start
-     - padding-right → padding-inline-end
-     - border-left → border-inline-start
-     - left/right → inset-inline-start/end
-   - Create RTL-specific utility classes if needed
-   - Ensure all spacing/layout tokens work bidirectionally
-   - Test all components in both LTR and RTL
-   - Add CSS custom properties for directional values if helpful
+IMPORTANT NOTES:
+- The bug is caused by missing Prisma relationships in the query
+- Without businessProfile, there's no industry context
+- System prompt MUST be included in every API call to Anthropic
+- The AI needs explicit instructions to not switch personas
+- This is a critical bug affecting core product functionality
 
-8. **Code Quality Standards**
-   - Use translation keys with clear namespacing (e.g., "dashboard:welcome", "common:buttons.startSimulation")
-   - No hard-coded strings should remain
-   - Add TypeScript types for translation keys if using TS
-   - Proper error handling for missing translations
-   - Lazy load translation namespaces for better performance
-
-**DELIVERABLE:**
-- Complete i18n setup with configuration files
-- Organized translation files split by category/feature (multiple JSON files per language)
-- Full English translation files (extracted from current code)
-- Full Hebrew translation files (professional translations)
-- Updated EVERY component/page with t() functions using proper namespaces
-- RTL stylesheet adjustments across entire app
-- **Language switcher component integrated into user dropdown menu (between Settings and Sign out)**
-- Testing checklist for RTL verification
-- Documentation on:
-  - Translation file structure and categories
-  - Adding new translations
-  - Namespace usage guidelines
-  - How to use the language switcher
-
-**QUALITY CHECKPOINT:**
-After implementation, verify:
-✓ Not a single hard-coded user-facing string remains
-✓ Translation files are well-organized by category (not one massive file)
-✓ App looks pixel-perfect in both English (LTR) and Hebrew (RTL)
-✓ Language switcher appears in user dropdown menu and works perfectly
-✓ Sidebar appears on RIGHT in Hebrew, LEFT in English
-✓ User dropdown menu anchors correctly in both directions
-✓ Profile dropdown and all menus open correctly in both directions
-✓ All interactive elements work naturally in RTL (hovers, clicks, navigation flow)
-✓ Hebrew text is professional and contextually accurate
-✓ Design system maintains consistency in both directions
-✓ No layout breaks, overlaps, or alignment issues in RTL
-✓ Icons and visual elements that should flip are flipped
-✓ Menu item icons appear on correct side in each direction
-✓ Language preference persists across sessions
-
-Treat this as a PRODUCTION-READY, ENTERPRISE-GRADE implementation. DO NOT SKIP ANYTHING. This should work flawlessly like apps built by Israeli companies (Wix, Monday.com level quality).
+Please implement all three fixes and provide the complete, corrected code for each file.

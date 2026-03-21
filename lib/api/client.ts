@@ -256,6 +256,11 @@ export const api = {
       const response = await instance.post<ApiResponse<unknown>>(`/simulations/${id}/complete`);
       return response.data;
     },
+
+    extract: async (id: string) => {
+      const response = await instance.post<ApiResponse<unknown>>(`/simulations/${id}/extract`);
+      return response.data;
+    },
   },
 
   /**
@@ -309,12 +314,22 @@ export const api = {
     },
 
     update: async (data: Record<string, unknown>) => {
-      const response = await instance.put<ApiResponse<unknown>>('/profile', data);
+      const response = await instance.patch<ApiResponse<unknown>>('/profile', data);
       return response.data;
     },
 
     refresh: async () => {
       const response = await instance.post<ApiResponse<unknown>>('/profile/refresh');
+      return response.data;
+    },
+
+    reset: async () => {
+      const response = await instance.post<ApiResponse<unknown>>('/profile/reset');
+      return response.data;
+    },
+
+    reExtract: async () => {
+      const response = await instance.post<ApiResponse<unknown>>('/profile/re-extract');
       return response.data;
     },
   },

@@ -7,6 +7,7 @@ import {
   getScenarioConfig,
   generateSimulationClientPrompt,
   generateUserPrompt,
+  generateSimulationPrompt,
 } from "@/lib/ai/prompts/simulation";
 import { v4 as uuidv4 } from "uuid";
 
@@ -84,14 +85,35 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     const data = validation.data as StartSimulationRequest;
     const { tenantId } = req.auth;
 
-    // Get scenario configuration
-    const scenarioConfig = getScenarioConfig(data.scenarioType);
+    // FIX 3: Fetch businessProfile BEFORE generating prompt
+    // This ensures the prompt has industry context from the start
+    const businessProfile = await prisma.businessProfile.findUnique({
+      where: { tenantId },
+    });
 
-    // Generate system prompt for AI client
-    const systemPrompt = generateSimulationClientPrompt(scenarioConfig);
+    if (!businessProfile) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "PROFILE_NOT_FOUND",
+            message: "Business profile not found. Please complete your profile first.",
+          },
+          meta: { timestamp, requestId },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Generate system prompt using templates + extracted patterns
+    // Pass businessProfile instead of tenantId for industry context
+    const systemPrompt = await generateSimulationPrompt(data.scenarioType as any, businessProfile);
 
     // Generate initial greeting from AI client
-    const initialUserPrompt = `Start the conversation. You are a potential client interested in learning about ${scenarioConfig.businessType}. Begin naturally, as if making first contact.`;
+    const initialUserPrompt = `Start the conversation. You are a potential client interested in learning about their services. Begin naturally, as if making first contact.`;
+
+    // Get scenario config for persona (used in response)
+    const scenarioConfig = getScenarioConfig(data.scenarioType);
 
     const aiResponse = await createChatCompletion(
       [

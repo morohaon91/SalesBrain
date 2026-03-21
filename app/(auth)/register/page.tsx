@@ -6,8 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { INDUSTRY_LIST } from "@/lib/templates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { AlertCircle, Loader2, CheckCircle } from "lucide-react";
 
 /**
@@ -24,7 +26,7 @@ const registerSchema = z
       .string()
       .min(2, "Business name must be at least 2 characters")
       .max(200, "Business name must be less than 200 characters"),
-    industry: z.string().optional(),
+    industry: z.string().min(1, "Please select your industry"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -208,15 +210,19 @@ export default function RegisterPage() {
         {/* Industry Field */}
         <div className="space-y-2">
           <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
-            Industry (optional)
+            Industry
           </label>
-          <Input
+          <Select
             id="industry"
-            type="text"
-            placeholder="e.g., Business Consulting"
+            placeholder="Select your industry"
+            options={INDUSTRY_LIST}
             {...register("industry")}
             disabled={isLoading}
+            className={errors.industry ? "border-danger-500" : ""}
           />
+          {errors.industry && (
+            <p className="text-sm text-danger-600">{errors.industry.message}</p>
+          )}
         </div>
 
         {/* Password Field */}

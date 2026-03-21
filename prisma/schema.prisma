@@ -113,16 +113,39 @@ model BusinessProfile {
   tenantId          String
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // Profile Status
+  // ============================================
+  // MANUAL FIELDS (User-Editable, Seeded from Templates)
+  // ============================================
+
+  industry              String?
+  serviceDescription    String?   @db.Text
+  targetClientType      String?
+  typicalBudgetRange    String?
+  commonClientQuestions String[]  @default([])
+
+  // ============================================
+  // AUTO-EXTRACTED FIELDS (From Simulations, Read-Only)
+  // ============================================
+
+  communicationStyle    Json?     @db.JsonB
+  pricingLogic          Json?     @db.JsonB
+  qualificationCriteria Json?     @db.JsonB
+  objectionHandling     Json?     @db.JsonB
+  decisionMakingPatterns Json?    @db.JsonB
+
+  // ============================================
+  // PROFILE METADATA
+  // ============================================
+
+  // Profile Status (legacy fields, kept for backward compat)
   isComplete        Boolean  @default(false)
   completionScore   Int      @default(0)
 
-  // Extracted Patterns
-  communicationStyle Json?   @db.JsonB
-  pricingLogic      Json?    @db.JsonB
-  qualificationCriteria Json? @db.JsonB
-  objectionHandling Json?    @db.JsonB
-  decisionMakingPatterns Json? @db.JsonB
+  // Progress tracking
+  completionPercentage  Int       @default(20)
+  lastExtractedAt       DateTime?
+  simulationCount       Int       @default(0)
+  embeddedMessageCount  Int       @default(0)
 
   // Knowledge Base
   knowledgeBase     Json?    @db.JsonB
@@ -132,6 +155,7 @@ model BusinessProfile {
   embeddingsCount   Int      @default(0)
 
   @@index([tenantId])
+  @@index([industry])
   @@unique([tenantId])
 }
 

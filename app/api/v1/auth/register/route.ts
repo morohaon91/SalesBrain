@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { generateAccessToken, generateRefreshToken } from "@/lib/auth/jwt";
+import { getIndustryTemplate } from "@/lib/templates";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -142,13 +143,24 @@ export async function POST(req: NextRequest): Promise<NextResponse<RegisterRespo
         },
       });
 
-      // Create business profile placeholder
+      // Get industry template to seed profile
+      const template = getIndustryTemplate(data.industry);
+
+      // Create business profile seeded with template
       await tx.businessProfile.create({
         data: {
           id: uuidv4(),
           tenantId: tenantId,
           isComplete: false,
           completionScore: 0,
+
+          // Template fields
+          industry: data.industry || null,
+          serviceDescription: template?.serviceDescription || null,
+          targetClientType: template?.targetClientType || null,
+          typicalBudgetRange: template?.typicalBudgetRange || null,
+          commonClientQuestions: template?.commonClientQuestions || [],
+          completionPercentage: template ? 20 : 0,
         },
       });
 

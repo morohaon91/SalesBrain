@@ -32,7 +32,10 @@
       "Bash(DATABASE_URL=\"postgresql://root:Vasker0408%24%25@192.168.50.3:5436/salesbrain\" npm run db:push)",
       "Bash(npx ts-node:*)",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
-      "Bash(ls -la /c/Users/Mor/Desktop/Repos/SalesBrain/app/\\\\\\(dashboard\\\\\\)/)"
+      "Bash(ls -la /c/Users/Mor/Desktop/Repos/SalesBrain/app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Bash(cd:*)"
     ]
   }
 }

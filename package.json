@@ -19,7 +19,6 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.16.0",
     "@hookform/resolvers": "^3.3.4",
-    "@prisma/client": "^5.8.0",
     "@tanstack/react-query": "^5.0.0",
     "axios": "^1.13.6",
     "bcryptjs": "^2.4.3",
@@ -48,6 +47,7 @@
   "devDependencies": {
     "@faker-js/faker": "^8.2.0",
     "@playwright/test": "^1.38.0",
+    "@prisma/client": "^6.19.2",
     "@types/bcryptjs": "^2.4.2",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.0.0",
