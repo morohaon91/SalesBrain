@@ -6,7 +6,7 @@ import { createChatCompletion } from "@/lib/ai/client";
 import {
   generateSimulationPrompt,
   generateUserPrompt,
-} from "@/lib/ai/prompts/simulation";
+} from "@/lib/ai/prompts";
 import { v4 as uuidv4 } from "uuid";
 
 /**

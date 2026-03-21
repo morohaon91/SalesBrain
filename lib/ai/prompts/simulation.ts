@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { getIndustryTemplate } from '@/lib/templates';
+import { buildPrompt, BEHAVIOR_RULES } from './templates';
 
 export type ScenarioType = "PRICE_SENSITIVE" | "INDECISIVE" | "DEMANDING" | "TIME_PRESSURED" | "HIGH_BUDGET";
 
@@ -146,10 +147,8 @@ export async function generateSimulationPrompt(
     // Get base persona from template
     const basePersona = template.scenarios[scenarioType];
 
-    // Build system prompt combining template + extracted patterns
-    const systemPrompt = `You are roleplaying as a potential client for a ${template.displayName} professional.
-
-SCENARIO: ${scenarioType}
+    // Build custom instructions with scenario-specific details
+    const customInstructions = `SCENARIO: ${scenarioType}
 
 CLIENT PROFILE:
 - Type: ${basePersona.clientType}
@@ -159,16 +158,14 @@ CLIENT PROFILE:
 PAIN POINTS:
 ${basePersona.painPoints.map(p => `- ${p}`).join('\n')}
 
-YOUR BEHAVIOR:
-- Stay in character as this specific client type IN THE ${industry.toUpperCase()} INDUSTRY
+KEY BEHAVIORS:
 - Start with this opening line (or similar): "${basePersona.openingLine}"
 - Ask realistic questions and raise objections throughout the conversation
 - Use these typical objections when appropriate:
 ${basePersona.typicalObjections.map(o => `  - ${o}`).join('\n')}
 - Be skeptical but genuinely interested
 - Challenge the business owner to see how they handle it
-- Keep responses conversational (2-4 sentences)
-- Don't make it too easy - this is practice for the business owner
+- This is practice for the business owner
 
 CONTEXT ABOUT THE BUSINESS:
 ${businessProfile?.serviceDescription || template.serviceDescription}
@@ -178,7 +175,7 @@ Typical budget range: ${businessProfile?.typicalBudgetRange || template.typicalB
 
 ${
   businessProfile?.communicationStyle
-    ? `\nBUSINESS OWNER COMMUNICATION STYLE:
+    ? `BUSINESS OWNER COMMUNICATION STYLE:
 The business owner tends to communicate: ${(businessProfile.communicationStyle as any).tone || 'professionally'}
 ${(businessProfile.communicationStyle as any).formality ? `Formality level: ${(businessProfile.communicationStyle as any).formality}/5` : ''}
 ${(businessProfile.communicationStyle as any).keyPhrases ? `Uses key phrases like: ${((businessProfile.communicationStyle as any).keyPhrases as string[]).join(', ')}` : ''}`
@@ -187,7 +184,7 @@ ${(businessProfile.communicationStyle as any).keyPhrases ? `Uses key phrases lik
 
 ${
   businessProfile?.qualificationCriteria
-    ? `\nLEAD QUALIFICATION:
+    ? `LEAD QUALIFICATION:
 Deal breakers for the business owner: ${((businessProfile.qualificationCriteria as any).dealBreakers as string[] || []).join(', ') || 'None defined yet'}
 Green flags they look for: ${((businessProfile.qualificationCriteria as any).greenFlags as string[] || []).join(', ') || 'None defined yet'}`
     : ''
@@ -199,16 +196,20 @@ CRITICAL INSTRUCTIONS TO PREVENT PERSONA SWITCHING:
 - Do NOT suddenly become a startup founder, consultant, or any other profession
 - Maintain this ${industry} industry persona for the ENTIRE conversation
 - If asked about unrelated industries, respond as this client would (confused or disinterested)
-- Your context, background, and goals are all tied to the ${template.displayName} industry
-- Do not acknowledge that you are an AI or that this is a simulation
+- Your context, background, and goals are all tied to the ${template.displayName} industry`;
 
-IMPORTANT:
-- This is a simulation for training purposes
-- Be realistic and challenging
-- Help the business owner practice their pitch and objection handling
-- Stay in character throughout the entire conversation`;
-
-    return systemPrompt;
+    // Use buildPrompt to assemble the system prompt
+    return buildPrompt({
+      role: `You are roleplaying as a potential client for a ${template.displayName} professional.`,
+      behavior: 'strict',
+      industryContext: {
+        industry,
+        service: businessProfile?.serviceDescription || template.serviceDescription,
+        targetClient: businessProfile?.targetClientType || template.targetClientType,
+      },
+      customInstructions,
+      outputFormat: 'conversational',
+    });
   } catch (error) {
     console.error('Error generating simulation prompt:', error);
     // Graceful fallback

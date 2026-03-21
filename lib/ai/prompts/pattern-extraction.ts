@@ -3,6 +3,8 @@
  * System and user prompts for analyzing simulations and extracting business patterns
  */
 
+import { buildPrompt, OUTPUT_FORMATS } from './templates';
+
 export const PATTERN_EXTRACTION_SYSTEM_PROMPT = `You are an expert business analyst specializing in sales conversation analysis.
 
 Your task is to analyze a conversation between a business owner and a potential client to extract structured patterns about how the business owner operates.
@@ -21,7 +23,40 @@ export function generatePatternExtractionPrompt(
   industry: string,
   scenarioType: string
 ): string {
-  return `Analyze this ${industry} sales conversation (scenario: ${scenarioType}) and extract structured business patterns.
+  const jsonSchema = `{
+  "communicationStyle": {
+    "tone": "professional" | "casual" | "empathetic" | "direct" | "friendly",
+    "style": "data-driven" | "emotional" | "educational" | "consultative",
+    "keyPhrases": ["phrase1", "phrase2", "phrase3"],
+    "formality": "formal" | "conversational" | "casual"
+  },
+  "pricingLogic": {
+    "minBudget": 200000,
+    "maxBudget": 800000,
+    "typicalRange": "$200k-$800k home loans",
+    "flexibilityFactors": ["timeline", "loan_size", "credit_score"],
+    "dealBreakers": ["budget_below_200k", "credit_score_below_620"]
+  },
+  "qualificationCriteria": {
+    "mustHaves": ["credit_score_620_plus", "proof_of_stable_income", "realistic_timeline"],
+    "dealBreakers": ["credit_below_620", "no_down_payment", "unrealistic_expectations"],
+    "greenFlags": ["pre_approved", "20_percent_down_saved", "clear_timeline"],
+    "redFlags": ["just_browsing", "price_shopping_only", "credit_repair_needed"]
+  },
+  "objectionHandling": {
+    "priceObjection": "Explains market rates, shows value vs DIY, offers payment options",
+    "timelineObjection": "Sets realistic expectations, doesn't rush process, explains why timeline matters",
+    "competitorObjection": "Focuses on unique value and track record, avoids criticizing competitors",
+    "qualityObjection": "Emphasizes experience and results, provides examples"
+  },
+  "decisionMakingPatterns": {
+    "whenToSayYes": ["meets_credit_minimum", "realistic_budget", "serious_and_ready"],
+    "whenToSayNo": ["below_credit_threshold", "budget_too_low", "not_ready_to_commit"],
+    "warningSignsToWatch": ["asking_for_exceptions", "vague_about_financials", "comparing_only_on_price"]
+  }
+}`;
+
+  const customInstructions = `Analyze this ${industry} sales conversation (scenario: ${scenarioType}) and extract structured business patterns.
 
 CONVERSATION TRANSCRIPT:
 ${transcript}
@@ -64,42 +99,14 @@ IMPORTANT INSTRUCTIONS:
 - Extract actual numbers when mentioned (budgets, percentages, timelines)
 - Use snake_case for array items (e.g., "credit_score_below_620")
 - Keep descriptions concise but informative
-- If something isn't clear from the conversation, use reasonable inference based on context
-- Return ONLY valid JSON, no markdown formatting, no explanations
+- If something isn't clear from the conversation, use reasonable inference based on context`;
 
-OUTPUT FORMAT (respond with ONLY this JSON structure):
-{
-  "communicationStyle": {
-    "tone": "professional" | "casual" | "empathetic" | "direct" | "friendly",
-    "style": "data-driven" | "emotional" | "educational" | "consultative",
-    "keyPhrases": ["phrase1", "phrase2", "phrase3"],
-    "formality": "formal" | "conversational" | "casual"
-  },
-  "pricingLogic": {
-    "minBudget": 200000,
-    "maxBudget": 800000,
-    "typicalRange": "$200k-$800k home loans",
-    "flexibilityFactors": ["timeline", "loan_size", "credit_score"],
-    "dealBreakers": ["budget_below_200k", "credit_score_below_620"]
-  },
-  "qualificationCriteria": {
-    "mustHaves": ["credit_score_620_plus", "proof_of_stable_income", "realistic_timeline"],
-    "dealBreakers": ["credit_below_620", "no_down_payment", "unrealistic_expectations"],
-    "greenFlags": ["pre_approved", "20_percent_down_saved", "clear_timeline"],
-    "redFlags": ["just_browsing", "price_shopping_only", "credit_repair_needed"]
-  },
-  "objectionHandling": {
-    "priceObjection": "Explains market rates, shows value vs DIY, offers payment options",
-    "timelineObjection": "Sets realistic expectations, doesn't rush process, explains why timeline matters",
-    "competitorObjection": "Focuses on unique value and track record, avoids criticizing competitors",
-    "qualityObjection": "Emphasizes experience and results, provides examples"
-  },
-  "decisionMakingPatterns": {
-    "whenToSayYes": ["meets_credit_minimum", "realistic_budget", "serious_and_ready"],
-    "whenToSayNo": ["below_credit_threshold", "budget_too_low", "not_ready_to_commit"],
-    "warningSignsToWatch": ["asking_for_exceptions", "vague_about_financials", "comparing_only_on_price"]
-  }
-}`;
+  return buildPrompt({
+    role: PATTERN_EXTRACTION_SYSTEM_PROMPT,
+    customInstructions,
+    outputFormat: 'json',
+    jsonSchema,
+  });
 }
 
 export function formatConversationTranscript(messages: any[]): string {

@@ -14,6 +14,7 @@ This folder contains documentation of all completed features and implementations
 ### Quick Start Guides
 - **`PLATFORM-ADMIN-QUICK-START.md`** - How to access and use the platform admin dashboard
 - **`QUICK-START-I18N.md`** - How to implement i18n on remaining pages
+- **`PROMPT-MANAGEMENT-GUIDE.md`** - How to use the centralized prompt system (Session 11)
 
 ### Feature Implementation Details
 - **`FRONTEND-IMPLEMENTATION-SUMMARY.md`** - Frontend architecture and component structure
@@ -39,6 +40,9 @@ This folder contains documentation of all completed features and implementations
 ### "How do I finish the i18n setup?"
 → Read: **`QUICK-START-I18N.md`**
 
+### "How do I use the prompt management system?"
+→ Read: **`PROMPT-MANAGEMENT-GUIDE.md`**
+
 ### "How does authentication work?"
 → Read: **`AUTH-UTILITIES-GUIDE.md`** + **`AUTH-ENDPOINTS-IMPLEMENTATION.md`**
 
@@ -55,7 +59,8 @@ This folder contains documentation of all completed features and implementations
 - Platform admin system
 - Industry templates & business profiles
 - AI simulation system
-- **NEW**: Pattern extraction (Session 10)
+- Pattern extraction (Session 10)
+- **NEW**: Prompt management system (Session 11)
 - API client
 - UI components
 
