@@ -11,6 +11,7 @@ export interface CommunicationStyle {
   style: 'data-driven' | 'emotional' | 'educational' | 'consultative';
   keyPhrases: string[];
   formality: 'formal' | 'conversational' | 'casual';
+  responsePattern?: string; // How owner typically structures responses
 }
 
 /**
@@ -22,6 +23,7 @@ export interface PricingLogic {
   typicalRange?: string;
   flexibilityFactors: string[];  // e.g., ["timeline", "scope", "payment_terms"]
   dealBreakers: string[];        // e.g., ["budget_below_X", "unrealistic_timeline"]
+  pricingConfidence?: string;    // How confidently owner discusses pricing
 }
 
 /**
@@ -32,6 +34,12 @@ export interface QualificationCriteria {
   dealBreakers: string[];  // Absolute no-gos
   greenFlags: string[];    // Signals of ideal client
   redFlags: string[];      // Warning signs
+  confidence?: {
+    mustHaves: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    dealBreakers: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    greenFlags: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    redFlags: 'high' | 'medium' | 'low' | 'not_demonstrated';
+  };
 }
 
 /**
@@ -53,6 +61,11 @@ export interface DecisionMakingPatterns {
   whenToSayYes: string[];
   whenToSayNo: string[];
   warningSignsToWatch: string[];
+  decisionSpeed?: string; // How quickly owner makes yes/no decisions
+  confidence?: {
+    whenToSayYes: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    whenToSayNo: 'high' | 'medium' | 'low' | 'not_demonstrated';
+  };
 }
 
 /**
@@ -68,6 +81,28 @@ export interface KnowledgeBase {
 }
 
 /**
+ * Conversation Quality Assessment - Quality metrics from the simulation
+ */
+export interface ConversationQuality {
+  unansweredQuestions: string[]; // Specific questions customer asked that owner didn't answer
+  hasResolution: boolean;
+  resolutionType: 'accepted' | 'rejected' | 'scheduled_followup' | 'none';
+  completenessScore: number; // 0-100 score
+  missingPatterns?: string[]; // Expected patterns that weren't demonstrated
+  conversationFlow: 'smooth' | 'interrupted' | 'one_sided' | 'incomplete';
+  overallConfidence: 'high' | 'medium' | 'low';
+}
+
+/**
+ * Extraction Notes - Feedback about the owner's performance
+ */
+export interface ExtractionNotes {
+  strengths: string[]; // What the owner handled well
+  weaknesses: string[]; // What the owner struggled with
+  suggestions: string[]; // What owner should practice
+}
+
+/**
  * Complete extracted patterns from a simulation
  */
 export interface ExtractedPatterns {
@@ -77,6 +112,8 @@ export interface ExtractedPatterns {
   objectionHandling: ObjectionHandling;
   decisionMakingPatterns: DecisionMakingPatterns;
   knowledgeBase?: KnowledgeBase;
+  conversationQuality?: ConversationQuality;
+  extractionNotes?: ExtractionNotes;
 }
 
 /**
