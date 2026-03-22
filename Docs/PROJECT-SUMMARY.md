@@ -1,6 +1,6 @@
 # SalesBrain - Project Summary
 
-**Status**: 🟢 MVP Core Complete | **Last Updated**: March 21, 2026 (Session 11)
+**Status**: 🟢 MVP Core Complete | **Last Updated**: March 22, 2026 (Sessions 12-14)
 
 ---
 
@@ -95,6 +95,32 @@ Centralized, versioned prompt system for all AI features:
 - **A/B Testing Ready** - Config-based approach for easy experimentation
 
 **Components**: Config system, templates, central registry, validation utilities, version tracking
+
+### Sessions 12-14: Master Fix Plan - Phases 1-3 🔧
+Critical pattern extraction fixes and quality gating system:
+
+**Phase 1: Fix AI Extraction Logic**
+- ✅ Perspective rules - Distinguish owner's criteria from customer complaints
+- ✅ Confidence metadata - High/medium/low/not_demonstrated for all patterns
+- ✅ Conversation quality - Assess completeness, resolution, flow
+- ✅ Extraction notes - Strengths, weaknesses, improvement suggestions
+
+**Phase 2: Grammar Normalization**
+- ✅ Automatic spelling/grammar fixes while preserving intent
+- ✅ Detects when normalization needed
+- ✅ Integrated into extraction pipeline
+
+**Phase 3: Simulation Quality Detection**
+- ✅ Quality gating - Prevents extraction from incomplete conversations
+- ✅ Detailed analysis - Message count, unanswered questions, resolution
+- ✅ Completeness scoring - 0-100 with recommendations (extract/review/continue/redo)
+- ✅ Feedback system - Strengths, weaknesses, and improvement suggestions
+
+**Key Problems Solved**:
+- ❌ AI confuses customer complaints with owner's deal-breakers → ✅ Clear role distinction
+- ❌ Extracts verbatim spelling errors → ✅ Grammar normalization layer
+- ❌ Accepts incomplete simulations → ✅ Quality gating with completion detection
+- ❌ Unreliable single-simulation data → ⏳ (Phases 4-5: Multi-sim confidence)
 
 ---
 
