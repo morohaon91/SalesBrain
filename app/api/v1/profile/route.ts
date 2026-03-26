@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma, setTenantContext, clearTenantContext } from '@/lib/prisma';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
+import { calculateProfileCompletion } from '@/lib/utils/profile-completion';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ProfileResponse {
@@ -102,14 +103,26 @@ export const GET = withAuth(
         );
       }
 
+      // Always recompute completion from actual field data so the UI is never stale
+      const liveCompletion = calculateProfileCompletion(profile as any);
+      const liveCompletionPct = liveCompletion.total;
+
+      // Persist if different (keeps DB in sync without a dedicated cron job)
+      if (liveCompletionPct !== profile.completionPercentage) {
+        prisma.businessProfile.update({
+          where: { tenantId },
+          data: { completionPercentage: liveCompletionPct, completionScore: liveCompletionPct },
+        }).catch(() => {}); // fire-and-forget, non-blocking
+      }
+
       // Transform response
       return NextResponse.json(
         {
           success: true,
           data: {
             id: profile.id,
-            isComplete: profile.isComplete || false,
-            completionScore: profile.completionScore || 0,
+            isComplete: liveCompletionPct >= 100,
+            completionScore: liveCompletionPct,
 
             // Manual fields
             industry: profile.industry,
@@ -117,6 +130,10 @@ export const GET = withAuth(
             targetClientType: profile.targetClientType,
             typicalBudgetRange: profile.typicalBudgetRange,
             commonClientQuestions: profile.commonClientQuestions,
+            yearsExperience: profile.yearsExperience,
+            serviceArea: profile.serviceArea,
+            teamSize: profile.teamSize,
+            certifications: profile.certifications,
 
             // Extracted fields
             communicationStyle: profile.communicationStyle as any,
@@ -124,10 +141,18 @@ export const GET = withAuth(
             qualificationCriteria: profile.qualificationCriteria as any,
             objectionHandling: profile.objectionHandling as any,
             decisionMakingPatterns: profile.decisionMakingPatterns as any,
+            ownerVoiceExamples: profile.ownerVoiceExamples as any,
 
-            // Progress
-            completionPercentage: profile.completionPercentage || 0,
+            // Approval
+            profileApprovalStatus: profile.profileApprovalStatus,
+            approvedAt: profile.approvedAt?.toISOString() ?? null,
+            goLiveAt: profile.goLiveAt?.toISOString() ?? null,
+
+            // Progress — use live computed value, not stale DB value
+            completionPercentage: liveCompletionPct,
+            completionBreakdown: liveCompletion,
             simulationCount: profile.simulationCount || 0,
+            lastExtractedAt: profile.lastExtractedAt?.toISOString() ?? null,
             embeddingsCount: profile.embeddingsCount || 0,
           },
           meta: { timestamp, requestId },
@@ -209,15 +234,26 @@ export const PATCH = withAuth(
 
       setTenantContext(tenantId);
 
-      // Update profile with provided fields
-      const profile = await prisma.businessProfile.update({
+      // Upsert profile — create if it doesn't exist yet (new onboarding flow skips auto-creation)
+      const updateData = {
+        ...(data.industry !== undefined && { industry: data.industry }),
+        ...(data.serviceDescription !== undefined && { serviceDescription: data.serviceDescription }),
+        ...(data.targetClientType !== undefined && { targetClientType: data.targetClientType }),
+        ...(data.typicalBudgetRange !== undefined && { typicalBudgetRange: data.typicalBudgetRange }),
+        ...(data.commonClientQuestions !== undefined && { commonClientQuestions: data.commonClientQuestions }),
+      };
+
+      const profile = await prisma.businessProfile.upsert({
         where: { tenantId },
-        data: {
-          ...(data.industry !== undefined && { industry: data.industry }),
-          ...(data.serviceDescription !== undefined && { serviceDescription: data.serviceDescription }),
-          ...(data.targetClientType !== undefined && { targetClientType: data.targetClientType }),
-          ...(data.typicalBudgetRange !== undefined && { typicalBudgetRange: data.typicalBudgetRange }),
-          ...(data.commonClientQuestions !== undefined && { commonClientQuestions: data.commonClientQuestions }),
+        update: updateData,
+        create: {
+          tenantId,
+          ...updateData,
+          completionPercentage: 0,
+          isComplete: false,
+          simulationCount: 0,
+          profileApprovalStatus: 'PENDING',
+          completedScenarios: [],
         },
       });
 

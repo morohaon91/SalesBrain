@@ -7,6 +7,7 @@ import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { SimulationChat } from '@/components/simulations/simulation-chat';
 import { ScenarioGuide } from '@/components/simulation/ScenarioGuide';
+import LiveQualityScore from '@/components/simulation/LiveQualityScore';
 import { ArrowLeft, Loader2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { checkSimulationQuality } from '@/lib/simulations/quality-checker';
 
@@ -36,7 +37,7 @@ export default function SimulationDetailPage() {
     mutationFn: () => api.simulations.complete(simulationId),
     onSuccess: () => {
       // Redirect to feedback page instead of simulations list
-      router.push(`/simulations/${simulationId}/feedback`);
+      router.push(`/simulations/${simulationId}/summary`);
     },
     onError: (error: any) => {
       const message =
@@ -168,6 +169,14 @@ export default function SimulationDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Live Quality Score (Phase 4) */}
+          {simulation.status === 'IN_PROGRESS' && (
+            <LiveQualityScore
+              score={simulation.liveScore ?? 0}
+              demonstratedPatterns={simulation.demonstratedPatterns ?? []}
+              messageCount={Math.floor((simulation.messages?.length ?? 0) / 2)}
+            />
+          )}
           {/* Session Info */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">

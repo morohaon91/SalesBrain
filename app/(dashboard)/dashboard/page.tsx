@@ -3,6 +3,7 @@
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useI18n } from "@/lib/hooks/useI18n";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { StatsCard } from "@/components/shared/stats-card";
@@ -13,8 +14,11 @@ import {
   AlertCircle,
   ArrowRight,
   Loader2,
+  Zap,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { authFetch } from "@/lib/api/auth-fetch";
 
 /**
  * Activity Item Component
@@ -56,6 +60,8 @@ function ActivityItem({
 export default function DashboardPage() {
   const { user } = useAuth();
   const { t } = useI18n('dashboard');
+  const searchParams = useSearchParams();
+  const approvalSuccess = searchParams.get('approval') === 'success';
 
   // Fetch analytics data
   const { data: analyticsResponse, isLoading } = useQuery({
@@ -64,19 +70,58 @@ export default function DashboardPage() {
     enabled: !!user,
   });
 
+  // Fetch profile for readiness banner
+  const { data: profileResponse } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => authFetch('/api/v1/profile').then((r) => r.json()),
+    enabled: !!user,
+  });
+
   const analyticsData = analyticsResponse?.data as any;
   const totalConversations = analyticsData?.totalConversations ?? 0;
   const qualifiedLeads = analyticsData?.qualifiedLeads ?? 0;
   const averageScore = analyticsData?.averageScore ?? 0;
 
+  const profile = (profileResponse?.data ?? profileResponse) as any;
+  const completionPct = profile?.completionPercentage ?? 0;
+  const isLive = profile?.profileApprovalStatus === 'APPROVED' || profile?.profileApprovalStatus === 'LIVE';
+  const showReadinessBanner = !isLive && completionPct >= 70;
+
   // Get current hour for greeting
   const hour = new Date().getHours();
   let greeting = t('welcome');
-  if (hour >= 12 && hour < 18) greeting = t('welcome'); // You can add time-specific greetings to translation files
+  if (hour >= 12 && hour < 18) greeting = t('welcome');
   if (hour >= 18) greeting = t('welcome');
 
   return (
     <div className="space-y-8">
+      {/* Go-Live Success Banner */}
+      {approvalSuccess && (
+        <div className="flex items-center gap-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-green-900">Your AI is now live!</p>
+            <p className="text-sm text-green-700">Lead conversations are active. Your AI will start qualifying leads immediately.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Readiness Banner (70%+ but not yet approved) */}
+      {showReadinessBanner && (
+        <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <Zap className="h-6 w-6 text-blue-600 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-blue-900">Your profile is ready to go live! ({completionPct}% complete)</p>
+            <p className="text-sm text-blue-700">Review and approve your profile to activate lead conversations.</p>
+          </div>
+          <Link href="/profile/approve">
+            <Button size="sm">
+              Review & Approve <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Welcome Section */}
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-gray-900">

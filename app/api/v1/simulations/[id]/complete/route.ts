@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth, AuthenticatedRequest } from "@/lib/auth/middleware";
+import { triggerAsyncExtraction } from "@/lib/simulations/extraction-queue";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -105,20 +106,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       },
     });
 
-    // Trigger pattern extraction asynchronously (fire and forget)
-    // Don't await - let it run in the background without blocking the response
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const extractUrl = `${baseUrl}/api/v1/simulations/${simulationId}/extract`;
-    fetch(extractUrl, {
-      method: "POST",
-      headers: {
-        Authorization: req.headers.get("authorization") || "",
-        "Content-Type": "application/json"
-      }
-    }).catch((err) => {
-      console.error("Auto-extraction failed:", err);
-      // Don't fail the complete request if extraction fails
-    });
+    // Phase 7: Trigger async extraction using extraction-queue
+    triggerAsyncExtraction(simulationId, tenantId);
 
     return NextResponse.json(
       {
@@ -129,6 +118,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
           duration: updatedSimulation.duration,
           messageCount: simulation.messages.length,
           qualityScore: updatedSimulation.qualityScore || undefined,
+          summaryUrl: `/simulations/${simulationId}/summary`,
         },
         meta: { timestamp, requestId },
       },

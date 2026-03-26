@@ -17,7 +17,10 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
+  Zap,
+  ArrowRight,
 } from 'lucide-react';
+import Link from 'next/link';
 
 type TabType = 'basic-info' | 'extracted-patterns';
 
@@ -35,8 +38,12 @@ interface ProfileData {
   qualificationCriteria?: any;
   objectionHandling?: any;
   decisionMakingPatterns?: any;
+  ownerVoiceExamples?: any;
+  profileApprovalStatus?: string | null;
   completionPercentage?: number;
+  completionBreakdown?: Record<string, number>;
   simulationCount?: number;
+  lastExtractedAt?: string | null;
   embeddingsCount: number;
 }
 
@@ -372,24 +379,90 @@ export default function ProfilePage() {
               </p>
             </div>
 
+            {/* 70%+ Go-Live CTA Banner */}
+            {(() => {
+              const pct = profile?.completionPercentage ?? 0;
+              const status = profile?.profileApprovalStatus;
+              const isLive = status === 'APPROVED' || status === 'LIVE';
+              if (pct >= 70 && !isLive) {
+                return (
+                  <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Zap className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-900">Your profile is ready to go live! ({pct}% complete)</p>
+                      <p className="text-sm text-blue-700 mt-0.5">Review your extracted patterns and approve to activate AI lead conversations.</p>
+                    </div>
+                    <Link href="/profile/approve">
+                      <Button size="sm" className="whitespace-nowrap">
+                        Review &amp; Approve <ArrowRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </Link>
+                  </div>
+                );
+              }
+              if (isLive) {
+                return (
+                  <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <p className="text-sm font-medium text-green-900">Your AI is live and actively qualifying leads.</p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             {/* Completion Progress */}
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold text-gray-900">Profile Completion</span>
                 <span className="text-2xl font-bold text-primary-600">
-                  {profile?.completionPercentage || 0}%
+                  {profile?.completionPercentage ?? 0}%
                 </span>
               </div>
               <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
                 <div
-                  className="h-full bg-primary-600 transition-all"
-                  style={{ width: `${profile?.completionPercentage || 0}%` }}
+                  className={`h-full transition-all ${
+                    (profile?.completionPercentage ?? 0) >= 70
+                      ? 'bg-green-500'
+                      : 'bg-primary-600'
+                  }`}
+                  style={{ width: `${profile?.completionPercentage ?? 0}%` }}
                 />
               </div>
-              <p className="text-sm text-gray-600">
-                {profile?.simulationCount || 0} simulations completed. Complete more to
-                improve profile accuracy.
-              </p>
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>
+                  {profile?.simulationCount ?? 0} simulation{(profile?.simulationCount ?? 0) !== 1 ? 's' : ''} completed
+                  {profile?.lastExtractedAt
+                    ? ` · Last extracted ${new Date(profile.lastExtractedAt).toLocaleDateString()}`
+                    : ''}
+                </span>
+                {(profile?.completionPercentage ?? 0) < 70 && (
+                  <span className="text-blue-600 font-medium">
+                    {70 - (profile?.completionPercentage ?? 0)}% to go-live threshold
+                  </span>
+                )}
+              </div>
+              {/* Section breakdown */}
+              {profile?.completionBreakdown && (
+                <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 border-t border-gray-200 pt-3">
+                  {[
+                    ['Questionnaire', profile.completionBreakdown.questionnaire, 20],
+                    ['Communication', profile.completionBreakdown.communicationStyle, 15],
+                    ['Pricing logic', profile.completionBreakdown.pricingLogic, 15],
+                    ['Qualification', profile.completionBreakdown.qualificationCriteria, 15],
+                    ['Objections', profile.completionBreakdown.objectionHandling, 15],
+                    ['Decision making', profile.completionBreakdown.decisionMaking, 10],
+                    ['Business facts', profile.completionBreakdown.businessFacts, 10],
+                  ].map(([label, pts, max]) => (
+                    <div key={label as string} className="flex justify-between">
+                      <span>{label as string}</span>
+                      <span className={(pts as number) === 0 ? 'text-red-400' : 'text-green-600 font-medium'}>
+                        {pts as number}/{max as number}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Patterns or Empty State */}

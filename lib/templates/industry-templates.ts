@@ -1,7 +1,21 @@
 /**
  * Industry-specific templates for simulations
  * Each template provides industry-realistic scenarios and business information
+ *
+ * @deprecated Legacy template structure kept for backward compatibility.
+ * New code should use lib/templates/industry-scenarios.ts instead.
  */
+
+// Re-export new scenario system for convenience
+export {
+  INDUSTRY_SCENARIOS,
+  INDUSTRY_LIST,
+  getScenariosForIndustry,
+  getScenarioById,
+  getAllScenarios,
+} from './industry-scenarios';
+export { generatePersona, getPersonaDisplayData } from './persona-generator';
+export { suggestNextScenario, getAllSuggestions, analyzeProfileGaps } from './scenario-suggester';
 
 export interface ScenarioPersona {
   clientType: string;

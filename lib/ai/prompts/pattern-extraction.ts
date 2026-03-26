@@ -27,6 +27,21 @@ export function generatePatternExtractionPrompt(
   scenarioType: string
 ): string {
   const jsonSchema = `{
+  "verbatimVoiceExamples": [
+    {
+      "phrase": "exact words owner said (grammar corrected)",
+      "context": "what situation prompted this phrase",
+      "category": "pricing | qualification | objection | closing | communication | other"
+    }
+  ],
+  "businessFacts": {
+    "mentionedExperience": "e.g. '15 years in construction' or null",
+    "mentionedServices": ["services explicitly mentioned"],
+    "mentionedCertifications": ["certifications mentioned"],
+    "mentionedServiceArea": "area mentioned or null",
+    "mentionedTeamSize": "team size mentioned or null",
+    "specializations": ["specializations mentioned"]
+  },
   "communicationStyle": {
     "tone": "professional" | "casual" | "empathetic" | "direct" | "friendly",
     "style": "data-driven" | "emotional" | "educational" | "consultative",
@@ -170,6 +185,28 @@ INDUSTRY CONTEXT:
 - Scenario Type: ${scenarioType}
 
 EXTRACTION INSTRUCTIONS:
+
+0. VERBATIM VOICE EXAMPLES (NEW - EXTRACT FIRST)
+   Extract 5-10 actual phrases the owner used that reveal their unique voice and style.
+   - Copy exact words but fix spelling/grammar errors
+   - Include what situation prompted each phrase
+   - Minimum 8 words per phrase, maximum 50 words
+   - Capture phrases that feel distinctive to this person
+   - Categories: pricing, qualification, objection, closing, communication, other
+
+   Examples of good verbatim captures:
+   - "We don't just build it and leave — we stay until you're 100% satisfied"
+   - "I always tell clients: transparency is key, no surprises on the bill"
+   - "If the timeline doesn't work for both of us, we shouldn't start"
+
+0b. BUSINESS FACTS (AUTO-EXTRACT)
+   Extract any factual business information the owner mentioned:
+   - Years of experience explicitly stated
+   - Services or specializations they mentioned
+   - Certifications or licenses they referenced
+   - Service area or location they mentioned
+   - Team size they mentioned
+   - Set to null/empty if not mentioned — do NOT guess
 
 1. COMMUNICATION STYLE
    - Extract INTENT and TONE, not verbatim text

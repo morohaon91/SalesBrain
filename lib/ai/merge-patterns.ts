@@ -47,6 +47,60 @@ export function mergePatterns(
 }
 
 /**
+ * Merge verbatim voice examples — keep up to 20 unique examples
+ */
+export function mergeOwnerVoiceExamples(
+  existing: any[] | null,
+  newExamples: any[] | null
+): any[] {
+  if (!existing && !newExamples) return [];
+  if (!existing) return newExamples ?? [];
+  if (!newExamples) return existing;
+
+  const combined = [...existing, ...newExamples];
+  // Deduplicate by phrase (case-insensitive)
+  const seen = new Set<string>();
+  return combined
+    .filter((ex) => {
+      const key = ex.phrase?.toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 20); // Cap at 20 examples
+}
+
+/**
+ * Merge business facts — prefer non-null values, merge arrays
+ */
+export function mergeBusinessFacts(
+  existing: any | null,
+  newFacts: any | null
+): any {
+  if (!existing && !newFacts) return null;
+  if (!existing) return newFacts;
+  if (!newFacts) return existing;
+
+  return {
+    mentionedExperience: newFacts.mentionedExperience ?? existing.mentionedExperience,
+    mentionedServices: uniqueArray([
+      ...(existing.mentionedServices ?? []),
+      ...(newFacts.mentionedServices ?? []),
+    ]),
+    mentionedCertifications: uniqueArray([
+      ...(existing.mentionedCertifications ?? []),
+      ...(newFacts.mentionedCertifications ?? []),
+    ]),
+    mentionedServiceArea: newFacts.mentionedServiceArea ?? existing.mentionedServiceArea,
+    mentionedTeamSize: newFacts.mentionedTeamSize ?? existing.mentionedTeamSize,
+    specializations: uniqueArray([
+      ...(existing.specializations ?? []),
+      ...(newFacts.specializations ?? []),
+    ]),
+  };
+}
+
+/**
  * Phase 5: Merge patterns with confidence checking based on simulation count
  * Requires patterns to appear in 2+ simulations before marking as reliable
  *

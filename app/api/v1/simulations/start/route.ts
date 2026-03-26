@@ -1,139 +1,165 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { withAuth, AuthenticatedRequest } from "@/lib/auth/middleware";
 import { createChatCompletion } from "@/lib/ai/client";
 import {
   getScenarioConfig,
-  generateSimulationClientPrompt,
-  generateUserPrompt,
   generateSimulationPrompt,
 } from "@/lib/ai/prompts";
+import { getScenarioById } from "@/lib/templates/industry-scenarios";
+import { generatePersona } from "@/lib/templates/persona-generator";
 import { v4 as uuidv4 } from "uuid";
 
-/**
- * Request validation schema
- */
 const startSimulationSchema = z.object({
-  scenarioType: z.enum(["PRICE_SENSITIVE", "INDECISIVE", "DEMANDING", "TIME_PRESSURED", "HIGH_BUDGET"]),
+  // Legacy: old enum-style scenario type
+  scenarioType: z.string().optional(),
+  // New: scenario ID from industry-scenarios.ts
+  scenarioId: z.string().optional(),
 });
 
-type StartSimulationRequest = z.infer<typeof startSimulationSchema>;
-
-/**
- * Response type
- */
-interface StartSimulationResponse {
-  success: boolean;
-  data?: {
-    simulationId: string;
-    scenarioType: string;
-    aiPersona: {
-      clientType: string;
-      budget: string;
-      painPoints: string[];
-      personality: string;
-    };
-    initialMessage: string;
-    status: string;
-  };
-  error?: {
-    code: string;
-    message: string;
-    details?: Array<{ field: string; message: string }>;
-  };
-  meta: {
-    timestamp: string;
-    requestId: string;
-  };
-}
-
-/**
- * POST /api/v1/simulations/start
- * Start a new simulation session with AI client
- */
 export const POST = withAuth(async (req: AuthenticatedRequest) => {
   const requestId = uuidv4();
   const timestamp = new Date().toISOString();
 
   try {
-    // Parse request body
     const body = await req.json();
-
-    // Validate request
     const validation = startSimulationSchema.safeParse(body);
-    if (!validation.success) {
-      const details = validation.error.issues.map((issue) => ({
-        field: String(issue.path[0]),
-        message: issue.message,
-      }));
 
+    if (!validation.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid input data",
-            details,
-          },
-          meta: { timestamp, requestId },
-        },
+        { success: false, error: { code: "VALIDATION_ERROR", message: "Invalid input" }, meta: { timestamp, requestId } },
         { status: 400 }
       );
     }
 
-    const data = validation.data as StartSimulationRequest;
     const { tenantId } = req.auth;
+    const { scenarioId, scenarioType } = validation.data;
 
-    // FIX 3: Fetch businessProfile BEFORE generating prompt
-    // This ensures the prompt has industry context from the start
-    const businessProfile = await prisma.businessProfile.findUnique({
-      where: { tenantId },
-    });
+    if (!scenarioId && !scenarioType) {
+      return NextResponse.json(
+        { success: false, error: { code: "VALIDATION_ERROR", message: "scenarioId or scenarioType required" }, meta: { timestamp, requestId } },
+        { status: 400 }
+      );
+    }
 
+    const businessProfile = await prisma.businessProfile.findUnique({ where: { tenantId } });
     if (!businessProfile) {
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "PROFILE_NOT_FOUND",
-            message: "Business profile not found. Please complete your profile first.",
-          },
-          meta: { timestamp, requestId },
-        },
+        { success: false, error: { code: "PROFILE_NOT_FOUND", message: "Business profile not found. Please complete your profile first." }, meta: { timestamp, requestId } },
         { status: 404 }
       );
     }
 
-    // Generate system prompt using templates + extracted patterns
-    // Pass businessProfile instead of tenantId for industry context
-    const systemPrompt = await generateSimulationPrompt(data.scenarioType as any, businessProfile);
+    let personaDetails: Record<string, unknown> | null = null;
+    let resolvedScenarioType = scenarioType ?? scenarioId ?? 'PRICE_SENSITIVE';
 
-    // Generate initial greeting from AI client
-    const initialUserPrompt = `Start the conversation. You are a potential client interested in learning about their services. Begin naturally, as if making first contact.`;
+    // New path: scenarioId from industry-scenarios.ts
+    if (scenarioId) {
+      const scenario = getScenarioById(scenarioId);
+      if (!scenario) {
+        return NextResponse.json(
+          { success: false, error: { code: "NOT_FOUND", message: "Scenario not found" }, meta: { timestamp, requestId } },
+          { status: 404 }
+        );
+      }
 
-    // Get scenario config for persona (used in response)
-    const scenarioConfig = getScenarioConfig(data.scenarioType);
+      const persona = generatePersona(scenario);
+      personaDetails = persona as unknown as Record<string, unknown>;
+      resolvedScenarioType = scenarioId;
+
+      // Build persona-aware system prompt — MUST include owner's business context
+      // so Claude never invents unrelated industries
+      const ownerIndustry = businessProfile.industry ?? scenario.industry;
+      const ownerService = businessProfile.serviceDescription ?? `professional ${ownerIndustry} services`;
+      const ownerTargetClient = (businessProfile as any).targetClientType ?? 'homeowners and businesses';
+      const ownerBudgetRange = (businessProfile as any).typicalBudgetRange ?? 'varies by project';
+
+      const personaPrompt = `You are roleplaying as a potential CLIENT reaching out to a ${ownerIndustry} professional.
+
+THE BUSINESS YOU ARE CONTACTING:
+- Industry: ${ownerIndustry}
+- What they do: ${ownerService}
+- Their typical clients: ${ownerTargetClient}
+- Typical budget range they work with: ${ownerBudgetRange}
+
+YOUR CLIENT PERSONA:
+- Name: ${persona.name}, age ${persona.age}
+- Scenario: ${scenario.name}
+- Your situation: ${scenario.teaser.replace('Incoming lead: ', '')}
+- Your personality: ${persona.personality.join(', ')}
+- Your main concerns: ${persona.painPoints.join(', ')}
+- Your budget: $${persona.budget.min.toLocaleString()} - $${persona.budget.max.toLocaleString()} (${persona.budget.flexibility} flexibility)
+- Your timeline: ${persona.timeline}
+
+CRITICAL RULES:
+- You are ALWAYS contacting a ${ownerIndustry} professional — NEVER change this industry
+- Stay in character as ${persona.name} for the entire conversation
+- Do NOT switch industries or invent a different type of business
+- Keep responses conversational (2-4 sentences max)
+- Gradually reveal concerns — don't dump everything at once
+
+Start the simulation now with this opening: "${persona.openingLine}"`;
+
+      const aiResponse = await createChatCompletion(
+        [{ role: "user", content: "Start the simulation with your opening line as the client." }],
+        personaPrompt,
+        { maxTokens: 300, temperature: 0.8 }
+      );
+
+      const simulation = await prisma.simulation.create({
+        data: {
+          tenantId,
+          scenarioType: resolvedScenarioType,
+          status: "IN_PROGRESS",
+          duration: 0,
+          aiPersona: personaDetails as any,
+          personaDetails: personaDetails as any,
+          demonstratedPatterns: [],
+          liveScore: 0,
+        },
+      });
+
+      await prisma.simulationMessage.create({
+        data: {
+          simulationId: simulation.id,
+          role: "AI_CLIENT",
+          content: aiResponse.content,
+          tokensUsed: aiResponse.tokensUsed,
+          latencyMs: aiResponse.latencyMs,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            simulationId: simulation.id,
+            scenarioType: resolvedScenarioType,
+            persona: { name: persona.name, teaser: scenario.teaser },
+            initialMessage: aiResponse.content,
+            status: simulation.status,
+          },
+          meta: { timestamp, requestId },
+        },
+        { status: 201 }
+      );
+    }
+
+    // Legacy path: old enum scenario type
+    const systemPrompt = await generateSimulationPrompt(scenarioType as any, businessProfile);
+    const scenarioConfig = getScenarioConfig(scenarioType as any);
 
     const aiResponse = await createChatCompletion(
-      [
-        {
-          role: "user",
-          content: initialUserPrompt,
-        },
-      ],
+      [{ role: "user", content: "Start the conversation. You are a potential client. Begin naturally, as if making first contact." }],
       systemPrompt,
-      {
-        maxTokens: 300,
-        temperature: 0.8,
-      }
+      { maxTokens: 300, temperature: 0.8 }
     );
 
-    // Create simulation in database
     const simulation = await prisma.simulation.create({
       data: {
         tenantId,
-        scenarioType: data.scenarioType,
+        scenarioType: scenarioType!,
         status: "IN_PROGRESS",
         duration: 0,
         aiPersona: {
@@ -142,10 +168,11 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
           painPoints: scenarioConfig.painPoints,
           personality: scenarioConfig.personality,
         },
+        demonstratedPatterns: [],
+        liveScore: 0,
       },
     });
 
-    // Store initial AI message
     await prisma.simulationMessage.create({
       data: {
         simulationId: simulation.id,
@@ -161,7 +188,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         success: true,
         data: {
           simulationId: simulation.id,
-          scenarioType: data.scenarioType,
+          scenarioType,
           aiPersona: {
             clientType: scenarioConfig.clientType,
             budget: scenarioConfig.budget,
@@ -177,31 +204,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     );
   } catch (error) {
     console.error("Simulation start error:", error);
-
-    // Handle AI provider errors
-    if (error instanceof Error && error.message.includes("AI")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "AI_ERROR",
-            message: error.message,
-          },
-          meta: { timestamp, requestId },
-        },
-        { status: 503 }
-      );
-    }
-
     return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: "INTERNAL_ERROR",
-          message: "Failed to start simulation. Please try again.",
-        },
-        meta: { timestamp, requestId },
-      },
+      { success: false, error: { code: "INTERNAL_ERROR", message: "Failed to start simulation. Please try again." }, meta: { timestamp, requestId } },
       { status: 500 }
     );
   }

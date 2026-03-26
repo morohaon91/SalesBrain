@@ -81,6 +81,31 @@ export const ExtractionNotesSchema = z.object({
   suggestions: z.array(z.string())
 }).optional();
 
+// Phase 5: Triple extraction schemas
+export const VerbatimPhraseSchema = z.object({
+  phrase: z.string().min(8).max(500),
+  context: z.string().min(3).max(300),
+  category: z.enum(['pricing', 'qualification', 'objection', 'closing', 'communication', 'other']),
+});
+
+const nullableStringArray = z
+  .array(z.string())
+  .nullable()
+  .optional()
+  .transform((v) => v ?? []);
+
+export const BusinessFactsSchema = z
+  .object({
+    mentionedExperience: z.string().nullable().optional(),
+    mentionedServices: nullableStringArray,
+    mentionedCertifications: nullableStringArray,
+    mentionedServiceArea: z.string().nullable().optional(),
+    mentionedTeamSize: z.string().nullable().optional(),
+    specializations: nullableStringArray,
+  })
+  .nullable()
+  .optional();
+
 export const ExtractedPatternsSchema = z.object({
   communicationStyle: CommunicationStyleSchema,
   pricingLogic: PricingLogicSchema,
@@ -89,7 +114,10 @@ export const ExtractedPatternsSchema = z.object({
   decisionMakingPatterns: DecisionMakingPatternsSchema,
   conversationQuality: ConversationQualitySchema,
   extractionNotes: ExtractionNotesSchema,
-  knowledgeBase: KnowledgeBaseSchema
+  knowledgeBase: KnowledgeBaseSchema,
+  // Phase 5 additions
+  verbatimVoiceExamples: z.array(VerbatimPhraseSchema).nullable().optional(),
+  businessFacts: BusinessFactsSchema,
 });
 
 export type ExtractedPatternsType = z.infer<typeof ExtractedPatternsSchema>;

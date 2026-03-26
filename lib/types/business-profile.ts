@@ -148,3 +148,84 @@ export interface ExtractionMetadata {
   scenarioType: string;
   confidence: 'high' | 'medium' | 'low';
 }
+
+/**
+ * Verbatim voice example - exact phrases from the owner
+ */
+export interface OwnerVoiceExample {
+  phrase: string;        // Exact words (grammar-corrected)
+  context: string;       // What situation prompted this
+  category: 'pricing' | 'qualification' | 'objection' | 'closing' | 'communication' | 'other';
+  simulationId: string;
+  extractedAt: string;
+}
+
+/**
+ * Business facts extracted from simulations + questionnaire
+ */
+export interface BusinessFacts {
+  mentionedExperience?: string;    // e.g., "15 years in construction"
+  mentionedServices?: string[];    // Services mentioned in simulations
+  mentionedCertifications?: string[];
+  mentionedServiceArea?: string;
+  mentionedTeamSize?: string;
+  specializations?: string[];
+}
+
+/**
+ * Profile approval state
+ */
+export type ProfileApprovalStatus = 'PENDING' | 'READY' | 'APPROVED' | 'LIVE' | 'PAUSED';
+
+/**
+ * Business profile with all fields (full shape from DB)
+ */
+export interface BusinessProfile {
+  id: string;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Manual fields
+  industry?: string | null;
+  serviceDescription?: string | null;
+  targetClientType?: string | null;
+  typicalBudgetRange?: string | null;
+  commonClientQuestions: string[];
+
+  // Business facts
+  yearsExperience?: number | null;
+  serviceOfferings: string[];
+  specializations: string[];
+  certifications: string[];
+  serviceArea?: string | null;
+  teamSize?: string | null;
+
+  // Extracted patterns (JSON)
+  communicationStyle?: CommunicationStyle | null;
+  pricingLogic?: PricingLogic | null;
+  qualificationCriteria?: QualificationCriteria | null;
+  objectionHandling?: ObjectionHandling | null;
+  decisionMakingPatterns?: DecisionMakingPatterns | null;
+  ownerVoiceExamples?: OwnerVoiceExample[] | null;
+  knowledgeBase?: KnowledgeBase | null;
+
+  // Approval
+  profileApprovalStatus: ProfileApprovalStatus;
+  approvedAt?: Date | null;
+  goLiveAt?: Date | null;
+
+  // Simulation tracking
+  completedScenarios: string[];
+  suggestedNextScenario?: string | null;
+  simulationCount: number;
+
+  // Progress
+  completionPercentage: number;
+  isComplete: boolean;
+  completionScore: number;
+  lastExtractedAt?: Date | null;
+  embeddedMessageCount: number;
+  pineconeNamespace?: string | null;
+  embeddingsCount: number;
+}

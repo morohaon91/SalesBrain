@@ -104,8 +104,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await api.user.getProfile();
         setUser(profile as User);
 
-        // Redirect to dashboard
-        router.push("/dashboard");
+        // Redirect based on onboarding state
+        const status = await api.onboarding.getStatus().catch(() => null);
+
+        if (status?.onboardingComplete) {
+          router.push('/dashboard');
+          return;
+        }
+
+        const step = status?.onboardingStep;
+        if (step === 'questionnaire') {
+          router.push('/questionnaire');
+          return;
+        }
+
+        if (step === 'simulations') {
+          router.push('/simulations/new');
+          return;
+        }
+
+        if (step === 'approval') {
+          router.push('/profile/approve');
+          return;
+        }
+
+        // Fallback
+        router.push('/dashboard');
       } catch (err: unknown) {
         const errorMsg =
           err instanceof Error ? err.message : "Login failed. Please try again.";
@@ -153,8 +177,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await api.user.getProfile();
         setUser(profile as User);
 
-        // Redirect to dashboard
-        router.push("/dashboard");
+        // Redirect to questionnaire for new users (onboarding)
+        const nextStep = (response as any)?.data?.nextStep;
+        router.push(nextStep === 'questionnaire' ? '/questionnaire' : '/dashboard');
       } catch (err: unknown) {
         const errorMsg =
           err instanceof Error ? err.message : "Registration failed. Please try again.";

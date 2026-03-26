@@ -3,12 +3,12 @@
  * Re-analyze all completed simulations and merge patterns
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
-import { extractPatternsWithQualityCheck } from '@/lib/ai/extract-patterns';
-import { mergePatternsWithConfidence } from '@/lib/ai/merge-patterns';
-import { calculateCompletionPercentage } from '@/lib/utils/completion';
+import { extractPatternsFromSimulation } from '@/lib/ai/extract-patterns';
+import { mergePatterns, mergeOwnerVoiceExamples } from '@/lib/ai/merge-patterns';
+import { calculateProfileCompletion } from '@/lib/utils/profile-completion';
 import { v4 as uuidv4 } from 'uuid';
 
 async function handler(req: AuthenticatedRequest) {
@@ -66,31 +66,31 @@ async function handler(req: AuthenticatedRequest) {
 
     const industry = profile.industry || 'business_consulting';
 
-    // 3. Extract patterns from each simulation and merge with confidence
+    // 3. Extract patterns from each simulation, bypassing the quality gate
+    // (re-extraction is a manual action — we extract from all completed sims)
     let mergedPatterns: any = null;
+    let mergedVoiceExamples: any = profile.ownerVoiceExamples ?? null;
     let successCount = 0;
 
     for (const simulation of completedSimulations) {
       if (simulation.messages.length < 4) continue;
 
       try {
-        const { patterns: extracted, qualityReport } = await extractPatternsWithQualityCheck(
+        const extracted = await extractPatternsFromSimulation(
           simulation.messages,
           industry,
           simulation.scenarioType
         );
 
-        // Only include patterns that passed quality check
-        if (extracted && qualityReport.completenessScore >= 60) {
-          successCount++;
-          mergedPatterns = mergePatternsWithConfidence(mergedPatterns, extracted, successCount);
+        successCount++;
+        mergedPatterns = mergePatterns(mergedPatterns, extracted);
+
+        const newVoice = (extracted as any).verbatimVoiceExamples ?? null;
+        if (newVoice) {
+          mergedVoiceExamples = mergeOwnerVoiceExamples(mergedVoiceExamples, newVoice);
         }
       } catch (error) {
-        console.error(
-          `Failed to extract from simulation ${simulation.id}:`,
-          error
-        );
-        // Continue with next simulation
+        console.error(`Failed to extract from simulation ${simulation.id}:`, error);
         continue;
       }
     }
@@ -109,11 +109,20 @@ async function handler(req: AuthenticatedRequest) {
       );
     }
 
-    // 4. Calculate completion based on successful extractions
-    const simulationCount = successCount;
-    const completionPercentage = calculateCompletionPercentage(simulationCount);
+    // 4. Calculate completion using the depth-based algorithm (same as everywhere else)
+    const updatedProfileShape = {
+      ...profile,
+      communicationStyle: mergedPatterns.communicationStyle,
+      pricingLogic: mergedPatterns.pricingLogic,
+      qualificationCriteria: mergedPatterns.qualificationCriteria,
+      objectionHandling: mergedPatterns.objectionHandling,
+      decisionMakingPatterns: mergedPatterns.decisionMakingPatterns,
+      ownerVoiceExamples: mergedVoiceExamples,
+      simulationCount: successCount,
+    };
+    const completionPercentage = calculateProfileCompletion(updatedProfileShape).total;
 
-    // 5. Update profile
+    // 5. Update profile with merged data
     await prisma.businessProfile.update({
       where: { tenantId },
       data: {
@@ -122,13 +131,12 @@ async function handler(req: AuthenticatedRequest) {
         qualificationCriteria: mergedPatterns.qualificationCriteria,
         objectionHandling: mergedPatterns.objectionHandling,
         decisionMakingPatterns: mergedPatterns.decisionMakingPatterns,
-        knowledgeBase: mergedPatterns.knowledgeBase,
-
+        ownerVoiceExamples: mergedVoiceExamples as any,
+        simulationCount: successCount,
         completionPercentage,
-        simulationCount,
+        completionScore: completionPercentage,
         lastExtractedAt: new Date(),
         isComplete: completionPercentage >= 100,
-        completionScore: completionPercentage
       }
     });
 
@@ -138,7 +146,9 @@ async function handler(req: AuthenticatedRequest) {
         data: {
           extractedPatterns: mergedPatterns,
           completionPercentage,
-          simulationCount
+          simulationCount: successCount,
+          simulationsProcessed: successCount,
+          simulationsTotal: completedSimulations.length,
         },
         meta: { timestamp, requestId }
       },

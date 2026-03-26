@@ -199,6 +199,31 @@ export const api = {
   },
 
   /**
+   * Onboarding endpoints
+   */
+  onboarding: {
+    getStatus: async () => {
+      const response = await instance.get<
+        ApiResponse<{
+          onboardingComplete: boolean;
+          onboardingStep: string;
+          leadConversationsActive: boolean;
+          activatedAt: string | null;
+          hasProfile: boolean;
+          profile: null | {
+            id: string;
+            profileApprovalStatus: string;
+            completionPercentage: number;
+            simulationCount: number;
+          };
+        }>
+      >('/onboarding/status');
+
+      return response.data.data;
+    },
+  },
+
+  /**
    * Conversations endpoints
    */
   conversations: {

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 import { extractPatternsFromSimulation } from '@/lib/ai/extract-patterns';
-import { mergePatterns } from '@/lib/ai/merge-patterns';
+import { mergePatterns, mergeOwnerVoiceExamples, mergeBusinessFacts } from '@/lib/ai/merge-patterns';
 import {
   calculateCompletionPercentage,
   calculateQualityScore
@@ -111,6 +111,15 @@ async function handler(req: AuthenticatedRequest) {
     // 6. Merge with existing patterns
     const mergedPatterns = mergePatterns(existingPatterns, extractedPatterns);
 
+    // Phase 5: Merge verbatim voice examples and business facts
+    const newVoiceExamples = (extractedPatterns as any).verbatimVoiceExamples ?? null;
+    const newBusinessFacts = (extractedPatterns as any).businessFacts ?? null;
+    const mergedVoiceExamples = mergeOwnerVoiceExamples(
+      existingProfile?.ownerVoiceExamples as any ?? null,
+      newVoiceExamples
+    );
+    const mergedBusinessFacts = mergeBusinessFacts(null, newBusinessFacts);
+
     // 7. Calculate metrics
     const aiMessages = simulation.messages.filter(
       (m) => m.role === 'AI_CLIENT'
@@ -152,6 +161,17 @@ async function handler(req: AuthenticatedRequest) {
           objectionHandling: mergedPatterns.objectionHandling as any,
           decisionMakingPatterns: mergedPatterns.decisionMakingPatterns as any,
           knowledgeBase: mergedPatterns.knowledgeBase as any,
+
+          // Phase 5: Triple extraction fields
+          ownerVoiceExamples: mergedVoiceExamples as any,
+          ...(mergedBusinessFacts?.mentionedExperience && !existingProfile?.yearsExperience
+            ? { yearsExperience: parseInt(mergedBusinessFacts.mentionedExperience) || undefined }
+            : {}),
+
+          // Update completed scenarios list
+          completedScenarios: existingProfile
+            ? [...new Set([...existingProfile.completedScenarios, simulation.scenarioType])]
+            : [simulation.scenarioType],
 
           // Update metadata
           completionPercentage,

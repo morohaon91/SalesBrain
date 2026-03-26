@@ -45,6 +45,12 @@ model Tenant {
   emailNotifications Boolean @default(true)
   notificationEmail String?
 
+  // Onboarding State
+  onboardingComplete      Boolean  @default(false)
+  onboardingStep          String   @default("questionnaire")
+  leadConversationsActive Boolean  @default(false)
+  activatedAt             DateTime?
+
   // Relations
   users             User[]
   profiles          BusinessProfile[]
@@ -123,6 +129,14 @@ model BusinessProfile {
   typicalBudgetRange    String?
   commonClientQuestions String[]  @default([])
 
+  // Business Facts (from questionnaire + auto-extracted)
+  yearsExperience       Int?
+  serviceOfferings      String[]  @default([])
+  specializations       String[]  @default([])
+  certifications        String[]  @default([])
+  serviceArea           String?
+  teamSize              String?
+
   // ============================================
   // AUTO-EXTRACTED FIELDS (From Simulations, Read-Only)
   // ============================================
@@ -132,6 +146,24 @@ model BusinessProfile {
   qualificationCriteria Json?     @db.JsonB
   objectionHandling     Json?     @db.JsonB
   decisionMakingPatterns Json?    @db.JsonB
+
+  // Verbatim voice examples from simulations
+  ownerVoiceExamples    Json?     @db.JsonB
+
+  // ============================================
+  // PROFILE APPROVAL & GO-LIVE
+  // ============================================
+
+  profileApprovalStatus ProfileApprovalStatus @default(PENDING)
+  approvedAt            DateTime?
+  goLiveAt              DateTime?
+
+  // ============================================
+  // SIMULATION TRACKING
+  // ============================================
+
+  completedScenarios    String[]  @default([])
+  suggestedNextScenario String?
 
   // ============================================
   // PROFILE METADATA
@@ -174,12 +206,21 @@ model Simulation {
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Simulation Configuration
-  scenarioType      ScenarioType
+  scenarioType      String
   duration          Int      @default(0)
   status            SimulationStatus @default(IN_PROGRESS)
 
-  // AI Configuration
+  // AI Configuration (legacy, kept for backward compat)
   aiPersona         Json     @db.JsonB
+
+  // Gamified Persona (Phase 4+)
+  personaDetails    Json?    @db.JsonB
+  demonstratedPatterns String[] @default([])
+  liveScore         Int      @default(0)
+
+  // Owner Review
+  ownerReviewedAt   DateTime?
+  ownerApprovalStatus SimulationApprovalStatus @default(PENDING)
 
   // Messages
   messages          SimulationMessage[]
@@ -210,18 +251,26 @@ model SimulationMessage {
   @@index([simulationId])
 }
 
-enum ScenarioType {
-  PRICE_SENSITIVE
-  INDECISIVE
-  DEMANDING
-  TIME_PRESSURED
-  HIGH_BUDGET
-}
-
 enum SimulationStatus {
   IN_PROGRESS
   COMPLETED
   ABANDONED
+}
+
+enum ProfileApprovalStatus {
+  PENDING
+  READY
+  APPROVED
+  LIVE
+  PAUSED
+}
+
+enum SimulationApprovalStatus {
+  PENDING
+  EXTRACTED
+  APPROVED
+  PARTIAL
+  REJECTED
 }
 
 enum MessageRole {

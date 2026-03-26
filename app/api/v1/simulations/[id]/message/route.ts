@@ -1,13 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { withAuth, AuthenticatedRequest } from "@/lib/auth/middleware";
 import { createChatCompletion } from "@/lib/ai/client";
 import {
   generateSimulationPrompt,
-  generateUserPrompt,
 } from "@/lib/ai/prompts";
+import { getScenarioById } from "@/lib/templates/industry-scenarios";
+import { generateLiveFeedback } from "@/lib/simulations/live-feedback-generator";
+import { calculateLiveQualityScore } from "@/lib/simulations/quality-scorer";
 import { v4 as uuidv4 } from "uuid";
+
+// Legacy enum types — anything not in this list is treated as a new-style scenarioId
+const LEGACY_SCENARIO_TYPES = new Set(['PRICE_SENSITIVE', 'INDECISIVE', 'DEMANDING', 'TIME_PRESSURED', 'HIGH_BUDGET']);
 
 /**
  * Request validation schema
@@ -171,12 +176,56 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       },
     });
 
-    // FIX 2: Pass businessProfile to prompt generator instead of tenantId
-    // This provides industry context so AI stays in correct persona
-    const systemPrompt = await generateSimulationPrompt(
-      simulation.scenarioType as any,
-      businessProfile
-    );
+    // Build system prompt — branch on legacy vs new-style scenario ID
+    let systemPrompt: string;
+    if (LEGACY_SCENARIO_TYPES.has(simulation.scenarioType)) {
+      // Old enum path — full industry-template aware prompt
+      systemPrompt = await generateSimulationPrompt(
+        simulation.scenarioType as any,
+        businessProfile
+      );
+    } else {
+      // New-style scenario ID (e.g. "construction_premium_skeptic")
+      // Rebuild the persona-aware prompt with owner context so the AI
+      // never drifts to a different industry on follow-up turns
+      const scenario = getScenarioById(simulation.scenarioType);
+      const ownerIndustry = businessProfile.industry ?? (scenario?.industry ?? 'your industry');
+      const ownerService = (businessProfile as any).serviceDescription ?? `professional ${ownerIndustry} services`;
+      const ownerTargetClient = (businessProfile as any).targetClientType ?? 'businesses and homeowners';
+      const ownerBudgetRange = (businessProfile as any).typicalBudgetRange ?? 'varies by project';
+
+      // Reconstruct persona details from saved personaDetails or fall back to generic
+      const personaDetails = simulation.personaDetails as Record<string, any> | null;
+      const personaName = personaDetails?.name ?? 'the client';
+      const personaAge = personaDetails?.age ?? '';
+      const personality = Array.isArray(personaDetails?.personality) ? personaDetails.personality.join(', ') : '';
+      const painPoints = Array.isArray(personaDetails?.painPoints) ? personaDetails.painPoints.join(', ') : '';
+      const budgetMin = personaDetails?.budget?.min;
+      const budgetMax = personaDetails?.budget?.max;
+      const timeline = personaDetails?.timeline ?? '';
+
+      systemPrompt = `You are roleplaying as a potential CLIENT named ${personaName}${personaAge ? `, age ${personaAge}` : ''} reaching out to a ${ownerIndustry} professional.
+
+THE BUSINESS YOU ARE CONTACTING:
+- Industry: ${ownerIndustry}
+- What they do: ${ownerService}
+- Their typical clients: ${ownerTargetClient}
+- Typical budget range they work with: ${ownerBudgetRange}
+
+YOUR CLIENT PERSONA:
+${scenario ? `- Scenario: ${scenario.name}\n- Your situation: ${scenario.teaser.replace('Incoming lead: ', '')}` : ''}
+${personality ? `- Personality: ${personality}` : ''}
+${painPoints ? `- Main concerns: ${painPoints}` : ''}
+${budgetMin !== undefined ? `- Budget: $${Number(budgetMin).toLocaleString()} - $${Number(budgetMax ?? budgetMin).toLocaleString()}` : ''}
+${timeline ? `- Timeline: ${timeline}` : ''}
+
+CRITICAL RULES:
+- You are ALWAYS a client contacting a ${ownerIndustry} professional — NEVER change this industry
+- Stay in character as ${personaName} for the entire conversation
+- Do NOT switch industries or invent a different type of business
+- Keep responses conversational (2-4 sentences max)
+- React naturally to the business owner's last message`;
+    }
 
     // Build conversation history for API
     const conversationHistory = simulation.messages.map((msg) => ({
@@ -212,13 +261,29 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       },
     });
 
-    // Update simulation duration
+    // Update simulation: duration + live feedback + quality score
     const createdAt = new Date(simulation.createdAt);
     const duration = Math.floor((Date.now() - createdAt.getTime()) / 1000);
 
+    // Detect newly demonstrated patterns from the owner's message
+    const newPatterns = generateLiveFeedback(data.content, simulation.demonstratedPatterns ?? []);
+    const allPatterns = [...(simulation.demonstratedPatterns ?? []), ...newPatterns];
+
+    // Calculate updated quality score
+    const allMessages = [
+      ...simulation.messages,
+      { role: 'BUSINESS_OWNER', content: data.content },
+      { role: 'AI_CLIENT', content: aiResponse.content },
+    ];
+    const liveScore = calculateLiveQualityScore(allMessages, null);
+
     await prisma.simulation.update({
       where: { id: simulationId },
-      data: { duration },
+      data: {
+        duration,
+        demonstratedPatterns: allPatterns,
+        liveScore,
+      },
     });
 
     return NextResponse.json(
@@ -235,6 +300,10 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
             latencyMs: aiResponse.latencyMs,
             tokensUsed: aiResponse.tokensUsed,
           },
+          // Live gamification data
+          newPatterns,
+          liveScore,
+          demonstratedPatterns: allPatterns,
         },
         meta: { timestamp, requestId },
       },
