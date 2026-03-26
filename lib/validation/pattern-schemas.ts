@@ -69,7 +69,7 @@ export const ConversationQualitySchema = z.object({
   unansweredQuestions: z.array(z.string()),
   hasResolution: z.boolean(),
   resolutionType: z.enum(['accepted', 'rejected', 'scheduled_followup', 'none']),
-  completenessScore: z.number().min(0).max(100),
+  completenessScore: z.coerce.number().min(0).max(100),
   missingPatterns: z.array(z.string()).optional(),
   conversationFlow: z.enum(['smooth', 'interrupted', 'one_sided', 'incomplete']),
   overallConfidence: z.enum(['high', 'medium', 'low'])

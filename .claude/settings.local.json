@@ -36,7 +36,10 @@
       "Bash(npx tsc:*)",
       "Bash(npx next:*)",
       "Bash(cd:*)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(ls -la /c/Users/Mor/Desktop/Repos/SalesBrain/app/\\\\\\(dashboard\\\\\\)/profile/validate/)",
+      "Bash(cat:*)",
+      "Bash(ls -la app/\\\\\\(dashboard\\\\\\)/profile/validate/page.tsx app/api/v1/profile/validate/route.ts app/api/v1/simulations/[id]/complete/route.ts app/api/v1/simulations/[id]/extract/route.ts lib/ai/merge-patterns.ts components/simulation/QualityIndicator.tsx components/simulation/ScenarioGuide.tsx)"
     ]
   }
 }

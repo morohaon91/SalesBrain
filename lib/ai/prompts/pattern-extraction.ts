@@ -123,6 +123,45 @@ Owner says: "we are profssionals with 15 years exprince"
 ❌ WRONG: keyPhrases: ["we are profssionals with 15 years exprince"]
 ✅ RIGHT: keyPhrases: ["emphasizes professionalism and extensive experience"]
 
+Example 4 - Confidence Assessment:
+Owner says: "We typically work with budgets around $50k" (stated once, confidently)
+
+✅ RIGHT:
+   minBudget: 50000
+   confidence.minBudget: "high"
+   (Owner stated this clearly)
+
+❌ WRONG:
+   confidence.minBudget: "medium"
+   (Owner demonstrated confidence, so should be "high")
+
+Example 5 - Red Flags vs Deal-Breakers:
+Customer: "We've had bad experiences with [vendor]"
+Owner: "Oh, I've heard about them. We actually beat their pricing by 30%"
+
+✅ RIGHT:
+   redFlag: "not_demonstrated" (owner didn't express hesitation)
+   greenFlags: ["customer has comparative interest", "owner positioned value"]
+   (Owner showed enthusiasm, not concern)
+
+Example 6 - Objection Handling Pattern:
+Customer: "Your timeline is too aggressive"
+Owner: "What if we break it into phases? We can deliver phase 1 in 2 weeks"
+
+✅ RIGHT:
+   timelineObjection: "proposes phased approach to address timeline concerns"
+   confidence.timelineObjection: "high"
+   (Owner demonstrated clear strategy)
+
+Example 7 - Missing Patterns:
+Owner never discusses pricing, never rejects anything, accepts every proposal
+
+✅ RIGHT:
+   pricingLogic.dealBreakers: ["not_demonstrated"]
+   decisionMakingPatterns.whenToSayNo: ["not_demonstrated"]
+   extractionNotes.weaknesses: ["Owner showed no price discipline", "Owner accepted all terms without negotiation"]
+   (Document what WASN'T demonstrated, don't make it up)
+
 CONVERSATION TRANSCRIPT:
 ${transcript}
 

@@ -168,6 +168,7 @@ model Simulation {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   completedAt       DateTime?
+  validatedAt       DateTime?
 
   tenantId          String
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)

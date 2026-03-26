@@ -6,13 +6,18 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { SimulationChat } from '@/components/simulations/simulation-chat';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { ScenarioGuide } from '@/components/simulation/ScenarioGuide';
+import { ArrowLeft, Loader2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { checkSimulationQuality } from '@/lib/simulations/quality-checker';
 
 export default function SimulationDetailPage() {
   const router = useRouter();
   const params = useParams();
   const simulationId = params.id as string;
   const [completeError, setCompleteError] = useState<string | null>(null);
+  const [showCompletionChecklist, setShowCompletionChecklist] = useState(false);
+  const [qualityReport, setQualityReport] = useState<any>(null);
+  const [isCheckingQuality, setIsCheckingQuality] = useState(false);
 
   // Fetch simulation data
   const {
@@ -30,7 +35,8 @@ export default function SimulationDetailPage() {
   const completeSimulation = useMutation({
     mutationFn: () => api.simulations.complete(simulationId),
     onSuccess: () => {
-      router.push('/simulations');
+      // Redirect to feedback page instead of simulations list
+      router.push(`/simulations/${simulationId}/feedback`);
     },
     onError: (error: any) => {
       const message =
@@ -38,8 +44,28 @@ export default function SimulationDetailPage() {
         error.message ||
         'Failed to complete simulation';
       setCompleteError(message);
+      setShowCompletionChecklist(false);
     },
   });
+
+  const handleCompleteClick = async () => {
+    if (!simulation?.messages) return;
+
+    try {
+      setIsCheckingQuality(true);
+      const report = checkSimulationQuality(
+        simulation.messages,
+        simulation.scenarioType
+      );
+      setQualityReport(report);
+      setShowCompletionChecklist(true);
+    } catch (error) {
+      console.error('Quality check error:', error);
+      setCompleteError('Failed to check quality. Try again.');
+    } finally {
+      setIsCheckingQuality(false);
+    }
+  };
 
   if (isSimulationLoading) {
     return (
@@ -108,15 +134,15 @@ export default function SimulationDetailPage() {
 
         {simulation.status === 'IN_PROGRESS' && (
           <Button
-            onClick={() => completeSimulation.mutate()}
-            disabled={completeSimulation.isPending}
+            onClick={handleCompleteClick}
+            disabled={isCheckingQuality || completeSimulation.isPending}
             variant="outline"
             className="text-danger-600 border-danger-300 hover:bg-danger-50"
           >
-            {completeSimulation.isPending ? (
+            {isCheckingQuality || completeSimulation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Completing...
+                {isCheckingQuality ? 'Checking Quality...' : 'Completing...'}
               </>
             ) : (
               'Complete Simulation'
@@ -239,6 +265,20 @@ export default function SimulationDetailPage() {
             </div>
           </div>
 
+          {/* Scenario Guide */}
+          {simulation.scenarioType && (
+            <ScenarioGuide
+              scenarioType={simulation.scenarioType}
+              industry="business_consulting"
+              guidelines={[
+                simulation.status === 'IN_PROGRESS'
+                  ? 'Focus on understanding this client type'
+                  : 'Review your approach for this scenario type'
+              ]}
+              keyTopics={simulation.aiPersona?.painPoints || []}
+            />
+          )}
+
           {/* Tips */}
           <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
             <h4 className="font-medium text-primary-900 mb-2">💡 Pro Tip</h4>
@@ -250,6 +290,157 @@ export default function SimulationDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Completion Checklist Modal */}
+      {showCompletionChecklist && qualityReport && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-lg">
+            <div className="p-6 space-y-4">
+              {/* Header */}
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Ready to Complete?
+                </h2>
+                <p className="text-gray-600">
+                  Let's review your simulation quality before finishing
+                </p>
+              </div>
+
+              {/* Quality Score */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-gray-600">
+                    Quality Score
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className={`text-3xl font-bold ${
+                        qualityReport.completenessScore >= 60
+                          ? 'text-green-600'
+                          : 'text-orange-600'
+                      }`}
+                    >
+                      {qualityReport.completenessScore}%
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      {qualityReport.completenessScore >= 80
+                        ? 'Excellent'
+                        : qualityReport.completenessScore >= 60
+                        ? 'Good'
+                        : 'Needs Improvement'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all ${
+                      qualityReport.completenessScore >= 80
+                        ? 'bg-green-600'
+                        : qualityReport.completenessScore >= 60
+                        ? 'bg-blue-600'
+                        : 'bg-orange-600'
+                    }`}
+                    style={{
+                      width: `${qualityReport.completenessScore}%`,
+                    }}
+                  />
+                </div>
+
+                <p className="text-sm text-gray-700">
+                  {qualityReport.recommendation}
+                </p>
+              </div>
+
+              {/* Feedback Summary */}
+              {qualityReport.feedback && (
+                <div className="space-y-3">
+                  {qualityReport.feedback.strengths?.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <p className="text-sm font-medium text-gray-900">
+                          Strengths
+                        </p>
+                      </div>
+                      <ul className="space-y-1 ml-6">
+                        {qualityReport.feedback.strengths
+                          .slice(0, 2)
+                          .map((strength: string, i: number) => (
+                            <li
+                              key={i}
+                              className="text-xs text-gray-600 flex items-start gap-2"
+                            >
+                              <span className="text-green-600 flex-shrink-0">
+                                ✓
+                              </span>
+                              <span>{strength}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {qualityReport.feedback.suggestions?.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-orange-600" />
+                        <p className="text-sm font-medium text-gray-900">
+                          Suggestions
+                        </p>
+                      </div>
+                      <ul className="space-y-1 ml-6">
+                        {qualityReport.feedback.suggestions
+                          .slice(0, 2)
+                          .map((suggestion: string, i: number) => (
+                            <li
+                              key={i}
+                              className="text-xs text-gray-600 flex items-start gap-2"
+                            >
+                              <span className="text-blue-600 flex-shrink-0">
+                                💡
+                              </span>
+                              <span>{suggestion}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCompletionChecklist(false)}
+                  className="flex-1"
+                >
+                  Continue Conversation
+                </Button>
+                <Button
+                  onClick={() => completeSimulation.mutate()}
+                  disabled={completeSimulation.isPending}
+                  className={`flex-1 ${
+                    qualityReport.completenessScore >= 60
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-orange-600 hover:bg-orange-700'
+                  }`}
+                >
+                  {completeSimulation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Completing...
+                    </>
+                  ) : (
+                    'Complete Anyway'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,8 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
-import { extractPatternsFromSimulation } from '@/lib/ai/extract-patterns';
-import { mergePatterns } from '@/lib/ai/merge-patterns';
+import { extractPatternsWithQualityCheck } from '@/lib/ai/extract-patterns';
+import { mergePatternsWithConfidence } from '@/lib/ai/merge-patterns';
 import { calculateCompletionPercentage } from '@/lib/utils/completion';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -66,20 +66,25 @@ async function handler(req: AuthenticatedRequest) {
 
     const industry = profile.industry || 'business_consulting';
 
-    // 3. Extract patterns from each simulation and merge
+    // 3. Extract patterns from each simulation and merge with confidence
     let mergedPatterns: any = null;
+    let successCount = 0;
 
     for (const simulation of completedSimulations) {
       if (simulation.messages.length < 4) continue;
 
       try {
-        const extracted = await extractPatternsFromSimulation(
+        const { patterns: extracted, qualityReport } = await extractPatternsWithQualityCheck(
           simulation.messages,
           industry,
           simulation.scenarioType
         );
 
-        mergedPatterns = mergePatterns(mergedPatterns, extracted);
+        // Only include patterns that passed quality check
+        if (extracted && qualityReport.completenessScore >= 60) {
+          successCount++;
+          mergedPatterns = mergePatternsWithConfidence(mergedPatterns, extracted, successCount);
+        }
       } catch (error) {
         console.error(
           `Failed to extract from simulation ${simulation.id}:`,
@@ -90,7 +95,7 @@ async function handler(req: AuthenticatedRequest) {
       }
     }
 
-    if (!mergedPatterns) {
+    if (!mergedPatterns || successCount === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -104,8 +109,8 @@ async function handler(req: AuthenticatedRequest) {
       );
     }
 
-    // 4. Calculate completion
-    const simulationCount = completedSimulations.length;
+    // 4. Calculate completion based on successful extractions
+    const simulationCount = successCount;
     const completionPercentage = calculateCompletionPercentage(simulationCount);
 
     // 5. Update profile

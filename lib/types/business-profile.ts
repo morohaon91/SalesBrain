@@ -12,6 +12,11 @@ export interface CommunicationStyle {
   keyPhrases: string[];
   formality: 'formal' | 'conversational' | 'casual';
   responsePattern?: string; // How owner typically structures responses
+  confidence?: {
+    tone: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    style: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    formality: 'high' | 'medium' | 'low' | 'not_demonstrated';
+  };
 }
 
 /**
@@ -24,6 +29,12 @@ export interface PricingLogic {
   flexibilityFactors: string[];  // e.g., ["timeline", "scope", "payment_terms"]
   dealBreakers: string[];        // e.g., ["budget_below_X", "unrealistic_timeline"]
   pricingConfidence?: string;    // How confidently owner discusses pricing
+  confidence?: {
+    minBudget: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    maxBudget: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    dealBreakers: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    flexibilityFactors: 'high' | 'medium' | 'low' | 'not_demonstrated';
+  };
 }
 
 /**
@@ -51,7 +62,14 @@ export interface ObjectionHandling {
   competitorObjection?: string;
   qualityObjection?: string;
   scopeObjection?: string;
-  [key: string]: string | undefined;  // Allow custom objection types
+  confidence?: {
+    priceObjection: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    timelineObjection: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    competitorObjection: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    qualityObjection: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    scopeObjection: 'high' | 'medium' | 'low' | 'not_demonstrated';
+  };
+  [key: string]: any;  // Allow custom objection types
 }
 
 /**
@@ -78,6 +96,10 @@ export interface KnowledgeBase {
     answer: string;
     category?: string;
   }>;
+  confidence?: {
+    expertiseAreas: 'high' | 'medium' | 'low' | 'not_demonstrated';
+    commonAnswers: 'high' | 'medium' | 'low' | 'not_demonstrated';
+  };
 }
 
 /**

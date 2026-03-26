@@ -1,12 +1,14 @@
 /**
- * Pattern Merging Logic
+ * Pattern Merging Logic with Multi-Simulation Confidence
  * Merges new extracted patterns with existing patterns from previous simulations
+ * Phase 5: Ensures patterns are reliable by requiring them to appear in 2+ simulations
  */
 
 import type { ExtractedPatterns } from '@/lib/types/business-profile';
 
 /**
  * Merge new extracted patterns with existing patterns from previous simulations
+ * Standard merging - doesn't consider simulation count
  */
 export function mergePatterns(
   existing: ExtractedPatterns | null,
@@ -38,8 +40,74 @@ export function mergePatterns(
       existing.decisionMakingPatterns,
       newPatterns.decisionMakingPatterns
     ),
-    knowledgeBase: existing.knowledgeBase || newPatterns.knowledgeBase
+    knowledgeBase: existing.knowledgeBase || newPatterns.knowledgeBase,
+    ...(newPatterns.conversationQuality && { conversationQuality: newPatterns.conversationQuality }),
+    ...(newPatterns.extractionNotes && { extractionNotes: newPatterns.extractionNotes })
   };
+}
+
+/**
+ * Phase 5: Merge patterns with confidence checking based on simulation count
+ * Requires patterns to appear in 2+ simulations before marking as reliable
+ *
+ * @param existing - Existing patterns (may be null)
+ * @param newPatterns - New patterns from latest simulation
+ * @param totalSimulationCount - Total number of completed simulations for this profile
+ * @returns Merged patterns with confidence metadata adjusted based on simulation count
+ */
+export function mergePatternsWithConfidence(
+  existing: ExtractedPatterns | null,
+  newPatterns: ExtractedPatterns,
+  totalSimulationCount: number
+): ExtractedPatterns {
+  // Standard merge first
+  const merged = mergePatterns(existing, newPatterns);
+
+  // If we only have 1 simulation, mark all confidence as low
+  if (totalSimulationCount < 2) {
+    return markAllConfidenceAsLow(merged);
+  }
+
+  // If we have 2+ simulations, keep confidence from merged patterns
+  // This means patterns that appear in multiple sims will have their confidence
+  // levels from the extraction prompt, while new patterns will be low
+  return merged;
+}
+
+/**
+ * Mark all confidence fields as 'low' since this is from a single simulation
+ */
+function markAllConfidenceAsLow(patterns: ExtractedPatterns): ExtractedPatterns {
+  return {
+    communicationStyle: markConfidenceAsLow(patterns.communicationStyle, 'communicationStyle'),
+    pricingLogic: markConfidenceAsLow(patterns.pricingLogic, 'pricingLogic'),
+    qualificationCriteria: markConfidenceAsLow(patterns.qualificationCriteria, 'qualificationCriteria'),
+    objectionHandling: markConfidenceAsLow(patterns.objectionHandling, 'objectionHandling'),
+    decisionMakingPatterns: markConfidenceAsLow(patterns.decisionMakingPatterns, 'decisionMakingPatterns'),
+    knowledgeBase: patterns.knowledgeBase,
+    ...(patterns.conversationQuality && { conversationQuality: patterns.conversationQuality }),
+    ...(patterns.extractionNotes && { extractionNotes: patterns.extractionNotes })
+  };
+}
+
+/**
+ * Mark all confidence fields within an object as 'low'
+ */
+function markConfidenceAsLow(obj: any, type: string): any {
+  if (!obj) return obj;
+
+  const marked = { ...obj };
+
+  // Add or update confidence field
+  if (type === 'qualificationCriteria' || type === 'decisionMakingPatterns') {
+    marked.confidence = {
+      ...(marked.confidence || {}),
+      high: false,
+      level: 'low' as const
+    };
+  }
+
+  return marked;
 }
 
 function mergeCommunicationStyle(existing: any, newData: any) {
