@@ -2,9 +2,43 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/shared/message-bubble";
-import { ArrowLeft, Flag } from "lucide-react";
+import { ArrowLeft, Flag, Loader2, AlertCircle } from "lucide-react";
+
+type ConversationDetail = {
+  id: string;
+  leadName: string;
+  leadEmail: string;
+  status: string;
+  qualificationStatus: string;
+  leadScore: number;
+  messageCount: number;
+  duration: number;
+  createdAt: string;
+  summary: string;
+  messages: Array<{
+    id: string;
+    role: "user" | "assistant" | "system";
+    content: string;
+    createdAt: string;
+  }>;
+};
+
+function qualificationLabel(status: string): string {
+  switch (status) {
+    case "QUALIFIED":
+      return "Qualified";
+    case "UNQUALIFIED":
+      return "Unqualified";
+    case "MAYBE":
+      return "Maybe";
+    default:
+      return "Unknown";
+  }
+}
 
 export default function ConversationDetailPage() {
   const router = useRouter();
@@ -12,64 +46,49 @@ export default function ConversationDetailPage() {
   const conversationId = params.id as string;
   const [isQualified, setIsQualified] = useState(false);
 
-  // Mock conversation data
-  const conversation = {
-    id: conversationId,
-    leadName: "Sarah Johnson",
-    leadEmail: "sarah@acmecorp.com",
-    status: "ENDED",
-    qualificationStatus: "QUALIFIED",
-    leadScore: 85,
-    messageCount: 12,
-    duration: 1245,
-    createdAt: "2026-03-17T10:30:00Z",
-    summary:
-      "Lead showed strong interest in our premium tier. Budget approved, timeline 2-3 months.",
-    messages: [
-      {
-        id: "1",
-        role: "assistant",
-        content:
-          "Hello Sarah! Thanks for reaching out. How can I help you today?",
-        createdAt: "2026-03-17T10:30:00Z",
-      },
-      {
-        id: "2",
-        role: "user",
-        content:
-          "Hi! I'm looking for a solution to help our team with lead qualification.",
-        createdAt: "2026-03-17T10:31:00Z",
-      },
-      {
-        id: "3",
-        role: "assistant",
-        content:
-          "Great! You've come to the right place. Can you tell me about your current process and main pain points?",
-        createdAt: "2026-03-17T10:32:00Z",
-      },
-      {
-        id: "4",
-        role: "user",
-        content:
-          "We currently use a manual spreadsheet. It's time-consuming and error-prone. We need AI to qualify leads automatically.",
-        createdAt: "2026-03-17T10:33:00Z",
-      },
-      {
-        id: "5",
-        role: "assistant",
-        content:
-          "I completely understand. Our platform can analyze conversations and qualify leads in real-time. How many leads do you handle monthly?",
-        createdAt: "2026-03-17T10:34:00Z",
-      },
-      {
-        id: "6",
-        role: "user",
-        content:
-          "Around 200-300 inbound leads per month. What's your pricing structure?",
-        createdAt: "2026-03-17T10:35:00Z",
-      },
-    ],
-  };
+  const {
+    data: conversation,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["conversation", conversationId],
+    queryFn: () => api.conversations.get(conversationId) as Promise<ConversationDetail>,
+    enabled: !!conversationId,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+
+  if (isLoading || (!conversation && !error)) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error || !conversation) {
+    return (
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 text-gray-700"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-danger-900">Could not load conversation</p>
+            <p className="text-sm text-danger-700 mt-1">
+              {error instanceof Error ? error.message : "It may have been removed or you may not have access."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -77,6 +96,7 @@ export default function ConversationDetailPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3 min-w-0">
           <button
+            type="button"
             onClick={() => router.back()}
             className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
@@ -144,14 +164,18 @@ export default function ConversationDetailPage() {
               Conversation
             </h3>
 
-            {conversation.messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                role={msg.role as "user" | "assistant"}
-                content={msg.content}
-                timestamp={msg.createdAt}
-              />
-            ))}
+            {conversation.messages.length === 0 ? (
+              <p className="text-sm text-gray-500">No messages in this thread yet.</p>
+            ) : (
+              conversation.messages.map((msg) => (
+                <MessageBubble
+                  key={msg.id}
+                  role={msg.role}
+                  content={msg.content}
+                  timestamp={msg.createdAt}
+                />
+              ))
+            )}
           </div>
         </div>
 
@@ -175,19 +199,9 @@ export default function ConversationDetailPage() {
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary-600"
-                    style={{ width: `${conversation.leadScore}%` }}
+                    style={{ width: `${Math.min(100, Math.max(0, conversation.leadScore))}%` }}
                   />
                 </div>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200 space-y-2">
-                <p className="text-xs font-medium text-gray-600">Indicators:</p>
-                <ul className="text-xs text-gray-600 space-y-1">
-                  <li>✓ Budget approved</li>
-                  <li>✓ Timeline: 2-3 months</li>
-                  <li>✓ Strong interest</li>
-                  <li>✗ Not urgent</li>
-                </ul>
               </div>
             </div>
           </div>
@@ -200,22 +214,14 @@ export default function ConversationDetailPage() {
             <div className="space-y-3">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-2">Status</p>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-success-100 text-success-800">
-                  Qualified
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                  {qualificationLabel(conversation.qualificationStatus)}
                 </span>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">
-                  Recommendation
-                </p>
-                <p className="text-sm text-gray-900">
-                  Contact immediately - high-value prospect
-                </p>
               </div>
 
               <div className="pt-3">
                 <Button
+                  type="button"
                   onClick={() => setIsQualified(!isQualified)}
                   className="w-full bg-success-600 hover:bg-success-700 text-white"
                 >
@@ -231,9 +237,9 @@ export default function ConversationDetailPage() {
               Owner Notes
             </h3>
             <textarea
-              defaultValue="Follow up with pricing proposal next week."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={4}
+              placeholder="Add notes for your team…"
             />
             <Button className="w-full mt-3 bg-primary-600 hover:bg-primary-700 text-white">
               Save Notes

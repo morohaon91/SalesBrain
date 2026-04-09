@@ -36,54 +36,6 @@ interface Lead {
   ownerNotes?: string;
 }
 
-// Fallback mock data
-const mockLeads: Lead[] = [
-  {
-    id: "lead-001",
-    name: "Sarah Johnson",
-    email: "sarah@startup.com",
-    company: "TechStart Inc",
-    phone: "+1-555-0123",
-    status: "NEW",
-    qualificationScore: 85,
-    budget: "$10k-25k",
-    timeline: "3-6 months",
-    conversationsCount: 1,
-    firstContactAt: "2026-03-17T09:15:00Z",
-    ownerViewed: true,
-    ownerNotes: "High potential, follow up this week",
-  },
-  {
-    id: "lead-002",
-    name: "Michael Chen",
-    email: "michael@techco.com",
-    company: "Tech Solutions Corp",
-    phone: "+1-555-0456",
-    status: "CONTACTED",
-    qualificationScore: 72,
-    budget: "$5k-15k",
-    timeline: "1-3 months",
-    conversationsCount: 2,
-    firstContactAt: "2026-03-16T14:30:00Z",
-    ownerViewed: true,
-    ownerNotes: "Budget conscious but interested",
-  },
-  {
-    id: "lead-003",
-    name: "Emma Davis",
-    email: "emma@consultancy.io",
-    company: "Consultancy Partners",
-    phone: "+1-555-0789",
-    status: "QUALIFIED",
-    qualificationScore: 45,
-    budget: "$25k+",
-    timeline: "6-12 months",
-    conversationsCount: 1,
-    firstContactAt: "2026-03-16T10:00:00Z",
-    ownerViewed: false,
-    ownerNotes: "",
-  },
-];
 
 /**
  * Status badge component

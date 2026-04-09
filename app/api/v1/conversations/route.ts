@@ -70,6 +70,8 @@ export const GET = withAuth(
       // Build where clause
       const where: any = {
         tenantId,
+        // Exclude empty conversations (no messages = widget opened but lead never typed)
+        messages: { some: {} },
       };
 
       if (status) {

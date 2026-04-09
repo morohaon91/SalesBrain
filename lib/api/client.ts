@@ -236,7 +236,7 @@ export const api = {
 
     get: async (id: string) => {
       const response = await instance.get<ApiResponse<unknown>>(`/conversations/${id}`);
-      return response.data;
+      return response.data.data;
     },
 
     review: async (id: string, data: Record<string, unknown>) => {
@@ -244,6 +244,11 @@ export const api = {
         `/conversations/${id}/review`,
         data
       );
+      return response.data;
+    },
+
+    reanalyze: async (id: string) => {
+      const response = await instance.post<ApiResponse<unknown>>(`/conversations/${id}/reanalyze`);
       return response.data;
     },
   },

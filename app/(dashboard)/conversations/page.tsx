@@ -1,20 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import {
   Search,
   MessageSquare,
-  Filter,
   ChevronRight,
   Zap,
   Clock,
   CheckCircle2,
   AlertCircle,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,57 +32,6 @@ interface Conversation {
   summary: string;
 }
 
-// Fallback mock data
-const mockConversations: Conversation[] = [
-  {
-    id: "conv-001",
-    leadName: "Sarah Johnson",
-    leadEmail: "sarah@startup.com",
-    status: "ENDED",
-    qualificationStatus: "QUALIFIED",
-    leadScore: 85,
-    messageCount: 15,
-    duration: 480,
-    createdAt: "2026-03-17T09:15:00Z",
-    summary: "Interested in 3-month consulting package",
-  },
-  {
-    id: "conv-002",
-    leadName: "Michael Chen",
-    leadEmail: "michael@techco.com",
-    status: "ENDED",
-    qualificationStatus: "QUALIFIED",
-    leadScore: 72,
-    messageCount: 12,
-    duration: 360,
-    createdAt: "2026-03-16T14:30:00Z",
-    summary: "Budget constraints but interested in features",
-  },
-  {
-    id: "conv-003",
-    leadName: "Emma Davis",
-    leadEmail: "emma@consultancy.io",
-    status: "ACTIVE",
-    qualificationStatus: "MAYBE",
-    leadScore: 45,
-    messageCount: 8,
-    duration: 240,
-    createdAt: "2026-03-16T10:00:00Z",
-    summary: "Still evaluating options",
-  },
-  {
-    id: "conv-004",
-    leadName: "James Wilson",
-    leadEmail: "james@corp.com",
-    status: "ENDED",
-    qualificationStatus: "UNQUALIFIED",
-    leadScore: 22,
-    messageCount: 5,
-    duration: 120,
-    createdAt: "2026-03-15T16:45:00Z",
-    summary: "Looking for different solution",
-  },
-];
 
 /**
  * Status badge component
@@ -111,18 +60,20 @@ function StatusBadge({
 function QualificationBadge({
   status,
 }: {
-  status: "QUALIFIED" | "UNQUALIFIED" | "MAYBE";
+  status: "QUALIFIED" | "UNQUALIFIED" | "MAYBE" | "UNKNOWN";
 }) {
   const styles = {
     QUALIFIED: "bg-success-100 text-success-800 border-success-300",
     UNQUALIFIED: "bg-danger-100 text-danger-800 border-danger-300",
     MAYBE: "bg-warning-100 text-warning-800 border-warning-300",
+    UNKNOWN: "bg-gray-100 text-gray-800 border-gray-300",
   };
 
   const icons = {
     QUALIFIED: <CheckCircle2 className="w-4 h-4" />,
     UNQUALIFIED: <AlertCircle className="w-4 h-4" />,
     MAYBE: <Zap className="w-4 h-4" />,
+    UNKNOWN: <MessageSquare className="w-4 h-4" />,
   };
 
   return (
@@ -138,9 +89,23 @@ function QualificationBadge({
  */
 export default function ConversationsPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterQualification, setFilterQualification] = useState<string>('ALL');
+  const [reanalyzingId, setReanalyzingId] = useState<string | null>(null);
+
+  const handleReanalyze = async (e: React.MouseEvent, convId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setReanalyzingId(convId);
+    try {
+      await api.conversations.reanalyze(convId);
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    } finally {
+      setReanalyzingId(null);
+    }
+  };
 
   // Fetch conversations from API
   const {
@@ -155,6 +120,9 @@ export default function ConversationsPage() {
         qualificationStatus: filterQualification !== 'ALL' ? filterQualification : undefined,
       }),
     enabled: !!user, // Only fetch when user is authenticated
+    // Public lead chat creates/ends conversations outside this app; default 5m staleTime would hide new rows.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const conversations = (response?.data as Conversation[]) || [];
@@ -355,12 +323,25 @@ export default function ConversationsPage() {
 
                     {/* Score & Arrow */}
                     <div className="flex flex-col items-end gap-2">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900">
-                          {conv.leadScore}
-                        </p>
-                        <p className="text-xs text-gray-500">Score</p>
-                      </div>
+                      {conv.leadScore > 0 ? (
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-900">{conv.leadScore}</p>
+                          <p className="text-xs text-gray-500">Score</p>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => handleReanalyze(e, conv.id)}
+                          disabled={reanalyzingId === conv.id}
+                          className="flex items-center gap-1 px-2 py-1 text-xs text-primary-600 border border-primary-200 rounded-md hover:bg-primary-50 disabled:opacity-50"
+                        >
+                          {reanalyzingId === conv.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
+                          Analyze
+                        </button>
+                      )}
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     </div>
                   </div>

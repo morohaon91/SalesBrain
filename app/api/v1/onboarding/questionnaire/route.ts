@@ -23,10 +23,18 @@ async function handler(req: AuthenticatedRequest) {
     // Prevent duplicate profiles
     const existing = await prisma.businessProfile.findUnique({ where: { tenantId } });
     if (existing) {
-      return NextResponse.json(
-        { success: false, error: { code: 'CONFLICT', message: 'Profile already exists for this tenant' } },
-        { status: 409 }
-      );
+      // Profile exists but onboardingStep may not have been updated — fix it
+      await prisma.tenant.update({
+        where: { id: tenantId },
+        data: { onboardingStep: 'simulations' },
+      });
+      return NextResponse.json({
+        success: true,
+        profileId: existing.id,
+        completionPercentage: existing.completionPercentage,
+        nextStep: 'simulations',
+        suggestedScenario: null,
+      });
     }
 
     const profile = await initializeProfile(tenantId, data);

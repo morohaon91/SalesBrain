@@ -79,10 +79,21 @@ export const GET = withAuth(
       // Set tenant context for Prisma middleware
       setTenantContext(tenantId);
 
-      // Fetch business profile
-      const profile = await prisma.businessProfile.findUnique({
-        where: { tenantId },
-      });
+      // Fetch business profile + tenant (for shareable lead chat link)
+      const [profile, tenantRow] = await Promise.all([
+        prisma.businessProfile.findUnique({
+          where: { tenantId },
+        }),
+        prisma.tenant.findUnique({
+          where: { id: tenantId },
+          select: {
+            widgetApiKey: true,
+            businessName: true,
+            leadConversationsActive: true,
+            widgetGreeting: true,
+          },
+        }),
+      ]);
 
       clearTenantContext();
 
@@ -154,6 +165,12 @@ export const GET = withAuth(
             simulationCount: profile.simulationCount || 0,
             lastExtractedAt: profile.lastExtractedAt?.toISOString() ?? null,
             embeddingsCount: profile.embeddingsCount || 0,
+
+            // Shareable lead chat (public /l/[widgetApiKey] — requires go-live)
+            widgetApiKey: tenantRow?.widgetApiKey ?? null,
+            leadChatPath:
+              tenantRow?.widgetApiKey != null ? `/l/${tenantRow.widgetApiKey}` : null,
+            leadConversationsActive: tenantRow?.leadConversationsActive ?? false,
           },
           meta: { timestamp, requestId },
         },

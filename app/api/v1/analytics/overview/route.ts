@@ -9,6 +9,7 @@ interface AnalyticsResponse {
     totalConversations: number;
     qualifiedLeads: number;
     unqualifiedLeads: number;
+    maybeLeads: number;
     contactedLeads: number;
     averageScore: number;
     conversionRate: number;
@@ -48,50 +49,46 @@ export const GET = withAuth(
       // Set tenant context for Prisma middleware
       setTenantContext(tenantId);
 
-      // Fetch conversation count
+      // Count only meaningful conversations (not abandoned, has messages)
       const totalConversations = await prisma.conversation.count({
-        where: { tenantId },
-      });
-
-      // Fetch lead statistics
-      const qualifiedLeads = await prisma.lead.count({
         where: {
           tenantId,
-          status: 'QUALIFIED',
+          status: { not: 'ABANDONED' },
+          messages: { some: {} },
         },
       });
 
-      const unqualifiedLeads = await prisma.lead.count({
-        where: {
-          tenantId,
-          status: 'UNQUALIFIED',
-        },
+      // Count qualification statuses from conversations (source of truth)
+      const qualifiedLeads = await prisma.conversation.count({
+        where: { tenantId, qualificationStatus: 'QUALIFIED' },
       });
 
-      const contactedLeads = await prisma.lead.count({
-        where: {
-          tenantId,
-          status: 'CONTACTED',
-        },
+      const unqualifiedLeads = await prisma.conversation.count({
+        where: { tenantId, qualificationStatus: 'UNQUALIFIED' },
       });
 
-      // Calculate average score
-      const leads = await prisma.lead.findMany({
-        where: { tenantId },
-        select: { qualificationScore: true },
+      const maybeLeads = await prisma.conversation.count({
+        where: { tenantId, qualificationStatus: 'MAYBE' },
+      });
+
+      // Average score from scored conversations
+      const scoredConversations = await prisma.conversation.findMany({
+        where: { tenantId, leadScore: { gt: 0 } },
+        select: { leadScore: true },
       });
 
       const averageScore =
-        leads.length > 0
+        scoredConversations.length > 0
           ? Math.round(
-              leads.reduce((sum, l) => sum + (l.qualificationScore || 0), 0) /
-                leads.length
+              scoredConversations.reduce((sum, c) => sum + (c.leadScore || 0), 0) /
+                scoredConversations.length
             )
           : 0;
 
-      // Calculate conversion rate
-      const totalLeads = qualifiedLeads + unqualifiedLeads + contactedLeads;
-      const conversionRate = totalLeads > 0 ? qualifiedLeads / totalLeads : 0;
+      // Conversion rate = qualified / all scored conversations
+      const totalScored = qualifiedLeads + unqualifiedLeads + maybeLeads;
+      const conversionRate = totalScored > 0 ? qualifiedLeads / totalScored : 0;
+      const contactedLeads = 0; // kept for API compatibility
 
       clearTenantContext();
 
@@ -102,6 +99,7 @@ export const GET = withAuth(
             totalConversations,
             qualifiedLeads,
             unqualifiedLeads,
+            maybeLeads,
             contactedLeads,
             averageScore,
             conversionRate,

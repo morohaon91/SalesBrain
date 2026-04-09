@@ -45,6 +45,9 @@ interface ProfileData {
   simulationCount?: number;
   lastExtractedAt?: string | null;
   embeddingsCount: number;
+  widgetApiKey?: string | null;
+  leadChatPath?: string | null;
+  leadConversationsActive?: boolean;
 }
 
 export default function ProfilePage() {
@@ -56,6 +59,11 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabType>('basic-info');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    setOrigin(typeof window !== 'undefined' ? window.location.origin : '');
+  }, []);
 
   // Form State
   const [industry, setIndustry] = useState('');
@@ -380,6 +388,43 @@ export default function ProfilePage() {
             </div>
 
             {/* 70%+ Go-Live CTA Banner */}
+            {/* Shareable lead chat link (after go-live) */}
+            {profile?.leadConversationsActive && profile?.leadChatPath && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <h3 className="text-sm font-semibold text-slate-900 mb-1">Lead chat link</h3>
+                <p className="text-xs text-slate-600 mb-2">
+                  Send this URL to a prospect to test the AI as it speaks for your business (same profile as go-live).
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                  <code className="flex-1 text-xs bg-white border rounded px-2 py-1.5 break-all">
+                    {origin ? `${origin}${profile.leadChatPath}` : profile.leadChatPath}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => {
+                      const url = origin ? `${origin}${profile.leadChatPath}` : profile.leadChatPath ?? '';
+                      void navigator.clipboard.writeText(url);
+                    }}
+                  >
+                    Copy link
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => {
+                      const url = origin ? `${origin}${profile.leadChatPath}` : profile.leadChatPath ?? '';
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    Open
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {(() => {
               const pct = profile?.completionPercentage ?? 0;
               const status = profile?.profileApprovalStatus;

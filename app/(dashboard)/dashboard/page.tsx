@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@/lib/hooks/useAuth";
-import { useI18n } from "@/lib/hooks/useI18n";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api/client";
@@ -20,78 +19,63 @@ import {
 import Link from "next/link";
 import { authFetch } from "@/lib/api/auth-fetch";
 
-/**
- * Activity Item Component
- */
-function ActivityItem({
-  title,
-  description,
-  time,
-  type,
-}: {
-  title: string;
-  description: string;
-  time: string;
-  type: "conversation" | "lead" | "simulation";
-}) {
-  const typeColors = {
-    conversation: "bg-primary-100 text-primary-700",
-    lead: "bg-success-100 text-success-700",
-    simulation: "bg-accent-100 text-accent-700",
-  };
-
-  return (
-    <div className="flex gap-4 py-3 border-b border-gray-100 last:border-0">
-      <div className={`px-3 py-1 rounded-full text-xs font-semibold ${typeColors[type]}`}>
-        {type.charAt(0).toUpperCase() + type.slice(1)}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900">{title}</p>
-        <p className="text-xs text-gray-500 mt-1">{description}</p>
-      </div>
-      <p className="text-xs text-gray-500 flex-shrink-0">{time}</p>
-    </div>
-  );
+interface RecentConversation {
+  id: string;
+  leadName: string;
+  leadEmail: string;
+  status: string;
+  qualificationStatus: string;
+  leadScore: number;
+  createdAt: string;
+  summary: string;
 }
 
-/**
- * Dashboard overview page
- */
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { t } = useI18n('dashboard');
   const searchParams = useSearchParams();
   const approvalSuccess = searchParams.get('approval') === 'success';
 
-  // Fetch analytics data
+  // Analytics
   const { data: analyticsResponse, isLoading } = useQuery({
     queryKey: ["analytics"],
     queryFn: () => api.analytics.getOverview(),
     enabled: !!user,
   });
 
-  // Fetch profile for readiness banner
+  // Profile
   const { data: profileResponse } = useQuery({
     queryKey: ["profile"],
     queryFn: () => authFetch('/api/v1/profile').then((r) => r.json()),
     enabled: !!user,
   });
 
+  // Recent conversations (up to 5, with messages)
+  const { data: conversationsResponse } = useQuery({
+    queryKey: ["conversations-recent"],
+    queryFn: () => api.conversations.list({ pageSize: 5 }),
+    enabled: !!user,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
   const analyticsData = analyticsResponse?.data as any;
   const totalConversations = analyticsData?.totalConversations ?? 0;
   const qualifiedLeads = analyticsData?.qualifiedLeads ?? 0;
   const averageScore = analyticsData?.averageScore ?? 0;
+  const totalLeads = qualifiedLeads + (analyticsData?.unqualifiedLeads ?? 0) + (analyticsData?.maybeLeads ?? 0);
+  const conversionRate = analyticsData?.conversionRate
+    ? (analyticsData.conversionRate * 100).toFixed(1)
+    : '0';
 
   const profile = (profileResponse?.data ?? profileResponse) as any;
   const completionPct = profile?.completionPercentage ?? 0;
   const isLive = profile?.profileApprovalStatus === 'APPROVED' || profile?.profileApprovalStatus === 'LIVE';
   const showReadinessBanner = !isLive && completionPct >= 70;
 
-  // Get current hour for greeting
+  const recentConversations = (conversationsResponse?.data as RecentConversation[]) ?? [];
+
   const hour = new Date().getHours();
-  let greeting = t('welcome');
-  if (hour >= 12 && hour < 18) greeting = t('welcome');
-  if (hour >= 18) greeting = t('welcome');
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className="space-y-8">
@@ -106,7 +90,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Readiness Banner (70%+ but not yet approved) */}
+      {/* Readiness Banner */}
       {showReadinessBanner && (
         <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <Zap className="h-6 w-6 text-blue-600 flex-shrink-0" />
@@ -122,60 +106,52 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Welcome Section */}
-      <div className="space-y-2">
+      {/* Welcome */}
+      <div className="space-y-1">
         <h1 className="text-2xl font-bold text-gray-900">
           {greeting}, {user?.name}! 👋
         </h1>
-        <p className="text-gray-600">
-          {t('overview')}
-        </p>
+        <p className="text-gray-600">Here's what's happening with your AI sales rep.</p>
       </div>
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-3">
         <Link href="/simulations/new">
           <Button className="bg-primary-600 hover:bg-primary-700 text-white">
-            {t('actions.newSimulation')}
+            New Simulation
           </Button>
         </Link>
         <Link href="/conversations">
-          <Button variant="outline">
-            {t('sections.recentActivity')}
-          </Button>
+          <Button variant="outline">View Conversations</Button>
         </Link>
         <Link href="/settings/widget">
-          <Button variant="outline">
-            {t('sections.recentActivity')}
-          </Button>
+          <Button variant="outline">Widget Settings</Button>
         </Link>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
-          label={t('stats.totalConversations')}
+          label="Total Conversations"
           value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : totalConversations}
           icon={MessageSquare}
           iconVariant="primary"
-          trend={{ value: "0%", positive: true }}
         />
         <StatsCard
-          label={t('stats.qualifiedLeads')}
+          label="Qualified Leads"
           value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : qualifiedLeads}
           icon={Users}
           iconVariant="success"
-          trend={{ value: "0%", positive: true }}
         />
         <StatsCard
-          label={t('stats.activeSimulations')}
+          label="Avg Lead Score"
           value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (averageScore > 0 ? averageScore : "—")}
           icon={TrendingUp}
           iconVariant="primary"
         />
         <StatsCard
-          label={t('stats.totalLeads')}
-          value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (qualifiedLeads + (analyticsData?.unqualifiedLeads ?? 0) + (analyticsData?.contactedLeads ?? 0))}
+          label="Total Leads"
+          value={isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : totalLeads}
           icon={AlertCircle}
           iconVariant="warning"
         />
@@ -183,179 +159,132 @@ export default function DashboardPage() {
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Get Started Section */}
+        {/* Getting Started */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Getting Started Card */}
           <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-5 sm:p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {t('welcome')}
-            </h2>
-            <p className="text-gray-700 mb-6">
-              {t('sections.recentActivity')}
-            </p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">How SalesBrain Works</h2>
+            <p className="text-gray-700 mb-6 text-sm">Complete each step to get your AI sales rep live.</p>
 
             <div className="space-y-4">
-              {/* Step 1 */}
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-primary-600 text-sm">
-                  1
-                </div>
+                <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-primary-600 text-sm">1</div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{t('actions.newSimulation')}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {t('actions.newSimulation')}
-                  </p>
+                  <h3 className="font-semibold text-gray-900">Run simulations</h3>
+                  <p className="text-sm text-gray-600 mt-1">Chat with an AI client so SalesBrain learns how you sell.</p>
                   <Link href="/simulations/new" className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2 inline-flex items-center gap-1">
-                    {t('actions.newSimulation')} <ArrowRight className="w-3 h-3" />
+                    Start a simulation <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </div>
 
-              {/* Step 2 */}
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-primary-600 text-sm">
-                  2
-                </div>
+                <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-primary-600 text-sm">2</div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{t('actions.viewAnalytics')}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {t('actions.viewAnalytics')}
-                  </p>
+                  <h3 className="font-semibold text-gray-900">Approve your AI profile</h3>
+                  <p className="text-sm text-gray-600 mt-1">Review what the AI has learned and go live.</p>
+                  <Link href="/profile/approve" className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2 inline-flex items-center gap-1">
+                    Review profile <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-primary-600 text-sm">3</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Add the widget to your website</h3>
+                  <p className="text-sm text-gray-600 mt-1">Embed the chat widget and start capturing leads automatically.</p>
                   <Link href="/settings/widget" className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2 inline-flex items-center gap-1">
-                    {t('actions.viewAnalytics')} <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-primary-600 text-sm">
-                  3
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{t('sections.recentActivity')}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {t('sections.recentActivity')}
-                  </p>
-                  <Link href="/leads" className="text-sm text-primary-600 hover:text-primary-700 font-medium mt-2 inline-flex items-center gap-1">
-                    {t('actions.viewAll')} <ArrowRight className="w-3 h-3" />
+                    Get widget code <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Analytics Preview */}
-          <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('sections.recentActivity')}
-            </h3>
-
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-100">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">{t('messages.noData')}</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  {t('messages.loading')}
-                </p>
+          {/* Conversion Rate card */}
+          <div className="bg-white border border-gray-100 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversion Rate</h3>
+            {isLoading ? (
+              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            ) : totalLeads === 0 ? (
+              <p className="text-sm text-gray-400">No leads yet. Complete conversations to see your conversion rate.</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Qualified</span>
+                  <span className="font-bold text-success-600">{qualifiedLeads}</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-success-500 rounded-full" style={{ width: `${conversionRate}%` }} />
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{conversionRate}% <span className="text-sm font-normal text-gray-500">conversion rate</span></p>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Recent Activity */}
+          {/* Recent Conversations */}
           <div className="bg-white border border-gray-100 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('sections.recentActivity')}
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Conversations</h3>
 
-            {totalConversations === 0 ? (
+            {recentConversations.length === 0 ? (
               <div className="text-center py-8">
                 <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">{t('messages.noData')}</p>
-                <p className="text-xs text-gray-400 mt-1">{t('messages.loading')}</p>
+                <p className="text-sm text-gray-500">No conversations yet</p>
+                <p className="text-xs text-gray-400 mt-1">They'll appear here once leads start chatting</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <ActivityItem
-                  title={t('stats.totalConversations')}
-                  description={`${totalConversations} conversation${totalConversations !== 1 ? 's' : ''} in progress`}
-                  time="Today"
-                  type="conversation"
-                />
-                <ActivityItem
-                  title={t('stats.qualifiedLeads')}
-                  description={`${qualifiedLeads} lead${qualifiedLeads !== 1 ? 's' : ''} qualified`}
-                  time="Today"
-                  type="lead"
-                />
-                {analyticsData?.contactedLeads > 0 && (
-                  <ActivityItem
-                    title={t('stats.qualifiedLeads')}
-                    description={`${analyticsData.contactedLeads} lead${analyticsData.contactedLeads !== 1 ? 's' : ''} contacted`}
-                    time="Today"
-                    type="simulation"
-                  />
-                )}
+              <div className="space-y-3">
+                {recentConversations.map((conv) => (
+                  <Link key={conv.id} href={`/conversations/${conv.id}`}>
+                    <div className="p-3 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{conv.leadName}</p>
+                        {conv.leadScore > 0 && (
+                          <span className="text-xs font-bold text-primary-600 ml-2 flex-shrink-0">{conv.leadScore}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">{conv.summary !== 'No summary available' ? conv.summary : conv.leadEmail}</p>
+                      <p className="text-xs text-gray-400 mt-1">{new Date(conv.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </Link>
+                ))}
               </div>
             )}
 
-            <Link href="/analytics">
-              <Button variant="outline" className="w-full mt-4">
-                {t('actions.viewAll')}
-              </Button>
+            <Link href="/conversations">
+              <Button variant="outline" className="w-full mt-4">View All</Button>
             </Link>
           </div>
 
           {/* Quick Links */}
           <div className="bg-white border border-gray-100 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('actions.viewAll')}
-            </h3>
-
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h3>
             <div className="space-y-2">
-              <Link
-                href="/settings/widget"
-                className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-              >
-                → {t('actions.viewAll')}
+              <Link href="/settings/widget" className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                → Widget Settings
               </Link>
-              <Link
-                href="/settings/subscription"
-                className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-              >
-                → {t('buttons.upgrade')}
+              <Link href="/analytics" className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                → Analytics
               </Link>
-              <Link
-                href="/settings"
-                className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-              >
-                → {t('actions.viewAll')}
+              <Link href="/leads" className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                → All Leads
               </Link>
-              <a
-                href="https://docs.yourbusinessbrain.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-              >
-                → {t('actions.viewAll')}
-              </a>
+              <Link href="/settings" className="block px-4 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                → Settings
+              </Link>
             </div>
           </div>
 
           {/* Trial Banner */}
           <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-4">
-            <p className="text-sm font-semibold text-primary-900">
-              ✨ {t('sidebar.trialPlan')}
-            </p>
-            <p className="text-xs text-primary-700 mt-1">
-              {t('buttons.upgrade')}
-            </p>
-            <Button className="w-full mt-3 bg-primary-600 hover:bg-primary-700 text-white">
-              {t('buttons.upgrade')}
-            </Button>
+            <p className="text-sm font-semibold text-primary-900">✨ Free Trial</p>
+            <p className="text-xs text-primary-700 mt-1">Upgrade to unlock unlimited conversations and leads.</p>
+            <Link href="/settings/subscription">
+              <Button className="w-full mt-3 bg-primary-600 hover:bg-primary-700 text-white">Upgrade Plan</Button>
+            </Link>
           </div>
         </div>
       </div>

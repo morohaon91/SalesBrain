@@ -19,49 +19,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Mock data - replace with API calls
-const mockSimulations = [
-  {
-    id: "sim-001",
-    scenarioType: "PRICE_SENSITIVE",
-    status: "COMPLETED",
-    duration: 1845,
-    messageCount: 32,
-    qualityScore: 85,
-    extractedScore: 85,
-    completedAt: "2026-03-15T14:30:00Z",
-  },
-  {
-    id: "sim-002",
-    scenarioType: "TIME_CONSTRAINED",
-    status: "COMPLETED",
-    duration: 1240,
-    messageCount: 24,
-    qualityScore: 72,
-    extractedScore: 72,
-    completedAt: "2026-03-14T10:15:00Z",
-  },
-  {
-    id: "sim-003",
-    scenarioType: "BUDGET_FOCUSED",
-    status: "COMPLETED",
-    duration: 2100,
-    messageCount: 38,
-    qualityScore: 78,
-    extractedScore: 78,
-    completedAt: "2026-03-13T16:45:00Z",
-  },
-  {
-    id: "sim-004",
-    scenarioType: "PRICE_SENSITIVE",
-    status: "IN_PROGRESS",
-    duration: 450,
-    messageCount: 8,
-    qualityScore: null,
-    extractedScore: null,
-    completedAt: null,
-  },
-];
 
 /**
  * Scenario badge
@@ -300,7 +257,7 @@ export default function SimulationsPage() {
       </div>
 
       {/* Getting Started */}
-      {mockSimulations.length === 0 && (
+      {simulations.length === 0 && (
         <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 mt-8">
           <h3 className="font-semibold text-primary-900 mb-2">
             How to use Simulations

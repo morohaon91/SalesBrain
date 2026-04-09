@@ -113,7 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const step = status?.onboardingStep;
-        if (step === 'questionnaire') {
+        // If profile already exists, questionnaire is done — skip it
+        if (step === 'questionnaire' && !status?.hasProfile) {
           router.push('/questionnaire');
           return;
         }

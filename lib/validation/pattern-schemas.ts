@@ -6,10 +6,10 @@
 import { z } from 'zod';
 
 export const CommunicationStyleSchema = z.object({
-  tone: z.enum(['professional', 'casual', 'empathetic', 'direct', 'friendly']),
-  style: z.enum(['data-driven', 'emotional', 'educational', 'consultative']),
+  tone: z.string().catch('professional'),
+  style: z.string().catch('consultative'),
   keyPhrases: z.array(z.string()),
-  formality: z.enum(['formal', 'conversational', 'casual']),
+  formality: z.string().catch('conversational'),
   responsePattern: z.string().optional()
 });
 
@@ -28,10 +28,10 @@ export const QualificationCriteriaSchema = z.object({
   greenFlags: z.array(z.string()),
   redFlags: z.array(z.string()),
   confidence: z.object({
-    mustHaves: z.enum(['high', 'medium', 'low', 'not_demonstrated']),
-    dealBreakers: z.enum(['high', 'medium', 'low', 'not_demonstrated']),
-    greenFlags: z.enum(['high', 'medium', 'low', 'not_demonstrated']),
-    redFlags: z.enum(['high', 'medium', 'low', 'not_demonstrated'])
+    mustHaves: z.string().catch('not_demonstrated'),
+    dealBreakers: z.string().catch('not_demonstrated'),
+    greenFlags: z.string().catch('not_demonstrated'),
+    redFlags: z.string().catch('not_demonstrated')
   }).optional()
 });
 
@@ -51,8 +51,8 @@ export const DecisionMakingPatternsSchema = z.object({
   warningSignsToWatch: z.array(z.string()),
   decisionSpeed: z.string().optional(),
   confidence: z.object({
-    whenToSayYes: z.enum(['high', 'medium', 'low', 'not_demonstrated']),
-    whenToSayNo: z.enum(['high', 'medium', 'low', 'not_demonstrated'])
+    whenToSayYes: z.string().catch('not_demonstrated'),
+    whenToSayNo: z.string().catch('not_demonstrated')
   }).optional()
 });
 
@@ -68,11 +68,11 @@ export const KnowledgeBaseSchema = z.object({
 export const ConversationQualitySchema = z.object({
   unansweredQuestions: z.array(z.string()),
   hasResolution: z.boolean(),
-  resolutionType: z.enum(['accepted', 'rejected', 'scheduled_followup', 'none']),
+  resolutionType: z.string().catch('none'),
   completenessScore: z.coerce.number().min(0).max(100),
   missingPatterns: z.array(z.string()).optional(),
-  conversationFlow: z.enum(['smooth', 'interrupted', 'one_sided', 'incomplete']),
-  overallConfidence: z.enum(['high', 'medium', 'low'])
+  conversationFlow: z.string().catch('incomplete'),
+  overallConfidence: z.string().catch('low')
 }).optional();
 
 export const ExtractionNotesSchema = z.object({
@@ -85,7 +85,7 @@ export const ExtractionNotesSchema = z.object({
 export const VerbatimPhraseSchema = z.object({
   phrase: z.string().min(8).max(500),
   context: z.string().min(3).max(300),
-  category: z.enum(['pricing', 'qualification', 'objection', 'closing', 'communication', 'other']),
+  category: z.string().catch('other'),
 });
 
 const nullableStringArray = z
