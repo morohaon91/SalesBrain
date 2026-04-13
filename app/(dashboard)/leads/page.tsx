@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useI18n } from '@/lib/hooks/useI18n';
 import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,14 +13,12 @@ import {
   Phone,
   Building2,
   Calendar,
-  TrendingUp,
   ChevronRight,
   Loader2,
   AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Type definition
 interface Lead {
   id: string;
   name: string;
@@ -36,38 +35,29 @@ interface Lead {
   ownerNotes?: string;
 }
 
-
-/**
- * Status badge component
- */
-function StatusBadge({ status }: { status: "NEW" | "CONTACTED" | "QUALIFIED" }) {
+function StatusBadge({ status, label }: { status: 'NEW' | 'CONTACTED' | 'QUALIFIED'; label: string }) {
   const styles = {
-    NEW: "bg-primary-100 text-primary-800",
-    CONTACTED: "bg-warning-100 text-warning-800",
-    QUALIFIED: "bg-success-100 text-success-800",
+    NEW: 'bg-primary-100 text-primary-800',
+    CONTACTED: 'bg-warning-100 text-warning-800',
+    QUALIFIED: 'bg-success-100 text-success-800',
   };
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
-      {status}
-    </span>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>{label}</span>
   );
 }
 
-/**
- * Score indicator component
- */
 function ScoreIndicator({ score }: { score: number }) {
-  let color = "text-danger-600";
-  if (score >= 70) color = "text-success-600";
-  else if (score >= 50) color = "text-warning-600";
+  let color = 'text-danger-600';
+  if (score >= 70) color = 'text-success-600';
+  else if (score >= 50) color = 'text-warning-600';
 
   return (
     <div className="flex items-center gap-2">
       <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
         <div
           className={`h-full ${
-            score >= 70 ? "bg-success-500" : score >= 50 ? "bg-warning-500" : "bg-danger-500"
+            score >= 70 ? 'bg-success-500' : score >= 50 ? 'bg-warning-500' : 'bg-danger-500'
           }`}
           style={{ width: `${score}%` }}
         />
@@ -77,16 +67,13 @@ function ScoreIndicator({ score }: { score: number }) {
   );
 }
 
-/**
- * Leads page component
- */
 export default function LeadsPage() {
   const { user } = useAuth();
+  const { t } = useI18n(['leads', 'common']);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<string>('score');
 
-  // Fetch leads from API
   const {
     data: response,
     isLoading,
@@ -102,7 +89,6 @@ export default function LeadsPage() {
 
   const leads = (response?.data as Lead[]) || [];
 
-  // Filter and sort leads
   let filteredLeads = leads.filter((lead) => {
     const matchesSearch =
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,46 +100,42 @@ export default function LeadsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Sort leads
   if (sortBy === 'score') {
     filteredLeads.sort((a, b) => b.qualificationScore - a.qualificationScore);
   } else if (sortBy === 'date') {
     filteredLeads.sort(
       (a, b) =>
-        new Date(b.firstContactAt || 0).getTime() -
-        new Date(a.firstContactAt || 0).getTime()
+        new Date(b.firstContactAt || 0).getTime() - new Date(a.firstContactAt || 0).getTime()
     );
   } else if (sortBy === 'name') {
     filteredLeads.sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  const convLabel = (n: number) =>
+    `${n} ${n !== 1 ? t('common:units.conversations') : t('common:units.conversation')}`;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Leads</h1>
-        <p className="text-gray-600 text-sm sm:text-base mt-1">
-          Qualified leads from conversations
-        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('leads:title')}</h1>
+        <p className="text-gray-600 text-sm sm:text-base mt-1">{t('leads:subtitle')}</p>
       </div>
 
-      {/* Error State */}
       {error && (
         <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
           <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-danger-900">Failed to load leads</p>
+            <p className="font-medium text-danger-900">{t('leads:list.failedLoad')}</p>
             <p className="text-sm text-danger-700 mt-1">
-              {error instanceof Error ? error.message : 'Please try again'}
+              {error instanceof Error ? error.message : t('leads:list.tryAgain')}
             </p>
           </div>
         </div>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">Total Leads</p>
+          <p className="text-xs font-medium text-gray-600">{t('leads:stats.total')}</p>
           {isLoading ? (
             <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
           ) : (
@@ -161,7 +143,7 @@ export default function LeadsPage() {
           )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">New</p>
+          <p className="text-xs font-medium text-gray-600">{t('leads:stats.new')}</p>
           {isLoading ? (
             <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
           ) : (
@@ -171,7 +153,7 @@ export default function LeadsPage() {
           )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">Contacted</p>
+          <p className="text-xs font-medium text-gray-600">{t('leads:stats.contacted')}</p>
           {isLoading ? (
             <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
           ) : (
@@ -181,15 +163,14 @@ export default function LeadsPage() {
           )}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">Avg Score</p>
+          <p className="text-xs font-medium text-gray-600">{t('leads:stats.avgScore')}</p>
           {isLoading ? (
             <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
           ) : (
             <p className="text-2xl font-bold text-success-600 mt-2">
               {leads.length > 0
                 ? Math.round(
-                    leads.reduce((acc, l) => acc + l.qualificationScore, 0) /
-                      leads.length
+                    leads.reduce((acc, l) => acc + l.qualificationScore, 0) / leads.length
                   )
                 : 0}
             </p>
@@ -197,14 +178,12 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Filters & Sort */}
       <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
         <div className="flex gap-3 sm:gap-4 flex-col md:flex-row">
-          {/* Search */}
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Search by name, email, company..."
+              placeholder={t('leads:list.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -212,41 +191,38 @@ export default function LeadsPage() {
             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
           </div>
 
-          {/* Status Filter */}
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
-            <option value="ALL">All Status</option>
-            <option value="NEW">New</option>
-            <option value="CONTACTED">Contacted</option>
-            <option value="QUALIFIED">Qualified</option>
+            <option value="ALL">{t('common:filters.allStatus')}</option>
+            <option value="NEW">{t('leads:leadStatus.NEW')}</option>
+            <option value="CONTACTED">{t('leads:leadStatus.CONTACTED')}</option>
+            <option value="QUALIFIED">{t('leads:leadStatus.QUALIFIED')}</option>
           </select>
 
-          {/* Sort */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
-            <option value="score">Highest Score</option>
-            <option value="date">Latest</option>
-            <option value="name">Name (A-Z)</option>
+            <option value="score">{t('leads:sort.score')}</option>
+            <option value="date">{t('leads:sort.date')}</option>
+            <option value="name">{t('leads:sort.name')}</option>
           </select>
         </div>
       </div>
 
-      {/* Leads List */}
       <div className="space-y-3">
         {filteredLeads.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
             <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No leads found</p>
+            <p className="text-gray-500 font-medium">{t('leads:list.noneFound')}</p>
             <p className="text-sm text-gray-400 mt-1">
-              {searchTerm || filterStatus !== "ALL"
-                ? "Try adjusting your filters"
-                : "Start conversations to generate leads"}
+              {searchTerm || filterStatus !== 'ALL'
+                ? t('leads:list.adjustFilters')
+                : t('leads:list.startConversations')}
             </p>
           </div>
         ) : (
@@ -255,15 +231,14 @@ export default function LeadsPage() {
               <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    {/* Top Row - Name & Status */}
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        {lead.name}
-                      </h3>
-                      <StatusBadge status={lead.status as any} />
+                      <h3 className="text-sm font-semibold text-gray-900">{lead.name}</h3>
+                      <StatusBadge
+                        status={lead.status as 'NEW' | 'CONTACTED' | 'QUALIFIED'}
+                        label={t(`leads:leadStatus.${lead.status}`)}
+                      />
                     </div>
 
-                    {/* Company & Email */}
                     <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
                       <span className="flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
@@ -281,39 +256,34 @@ export default function LeadsPage() {
                       )}
                     </div>
 
-                    {/* Budget & Timeline */}
                     <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
                       <span className="font-medium">{lead.budget}</span>
                       <span className="font-medium">{lead.timeline}</span>
                     </div>
 
-                    {/* Owner Notes */}
                     {lead.ownerNotes && (
                       <div className="bg-primary-50 border border-primary-200 rounded px-2 py-1 text-xs text-primary-900 mb-2">
                         {lead.ownerNotes}
                       </div>
                     )}
 
-                    {/* Metadata */}
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <Mail className="w-3 h-3" />
-                        {lead.conversationsCount} conversation
-                        {lead.conversationsCount !== 1 ? "s" : ""}
+                        {convLabel(lead.conversationsCount)}
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {new Date(lead.firstContactAt).toLocaleDateString()}
+                        {lead.firstContactAt && new Date(lead.firstContactAt).toLocaleDateString()}
                       </span>
                       {!lead.ownerViewed && (
                         <span className="px-2 py-0.5 bg-warning-100 text-warning-800 rounded-full font-medium">
-                          Needs Review
+                          {t('leads:badges.needsReview')}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Score & Arrow */}
                   <div className="flex flex-col items-end gap-3">
                     <ScoreIndicator score={lead.qualificationScore} />
                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -325,15 +295,16 @@ export default function LeadsPage() {
         )}
       </div>
 
-      {/* Pagination (Placeholder) */}
       {filteredLeads.length > 0 && (
         <div className="flex items-center justify-center gap-2">
           <Button variant="outline" disabled>
-            Previous
+            {t('common:pagination.previous')}
           </Button>
-          <span className="text-sm text-gray-600">Page 1 of 1</span>
+          <span className="text-sm text-gray-600">
+            {t('common:pagination.pageOf', { current: 1, total: 1 })}
+          </span>
           <Button variant="outline" disabled>
-            Next
+            {t('common:pagination.next')}
           </Button>
         </div>
       )}

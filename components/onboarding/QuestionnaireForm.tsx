@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { QuestionnaireData } from '@/lib/types/onboarding';
 import { validateQuestionnaireData } from '@/lib/onboarding/questionnaire-validator';
+import { createQuestionnaireDataSchema } from '@/lib/validation/business-profile-schemas';
 import IndustrySelect from './IndustrySelect';
 import MultiInputField from './MultiInputField';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { useI18n } from '@/lib/hooks/useI18n';
 
 interface QuestionnaireFormProps {
   onSubmit: (data: QuestionnaireData) => void;
@@ -17,11 +19,14 @@ interface QuestionnaireFormProps {
 }
 
 export default function QuestionnaireForm({ onSubmit, isSubmitting }: QuestionnaireFormProps) {
+  const { t } = useI18n('onboarding');
   const [formData, setFormData] = useState<Partial<QuestionnaireData>>({
     commonClientQuestions: [],
     certifications: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const schema = useMemo(() => createQuestionnaireDataSchema(t), [t]);
 
   const handleChange = (field: keyof QuestionnaireData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -36,25 +41,39 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validation = validateQuestionnaireData(formData as QuestionnaireData);
+    const validation = validateQuestionnaireData(formData as QuestionnaireData, {
+      schema,
+      duplicateQuestions: t('validation.duplicateQuestions'),
+      addOneQuestion: t('validation.addOneQuestion'),
+    });
     if (!validation.isValid) {
       const errorMap: Record<string, string> = {};
-      validation.errors.forEach((err) => { errorMap[err.field] = err.message; });
+      validation.errors.forEach((err) => {
+        errorMap[err.field] = err.message;
+      });
       setErrors(errorMap);
       return;
     }
     onSubmit(formData as QuestionnaireData);
   };
 
+  const teamOptions = [
+    { value: 'Solo', label: t('form.teamSolo') },
+    { value: '2-5', label: t('form.team25') },
+    { value: '6-10', label: t('form.team610') },
+    { value: '10+', label: t('form.team10plus') },
+  ];
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Section 1: Basic Business Info */}
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900">Basic Business Information</h2>
+        <h2 className="text-xl font-semibold text-gray-900">{t('form.sectionBasic')}</h2>
 
         <div>
-          <Label>Industry <span className="text-red-500">*</span></Label>
-          <p className="text-sm text-gray-500 mb-2">This determines which practice scenarios you'll get</p>
+          <Label>
+            {t('form.industryLabel')} <span className="text-red-500">*</span>
+          </Label>
+          <p className="text-sm text-gray-500 mb-2">{t('form.industryHint')}</p>
           <IndustrySelect
             value={formData.industry || ''}
             onChange={(v) => handleChange('industry', v)}
@@ -63,71 +82,86 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
         </div>
 
         <div>
-          <Label htmlFor="serviceDescription">Service Description <span className="text-red-500">*</span></Label>
-          <p className="text-sm text-gray-500 mb-2">What services do you provide?</p>
+          <Label htmlFor="serviceDescription">
+            {t('form.serviceDescriptionLabel')} <span className="text-red-500">*</span>
+          </Label>
+          <p className="text-sm text-gray-500 mb-2">{t('form.serviceDescriptionHint')}</p>
           <Textarea
             id="serviceDescription"
-            placeholder="e.g., Kitchen and bathroom remodeling, custom cabinetry, general contracting for residential projects"
+            placeholder={t('form.serviceDescriptionPlaceholder')}
             value={formData.serviceDescription || ''}
             onChange={(e) => handleChange('serviceDescription', e.target.value)}
             rows={4}
             className={errors.serviceDescription ? 'border-red-500' : ''}
           />
-          {errors.serviceDescription && <p className="text-sm text-red-600 mt-1">{errors.serviceDescription}</p>}
+          {errors.serviceDescription && (
+            <p className="text-sm text-red-600 mt-1">{errors.serviceDescription}</p>
+          )}
         </div>
 
         <div>
-          <Label htmlFor="targetClientType">Target Client Type <span className="text-red-500">*</span></Label>
-          <p className="text-sm text-gray-500 mb-2">Who do you typically work with?</p>
+          <Label htmlFor="targetClientType">
+            {t('form.targetClientLabel')} <span className="text-red-500">*</span>
+          </Label>
+          <p className="text-sm text-gray-500 mb-2">{t('form.targetClientHint')}</p>
           <Input
             id="targetClientType"
-            placeholder="e.g., Homeowners, property investors, commercial clients"
+            placeholder={t('form.targetClientPlaceholder')}
             value={formData.targetClientType || ''}
             onChange={(e) => handleChange('targetClientType', e.target.value)}
             className={errors.targetClientType ? 'border-red-500' : ''}
           />
-          {errors.targetClientType && <p className="text-sm text-red-600 mt-1">{errors.targetClientType}</p>}
+          {errors.targetClientType && (
+            <p className="text-sm text-red-600 mt-1">{errors.targetClientType}</p>
+          )}
         </div>
 
         <div>
-          <Label htmlFor="typicalBudgetRange">Typical Budget Range <span className="text-red-500">*</span></Label>
-          <p className="text-sm text-gray-500 mb-2">What's your typical project budget range?</p>
+          <Label htmlFor="typicalBudgetRange">
+            {t('form.budgetLabel')} <span className="text-red-500">*</span>
+          </Label>
+          <p className="text-sm text-gray-500 mb-2">{t('form.budgetHint')}</p>
           <Input
             id="typicalBudgetRange"
-            placeholder="e.g., $20k-$50k, $100k+"
+            placeholder={t('form.budgetPlaceholder')}
             value={formData.typicalBudgetRange || ''}
             onChange={(e) => handleChange('typicalBudgetRange', e.target.value)}
             className={errors.typicalBudgetRange ? 'border-red-500' : ''}
           />
-          {errors.typicalBudgetRange && <p className="text-sm text-red-600 mt-1">{errors.typicalBudgetRange}</p>}
+          {errors.typicalBudgetRange && (
+            <p className="text-sm text-red-600 mt-1">{errors.typicalBudgetRange}</p>
+          )}
         </div>
 
         <div>
-          <Label>Common Client Questions <span className="text-red-500">*</span></Label>
-          <p className="text-sm text-gray-500 mb-2">What do clients usually ask you?</p>
+          <Label>
+            {t('form.commonQuestionsLabel')} <span className="text-red-500">*</span>
+          </Label>
+          <p className="text-sm text-gray-500 mb-2">{t('form.commonQuestionsHint')}</p>
           <MultiInputField
             values={formData.commonClientQuestions || []}
             onChange={(v) => handleChange('commonClientQuestions', v)}
-            placeholder="e.g., 'Do you handle permits?', 'How long does a kitchen take?'"
+            placeholder={t('form.commonQuestionsPlaceholder')}
             maxItems={10}
             minItems={1}
-            addButtonText="Add Question"
+            addButtonText={t('form.addQuestion')}
           />
-          {errors.commonClientQuestions && <p className="text-sm text-red-600 mt-1">{errors.commonClientQuestions}</p>}
+          {errors.commonClientQuestions && (
+            <p className="text-sm text-red-600 mt-1">{errors.commonClientQuestions}</p>
+          )}
         </div>
       </div>
 
       <div className="border-t border-gray-200" />
 
-      {/* Section 2: Business Facts */}
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Business Facts</h2>
-          <p className="text-sm text-gray-600">This information helps create more realistic practice scenarios</p>
+          <h2 className="text-xl font-semibold text-gray-900">{t('form.sectionFacts')}</h2>
+          <p className="text-sm text-gray-600">{t('form.factsIntro')}</p>
         </div>
 
         <div>
-          <Label htmlFor="yearsExperience">Years of Experience</Label>
+          <Label htmlFor="yearsExperience">{t('form.yearsExperience')}</Label>
           <Input
             id="yearsExperience"
             type="number"
@@ -135,30 +169,38 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
             max="100"
             placeholder="15"
             value={formData.yearsExperience ?? ''}
-            onChange={(e) => handleChange('yearsExperience', e.target.value ? parseInt(e.target.value) : null)}
+            onChange={(e) =>
+              handleChange('yearsExperience', e.target.value ? parseInt(e.target.value, 10) : null)
+            }
             className={errors.yearsExperience ? 'border-red-500' : ''}
           />
-          {errors.yearsExperience && <p className="text-sm text-red-600 mt-1">{errors.yearsExperience}</p>}
+          {errors.yearsExperience && (
+            <p className="text-sm text-red-600 mt-1">{errors.yearsExperience}</p>
+          )}
         </div>
 
         <div>
-          <Label>Certifications / Licenses</Label>
-          <p className="text-sm text-gray-500 mb-2">Optional but helps establish credibility</p>
+          <Label>{t('form.certificationsLabel')}</Label>
+          <p className="text-sm text-gray-500 mb-2">{t('form.certificationsHint')}</p>
           <MultiInputField
             values={formData.certifications || []}
             onChange={(v) => handleChange('certifications', v)}
-            placeholder="e.g., Licensed General Contractor - California"
+            placeholder={t('form.certificationsPlaceholder')}
             maxItems={20}
-            addButtonText="Add Certification"
+            addButtonText={t('form.addCertification')}
           />
-          {errors.certifications && <p className="text-sm text-red-600 mt-1">{errors.certifications}</p>}
+          {errors.certifications && (
+            <p className="text-sm text-red-600 mt-1">{errors.certifications}</p>
+          )}
         </div>
 
         <div>
-          <Label htmlFor="serviceArea">Service Area <span className="text-red-500">*</span></Label>
+          <Label htmlFor="serviceArea">
+            {t('form.serviceAreaLabel')} <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="serviceArea"
-            placeholder="e.g., San Francisco Bay Area"
+            placeholder={t('form.serviceAreaPlaceholder')}
             value={formData.serviceArea || ''}
             onChange={(e) => handleChange('serviceArea', e.target.value)}
             className={errors.serviceArea ? 'border-red-500' : ''}
@@ -167,17 +209,14 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
         </div>
 
         <div>
-          <Label htmlFor="teamSize">Team Size <span className="text-red-500">*</span></Label>
+          <Label htmlFor="teamSize">
+            {t('form.teamSizeLabel')} <span className="text-red-500">*</span>
+          </Label>
           <Select
             value={formData.teamSize || ''}
             onChange={(e) => handleChange('teamSize', e.target.value)}
-            placeholder="Select team size"
-            options={[
-              { value: 'Solo', label: 'Solo (just me)' },
-              { value: '2-5', label: '2-5 people' },
-              { value: '6-10', label: '6-10 people' },
-              { value: '10+', label: '10+ people' },
-            ]}
+            placeholder={t('form.teamSizePlaceholder')}
+            options={teamOptions}
             className={errors.teamSize ? 'border-red-500' : ''}
           />
           {errors.teamSize && <p className="text-sm text-red-600 mt-1">{errors.teamSize}</p>}
@@ -186,7 +225,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
 
       <div className="pt-6">
         <Button type="submit" disabled={isSubmitting} className="w-full" size="lg">
-          {isSubmitting ? 'Saving...' : 'Continue to Practice Simulations'}
+          {isSubmitting ? t('form.saving') : t('form.continueButton')}
         </Button>
       </div>
     </form>

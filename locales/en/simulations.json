@@ -1,10 +1,34 @@
 {
   "title": "Simulations",
-  "subtitle": "Create and manage AI simulations",
+  "subtitle": "Practice conversations to train your AI",
   "list": {
     "empty": "No simulations yet",
     "search": "Search simulations",
-    "filter": "Filter by status"
+    "filter": "Filter by status",
+    "noneFound": "No simulations found",
+    "trainHint": "Start your first simulation to train your AI profile",
+    "failedLoad": "Failed to load simulations",
+    "tryAgain": "Please try again"
+  },
+  "stats": {
+    "total": "Total",
+    "completed": "Completed",
+    "messages": "Messages",
+    "avgQuality": "Avg Quality"
+  },
+  "scenarioTypes": {
+    "PRICE_SENSITIVE": "Price Sensitive",
+    "TIME_CONSTRAINED": "Time Constrained",
+    "BUDGET_FOCUSED": "Budget Focused"
+  },
+  "simStatus": {
+    "COMPLETED": "Completed",
+    "IN_PROGRESS": "In Progress"
+  },
+  "filters": {
+    "all": "All Simulations",
+    "completed": "Completed",
+    "inProgress": "In Progress"
   },
   "columns": {
     "name": "Name",
@@ -25,7 +49,9 @@
     "view": "View Details",
     "edit": "Edit",
     "delete": "Delete",
-    "duplicate": "Duplicate"
+    "duplicate": "Duplicate",
+    "new": "New Simulation",
+    "newShort": "New"
   },
   "create": {
     "title": "Create New Simulation",
@@ -40,6 +66,17 @@
     "progress": "Progress",
     "results": "Results",
     "transcript": "Transcript"
+  },
+  "listMeta": {
+    "completedOn": "Completed {{date}}",
+    "inProgress": "In progress..."
+  },
+  "howTo": {
+    "title": "How to use Simulations",
+    "step1": "Start a simulation - Choose a scenario (price sensitive, time constrained, etc.)",
+    "step2": "Chat with AI - Have a conversation like you would with a real client",
+    "step3": "AI learns - The system analyzes your responses to extract business rules",
+    "step4": "Profile builds - Repeat simulations to improve accuracy"
   },
   "messages": {
     "createSuccess": "Simulation created successfully",

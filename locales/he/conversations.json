@@ -1,10 +1,22 @@
 {
   "title": "שיחות",
-  "subtitle": "צפה וניהול כל השיחות",
+  "subtitle": "כל שיחות ואינטראקציות הלידים",
   "list": {
-    "empty": "אין שיחות עדיין",
+    "empty": "אין עדיין שיחות",
     "search": "חיפוש שיחות",
-    "filter": "סנן לפי סטטוס"
+    "filter": "סינון לפי סטטוס",
+    "searchPlaceholder": "חיפוש לפי שם או דוא\"ל...",
+    "noneFound": "לא נמצאו שיחות",
+    "adjustFilters": "נסו לשנות את המסננים",
+    "startSimulation": "התחילו סימולציה כדי ליצור שיחות",
+    "failedLoad": "טעינת השיחות נכשלה",
+    "tryAgain": "נסו שוב"
+  },
+  "stats": {
+    "total": "סה\"כ",
+    "active": "פעיל",
+    "qualified": "מוסמך",
+    "avgScore": "ציון ממוצע"
   },
   "columns": {
     "participant": "משתתף",
@@ -13,6 +25,18 @@
     "status": "סטטוס",
     "actions": "פעולות"
   },
+  "conversationStatus": {
+    "ACTIVE": "פעיל",
+    "ENDED": "הסתיים",
+    "ABANDONED": "ננטש",
+    "MANUAL": "שליטה ידנית"
+  },
+  "qualification": {
+    "QUALIFIED": "מוסמך",
+    "UNQUALIFIED": "לא מוסמך",
+    "MAYBE": "אולי",
+    "UNKNOWN": "לא ידוע"
+  },
   "status": {
     "active": "פעיל",
     "archived": "בארכיון",
@@ -20,13 +44,50 @@
   },
   "actions": {
     "view": "צפה",
-    "archive": "שמור בארכיון",
+    "archive": "ארכיון",
     "delete": "מחק",
-    "export": "ייצוא"
+    "export": "ייצוא",
+    "analyze": "נתח",
+    "flag": "סמן",
+    "addCrm": "הוסף ל-CRM",
+    "addCrmShort": "הוסף CRM"
+  },
+  "detail": {
+    "back": "חזרה",
+    "loadError": "לא ניתן לטעון שיחה",
+    "loadErrorHint": "ייתכן שהוסרה או שאין לך גישה.",
+    "status": "סטטוס",
+    "duration": "משך",
+    "messages": "הודעות",
+    "summary": "תקציר",
+    "conversation": "שיחה",
+    "noMessages": "אין עדיין הודעות בשרשור.",
+    "scoringDetails": "פירוט ציון",
+    "leadScore": "ציון ליד",
+    "overall": "כללי",
+    "qualification": "הסמכה",
+    "markUnqualified": "סמן כלא מוסמך",
+    "confirmQualified": "אשר מוסמך",
+    "takeOverTitle": "קח שליטה",
+    "takeOverBody": "השהה את ה-AI והגב ישירות לליד.",
+    "takeOverBtn": "קח שליטה על השיחה",
+    "takeOverLoading": "לוקח שליטה...",
+    "inControlTitle": "אתה בשליטה",
+    "inControlBody": "אתה מגיב ישירות לליד. ה-AI מושהה.",
+    "messagePlaceholder": "הקלד הודעה...",
+    "sendMessage": "שלח הודעה",
+    "sending": "שולח...",
+    "ownerNotes": "הערות בעלים",
+    "notesPlaceholder": "הוסף הערות לצוות…",
+    "saveNotes": "שמור הערות"
+  },
+  "alerts": {
+    "takeoverFailed": "נכשל לקחת שליטה על השיחה",
+    "sendFailed": "שליחת ההודעה נכשלה"
   },
   "messages": {
-    "deleteConfirm": "האם אתה בטוח שברצונך למחוק שיחה זו?",
+    "deleteConfirm": "האם למחוק שיחה זו?",
     "deleteSuccess": "השיחה נמחקה בהצלחה",
-    "deleteError": "נכשל מחיקת השיחה"
+    "deleteError": "מחיקת השיחה נכשלה"
   }
 }

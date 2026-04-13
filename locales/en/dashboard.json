@@ -2,12 +2,20 @@
   "title": "Dashboard",
   "welcome": "Welcome back",
   "overview": "Overview",
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "tagline": "Here's what's happening with your AI sales rep.",
   "stats": {
     "totalLeads": "Total Leads",
     "qualifiedLeads": "Qualified Leads",
     "conversionRate": "Conversion Rate",
     "activeSimulations": "Active Simulations",
-    "totalConversations": "Total Conversations"
+    "totalConversations": "Total Conversations",
+    "avgLeadScore": "Avg Lead Score",
+    "totalLeadsLabel": "Total Leads"
   },
   "sections": {
     "recentActivity": "Recent Activity",
@@ -17,11 +25,55 @@
   },
   "messages": {
     "noData": "No data available",
-    "loading": "Loading dashboard data..."
+    "loading": "Loading dashboard data...",
+    "approvalLiveTitle": "Your AI is now live!",
+    "approvalLiveBody": "Lead conversations are active. Your AI will start qualifying leads immediately.",
+    "readinessTitle": "Your profile is ready to go live! ({{pct}}% complete)",
+    "readinessBody": "Review and approve your profile to activate lead conversations.",
+    "reviewApprove": "Review & Approve",
+    "noConversationsYet": "No conversations yet",
+    "conversationsHint": "They'll appear here once leads start chatting",
+    "noSummaryFallback": "No summary available",
+    "conversionEmpty": "No leads yet. Complete conversations to see your conversion rate.",
+    "qualifiedLabel": "Qualified",
+    "conversionRateSuffix": "conversion rate"
   },
   "actions": {
     "viewAll": "View All",
     "newSimulation": "New Simulation",
-    "viewAnalytics": "View Analytics"
+    "viewAnalytics": "View Analytics",
+    "viewConversations": "View Conversations",
+    "widgetSettings": "Widget Settings",
+    "startSimulation": "Start a simulation",
+    "reviewProfile": "Review profile",
+    "getWidgetCode": "Get widget code"
+  },
+  "howItWorks": {
+    "title": "How SalesBrain Works",
+    "subtitle": "Complete each step to get your AI sales rep live.",
+    "step1Title": "Run simulations",
+    "step1Body": "Chat with an AI client so SalesBrain learns how you sell.",
+    "step2Title": "Approve your AI profile",
+    "step2Body": "Review what the AI has learned and go live.",
+    "step3Title": "Add the widget to your website",
+    "step3Body": "Embed the chat widget and start capturing leads automatically."
+  },
+  "conversionCard": {
+    "title": "Conversion Rate"
+  },
+  "recentConversations": {
+    "title": "Recent Conversations"
+  },
+  "quickLinks": {
+    "title": "Quick Links",
+    "widget": "Widget Settings",
+    "analytics": "Analytics",
+    "leads": "All Leads",
+    "settings": "Settings"
+  },
+  "trial": {
+    "title": "Free Trial",
+    "body": "Upgrade to unlock unlimited conversations and leads.",
+    "upgrade": "Upgrade Plan"
   }
 }

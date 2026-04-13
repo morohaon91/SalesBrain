@@ -13,5 +13,22 @@
   "password": "Password must contain at least 8 characters, including uppercase, lowercase, and numbers",
   "unique": "This value is already in use",
   "server": "Server validation error",
-  "custom": "Invalid input"
+  "custom": "Invalid input",
+  "login": {
+    "emailInvalid": "Invalid email address",
+    "passwordRequired": "Password is required"
+  },
+  "register": {
+    "nameMin": "Name must be at least 2 characters",
+    "nameMax": "Name must be less than 100 characters",
+    "emailInvalid": "Invalid email address",
+    "businessNameMin": "Business name must be at least 2 characters",
+    "businessNameMax": "Business name must be less than 200 characters",
+    "industryRequired": "Please select your industry",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordUppercase": "Password must contain at least one uppercase letter",
+    "passwordNumber": "Password must contain at least one number",
+    "termsRequired": "You must agree to the terms and conditions",
+    "passwordsMatch": "Passwords don't match"
+  }
 }

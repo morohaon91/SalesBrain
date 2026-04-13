@@ -1,27 +1,79 @@
 {
   "title": "לוח בקרה",
-  "welcome": "ברוכים הבאים חזרה",
+  "welcome": "ברוכים השבים",
   "overview": "סקירה",
+  "greeting": {
+    "morning": "בוקר טוב",
+    "afternoon": "צהריים טובים",
+    "evening": "ערב טוב"
+  },
+  "tagline": "הנה מה שקורה עם נציג המכירות AI שלך.",
   "stats": {
     "totalLeads": "סה\"כ לידים",
     "qualifiedLeads": "לידים מוסמכים",
-    "conversionRate": "שיעור ההמרה",
+    "conversionRate": "שיעור המרה",
     "activeSimulations": "סימולציות פעילות",
-    "totalConversations": "סה\"כ שיחות"
+    "totalConversations": "סה\"כ שיחות",
+    "avgLeadScore": "ציון ליד ממוצע",
+    "totalLeadsLabel": "סה\"כ לידים"
   },
   "sections": {
     "recentActivity": "פעילות אחרונה",
     "upcomingSimulations": "סימולציות קרובות",
-    "topPerformers": "המבצעים הטובים ביותר",
+    "topPerformers": "המובילים",
     "quickActions": "פעולות מהירות"
   },
   "messages": {
     "noData": "אין נתונים זמינים",
-    "loading": "טעינת נתוני לוח הבקרה..."
+    "loading": "טוען נתוני לוח בקרה...",
+    "approvalLiveTitle": "ה-AI שלך בשידור חי!",
+    "approvalLiveBody": "שיחות לידים פעילות. ה-AI יתחיל להסמיך לידים מיד.",
+    "readinessTitle": "הפרופיל מוכן לשידור חי! ({{pct}}% הושלמו)",
+    "readinessBody": "עברו על הפרופיל ואשרו כדי להפעיל שיחות לידים.",
+    "reviewApprove": "סקירה ואישור",
+    "noConversationsYet": "אין עדיין שיחות",
+    "conversationsHint": "הן יופיעו כאן כשלידים יתחילו לצ'אט",
+    "noSummaryFallback": "אין תקציר זמין",
+    "conversionEmpty": "אין עדיין לידים. השלימו שיחות כדי לראות שיעור המרה.",
+    "qualifiedLabel": "מוסמכים",
+    "conversionRateSuffix": "שיעור המרה"
   },
   "actions": {
-    "viewAll": "צפה בהכל",
+    "viewAll": "הצג הכל",
     "newSimulation": "סימולציה חדשה",
-    "viewAnalytics": "צפה באנליטיקה"
+    "viewAnalytics": "צפה באנליטיקה",
+    "viewConversations": "צפה בשיחות",
+    "widgetSettings": "הגדרות וידג'ט",
+    "startSimulation": "התחל סימולציה",
+    "reviewProfile": "סקור פרופיל",
+    "getWidgetCode": "קבל קוד וידג'ט"
+  },
+  "howItWorks": {
+    "title": "איך SalesBrain עובד",
+    "subtitle": "השלימו כל שלב כדי להפעיל את נציג המכירות AI.",
+    "step1Title": "הריצו סימולציות",
+    "step1Body": "שוחחו עם לקוח AI כדי ש-SalesBrain ילמד איך אתם מוכרים.",
+    "step2Title": "אשרו את פרופיל ה-AI",
+    "step2Body": "עברו על מה שה-AI למד ועברו לשידור חי.",
+    "step3Title": "הוסיפו וידג'ט לאתר",
+    "step3Body": "הטמיעו את צ'אט הווידג'ט ותפסו לידים אוטומטית."
+  },
+  "conversionCard": {
+    "title": "שיעור המרה"
+  },
+  "recentConversations": {
+    "title": "שיחות אחרונות"
+  },
+  "quickLinks": {
+    "title": "קישורים מהירים",
+    "widget": "הגדרות וידג'ט",
+    "analytics": "אנליטיקה",
+    "leads": "כל הלידים",
+    "settings": "הגדרות"
+  },
+  "trial": {
+    "title": "ניסיון חינם",
+    "body": "שדרגו לשיחות ולידים ללא הגבלה.",
+    "upgrade": "שדרג תוכנית"
   }
 }

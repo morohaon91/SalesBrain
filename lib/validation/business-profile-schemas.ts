@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import type { TFunction } from 'i18next';
 
 /**
- * Questionnaire data validation schema
+ * Questionnaire data validation schema (English defaults for API / server)
  */
 export const QuestionnaireDataSchema = z.object({
   industry: z.string().min(1, 'Industry is required'),
@@ -19,6 +20,35 @@ export const QuestionnaireDataSchema = z.object({
     errorMap: () => ({ message: 'Please select a team size' }),
   }),
 });
+
+/**
+ * Localized questionnaire schema for client-side forms (onboarding namespace).
+ */
+/** Pass `t` scoped to the `onboarding` namespace (e.g. from useI18n('onboarding')). */
+export function createQuestionnaireDataSchema(t: TFunction) {
+  return z.object({
+    industry: z.string().min(1, t('validation.industryRequired')),
+    serviceDescription: z
+      .string()
+      .min(10, t('validation.serviceDescriptionMin'))
+      .max(1000),
+    targetClientType: z
+      .string()
+      .min(5, t('validation.targetClientMin'))
+      .max(200),
+    typicalBudgetRange: z.string().min(3, t('validation.budgetRequired')).max(100),
+    commonClientQuestions: z
+      .array(z.string().min(5).max(300))
+      .min(1, t('validation.questionsMin'))
+      .max(10),
+    yearsExperience: z.number().min(0).max(100).nullable().optional(),
+    certifications: z.array(z.string().min(3).max(200)).max(20).default([]),
+    serviceArea: z.string().min(3, t('validation.serviceAreaRequired')).max(200),
+    teamSize: z.enum(['Solo', '2-5', '6-10', '10+'], {
+      errorMap: () => ({ message: t('validation.teamSizeRequired') }),
+    }),
+  });
+}
 
 export type QuestionnaireDataInput = z.infer<typeof QuestionnaireDataSchema>;
 

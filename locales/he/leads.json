@@ -1,39 +1,64 @@
 {
   "title": "לידים",
-  "subtitle": "צפה וניהול לידים מוסמכים",
+  "subtitle": "לידים מוסמכים משיחות",
   "list": {
     "empty": "לא נמצאו לידים",
     "search": "חיפוש לידים",
-    "filter": "סנן לפי סטטוס"
+    "filter": "סינון לפי סטטוס",
+    "searchPlaceholder": "חיפוש לפי שם, דוא\"ל, חברה...",
+    "noneFound": "לא נמצאו לידים",
+    "adjustFilters": "נסו לשנות את המסננים",
+    "startConversations": "התחילו שיחות כדי ליצור לידים",
+    "failedLoad": "טעינת הלידים נכשלה",
+    "tryAgain": "נסו שוב"
+  },
+  "stats": {
+    "total": "סה\"כ לידים",
+    "new": "חדש",
+    "contacted": "נוצר קשר",
+    "avgScore": "ציון ממוצע"
   },
   "columns": {
     "name": "שם",
     "email": "דוא\"ל",
     "company": "חברה",
-    "score": "ניקוד",
+    "score": "ציון",
     "status": "סטטוס",
     "date": "תאריך",
     "actions": "פעולות"
   },
+  "leadStatus": {
+    "NEW": "חדש",
+    "CONTACTED": "נוצר קשר",
+    "QUALIFIED": "מוסמך"
+  },
+  "sort": {
+    "score": "ציון גבוה ביותר",
+    "date": "האחרונים",
+    "name": "שם (א-ת)"
+  },
   "status": {
     "qualified": "מוסמך",
-    "pending": "בהמתנה",
+    "pending": "ממתין",
     "rejected": "נדחה",
-    "contacted": "יצור קשר"
+    "contacted": "נוצר קשר"
   },
   "actions": {
     "view": "צפה",
-    "contact": "יצור קשר",
-    "edit": "עריכה",
+    "contact": "צור קשר",
+    "edit": "ערוך",
     "export": "ייצוא"
   },
+  "badges": {
+    "needsReview": "דורש סקירה"
+  },
   "detail": {
-    "information": "מידע על ליד",
+    "information": "פרטי ליד",
     "history": "היסטוריית הסמכה",
     "interactions": "אינטראקציות"
   },
   "messages": {
-    "noLeads": "אין לידים זמינים עדיין",
-    "loading": "טעינת לידים..."
+    "noLeads": "אין עדיין לידים",
+    "loading": "טוען לידים..."
   }
 }

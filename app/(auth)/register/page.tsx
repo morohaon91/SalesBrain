@@ -1,53 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useI18n } from "@/lib/hooks/useI18n";
 import { INDUSTRY_LIST } from "@/lib/templates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { AlertCircle, Loader2, CheckCircle } from "lucide-react";
+import type { TFunction } from "i18next";
 
-/**
- * Register form validation schema
- */
-const registerSchema = z
-  .object({
-    name: z
-      .string()
-      .min(2, "Name must be at least 2 characters")
-      .max(100, "Name must be less than 100 characters"),
-    email: z.string().email("Invalid email address"),
-    businessName: z
-      .string()
-      .min(2, "Business name must be at least 2 characters")
-      .max(200, "Business name must be less than 200 characters"),
-    industry: z.string().min(1, "Please select your industry"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
-    confirmPassword: z.string(),
-    terms: z.boolean().refine((val) => val === true, {
-      message: "You must agree to the terms and conditions",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type RegisterFormData = z.infer<typeof registerSchema>;
-
-/**
- * Password strength indicator
- */
-function PasswordStrengthIndicator({ password }: { password: string }) {
+function PasswordStrengthIndicator({
+  password,
+  t,
+}: {
+  password: string;
+  t: TFunction;
+}) {
   let strength = 0;
 
   if (password.length >= 8) strength++;
@@ -63,10 +36,10 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
   };
 
   const getStrengthLabel = (str: number) => {
-    if (str <= 1) return "Weak";
-    if (str <= 2) return "Fair";
-    if (str <= 3) return "Good";
-    return "Strong";
+    if (str <= 1) return t("auth:passwordStrength.weak");
+    if (str <= 2) return t("auth:passwordStrength.fair");
+    if (str <= 3) return t("auth:passwordStrength.good");
+    return t("auth:passwordStrength.strong");
   };
 
   return (
@@ -82,18 +55,50 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
         ))}
       </div>
       <p className="text-xs text-gray-600">
-        Strength: <span className="font-medium">{getStrengthLabel(strength)}</span>
+        {t("auth:passwordStrength.label")}{" "}
+        <span className="font-medium">{getStrengthLabel(strength)}</span>
       </p>
     </div>
   );
 }
 
-/**
- * Register page component
- */
+type RegisterFormData = z.infer<ReturnType<typeof buildRegisterSchema>>;
+
+function buildRegisterSchema(t: TFunction) {
+  return z
+    .object({
+      name: z
+        .string()
+        .min(2, t("validation:register.nameMin"))
+        .max(100, t("validation:register.nameMax")),
+      email: z.string().email(t("validation:register.emailInvalid")),
+      businessName: z
+        .string()
+        .min(2, t("validation:register.businessNameMin"))
+        .max(200, t("validation:register.businessNameMax")),
+      industry: z.string().min(1, t("validation:register.industryRequired")),
+      password: z
+        .string()
+        .min(8, t("validation:register.passwordMin"))
+        .regex(/[A-Z]/, t("validation:register.passwordUppercase"))
+        .regex(/[0-9]/, t("validation:register.passwordNumber")),
+      confirmPassword: z.string(),
+      terms: z.boolean().refine((val) => val === true, {
+        message: t("validation:register.termsRequired"),
+      }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("validation:register.passwordsMatch"),
+      path: ["confirmPassword"],
+    });
+}
+
 export default function RegisterPage() {
   const { register: registerUser, error: authError, clearError } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useI18n(["auth", "validation"]);
+
+  const registerSchema = useMemo(() => buildRegisterSchema(t), [t]);
 
   const {
     register,
@@ -106,9 +111,6 @@ export default function RegisterPage() {
 
   const password = watch("password");
 
-  /**
-   * Handle form submission
-   */
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setIsLoading(true);
@@ -121,10 +123,7 @@ export default function RegisterPage() {
         industry: data.industry,
         password: data.password,
       });
-
-      // Redirect happens in useAuth hook
     } catch (err) {
-      // Error is handled by useAuth hook
       console.error("Registration error:", err);
     } finally {
       setIsLoading(false);
@@ -133,15 +132,11 @@ export default function RegisterPage() {
 
   return (
     <div className="space-y-6">
-      {/* Heading */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-        <p className="text-gray-600 mt-1">
-          Get started with AI-powered lead qualification in minutes
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900">{t("auth:register.heading")}</h2>
+        <p className="text-gray-600 mt-1">{t("auth:register.subtitle")}</p>
       </div>
 
-      {/* Error Alert */}
       {authError && (
         <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
           <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
@@ -151,12 +146,10 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* Register Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Name Field */}
         <div className="space-y-2">
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Full name
+            {t("auth:register.name")}
           </label>
           <Input
             id="name"
@@ -171,10 +164,9 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Email Field */}
         <div className="space-y-2">
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email address
+            {t("auth:register.emailAddress")}
           </label>
           <Input
             id="email"
@@ -189,10 +181,9 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Business Name Field */}
         <div className="space-y-2">
           <label htmlFor="businessName" className="block text-sm font-medium text-gray-700">
-            Business name
+            {t("auth:register.businessName")}
           </label>
           <Input
             id="businessName"
@@ -207,14 +198,13 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Industry Field */}
         <div className="space-y-2">
           <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
-            Industry
+            {t("auth:register.industry")}
           </label>
           <Select
             id="industry"
-            placeholder="Select your industry"
+            placeholder={t("auth:register.industryPlaceholder")}
             options={INDUSTRY_LIST}
             {...register("industry")}
             disabled={isLoading}
@@ -225,10 +215,9 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Password Field */}
         <div className="space-y-2">
           <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Password
+            {t("auth:register.password")}
           </label>
           <Input
             id="password"
@@ -241,16 +230,15 @@ export default function RegisterPage() {
               register("password").onChange(e);
             }}
           />
-          {password && <PasswordStrengthIndicator password={password} />}
+          {password && <PasswordStrengthIndicator password={password} t={t} />}
           {errors.password && (
             <p className="text-sm text-danger-600">{errors.password.message}</p>
           )}
         </div>
 
-        {/* Confirm Password Field */}
         <div className="space-y-2">
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-            Confirm password
+            {t("auth:register.confirmPassword")}
           </label>
           <Input
             id="confirmPassword"
@@ -265,7 +253,6 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Terms & Conditions */}
         <div className="space-y-2">
           <label className="flex items-start gap-2 cursor-pointer">
             <input
@@ -275,13 +262,13 @@ export default function RegisterPage() {
               className="mt-1 rounded border-gray-300"
             />
             <span className="text-sm text-gray-700">
-              I agree to the{" "}
+              {t("auth:register.terms")}{" "}
               <Link href="/terms" className="text-primary-600 hover:text-primary-700">
-                terms and conditions
+                {t("auth:register.termsLink")}
               </Link>{" "}
-              and{" "}
+              {t("auth:register.and")}{" "}
               <Link href="/privacy" className="text-primary-600 hover:text-primary-700">
-                privacy policy
+                {t("auth:register.privacyLink")}
               </Link>
             </span>
           </label>
@@ -290,7 +277,6 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Submit Button */}
         <Button
           type="submit"
           disabled={isLoading}
@@ -299,48 +285,45 @@ export default function RegisterPage() {
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
+              {t("auth:register.creating")}
             </>
           ) : (
-            "Create account"
+            t("auth:register.submit")
           )}
         </Button>
       </form>
 
-      {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-300"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or</span>
+          <span className="px-2 bg-white text-gray-500">{t("auth:register.or")}</span>
         </div>
       </div>
 
-      {/* Sign In Link */}
       <div className="text-center">
         <p className="text-gray-600">
-          Already have an account?{" "}
+          {t("auth:register.haveAccount")}{" "}
           <Link
             href="/login"
             className="text-primary-600 hover:text-primary-700 font-medium"
           >
-            Sign in
+            {t("auth:register.signIn")}
           </Link>
         </p>
       </div>
 
-      {/* Benefits */}
       <div className="bg-success-50 border border-success-200 rounded-lg p-4 space-y-2">
         <p className="text-sm font-medium text-success-900 flex items-center gap-2">
           <CheckCircle className="w-4 h-4" />
-          What you get:
+          {t("auth:register.benefitsTitle")}
         </p>
         <ul className="text-sm text-success-800 space-y-1 ml-6 list-disc">
-          <li>14-day free trial</li>
-          <li>Unlimited simulations</li>
-          <li>AI-powered lead qualification</li>
-          <li>24/7 support</li>
+          <li>{t("auth:register.benefit1")}</li>
+          <li>{t("auth:register.benefit2")}</li>
+          <li>{t("auth:register.benefit3")}</li>
+          <li>{t("auth:register.benefit4")}</li>
         </ul>
       </div>
     </div>

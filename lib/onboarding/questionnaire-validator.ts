@@ -1,22 +1,39 @@
 import { QuestionnaireData, QuestionnaireValidation, QuestionnaireValidationError } from '@/lib/types/onboarding';
 import { QuestionnaireDataSchema } from '@/lib/validation/business-profile-schemas';
-import { ZodError } from 'zod';
+import { ZodError, ZodType } from 'zod';
 
-export function validateQuestionnaireData(data: QuestionnaireData): QuestionnaireValidation {
+export type ValidateQuestionnaireOptions = {
+  /** Defaults to {@link QuestionnaireDataSchema} (English API messages). */
+  schema?: ZodType<QuestionnaireData>;
+  duplicateQuestions?: string;
+  addOneQuestion?: string;
+};
+
+export function validateQuestionnaireData(
+  data: QuestionnaireData,
+  options?: ValidateQuestionnaireOptions
+): QuestionnaireValidation {
   const errors: QuestionnaireValidationError[] = [];
+  const schema = options?.schema ?? QuestionnaireDataSchema;
 
   try {
-    QuestionnaireDataSchema.parse(data);
+    schema.parse(data);
 
     if (!data.commonClientQuestions || data.commonClientQuestions.length === 0) {
-      errors.push({ field: 'commonClientQuestions', message: 'Please add at least one common client question' });
+      errors.push({
+        field: 'commonClientQuestions',
+        message: options?.addOneQuestion ?? 'Please add at least one common client question',
+      });
     }
 
     const uniqueQuestions = new Set(
       (data.commonClientQuestions || []).map((q) => q.toLowerCase().trim())
     );
     if (uniqueQuestions.size !== (data.commonClientQuestions || []).length) {
-      errors.push({ field: 'commonClientQuestions', message: 'Duplicate questions detected' });
+      errors.push({
+        field: 'commonClientQuestions',
+        message: options?.duplicateQuestions ?? 'Duplicate questions detected',
+      });
     }
 
     return { isValid: errors.length === 0, errors };

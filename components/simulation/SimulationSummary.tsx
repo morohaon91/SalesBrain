@@ -114,19 +114,19 @@ export default function SimulationSummary({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button onClick={handleContinue} className="flex-1" size="lg">
-            <ArrowRight className="h-5 w-5 mr-2" />
-            Continue to Next Simulation
+          <Button onClick={handleContinue} className="flex-1 inline-flex items-center justify-center gap-2" size="lg">
+            <span>Continue to Next Simulation</span>
+            <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
           </Button>
           <Button
             variant="outline"
             onClick={handleReview}
             disabled={extractionStatus === 'extracting'}
-            className="flex-1"
+            className="flex-1 inline-flex items-center justify-center gap-2"
             size="lg"
           >
-            <Eye className="h-5 w-5 mr-2" />
-            Review What We Learned
+            <Eye className="h-5 w-5 shrink-0" aria-hidden />
+            <span>Review What We Learned</span>
           </Button>
         </div>
       </div>

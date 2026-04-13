@@ -73,5 +73,32 @@
     "noData": "אין נתונים עדיין",
     "noResults": "לא נמצאו תוצאות",
     "tryAgain": "נסה שוב"
+  },
+  "home": {
+    "title": "SalesBrain",
+    "tagline": "פלטפורמת הסמכת לידים מבוססת AI",
+    "launch": "מתכוננים להשקה..."
+  },
+  "loadingScreen": {
+    "title": "טעינה",
+    "subtitle": "מכינים את לוח הבקרה..."
+  },
+  "pagination": {
+    "previous": "הקודם",
+    "next": "הבא",
+    "pageOf": "עמוד {{current}} מתוך {{total}}"
+  },
+  "filters": {
+    "all": "הכל",
+    "allStatus": "כל הסטטוסים",
+    "allQualifications": "כל הסיווגים"
+  },
+  "units": {
+    "min": "דק'",
+    "messages": "הודעות",
+    "msgs": "הודעות",
+    "score": "ציון",
+    "conversation": "שיחה",
+    "conversations": "שיחות"
   }
 }

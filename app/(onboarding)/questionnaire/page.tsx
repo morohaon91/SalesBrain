@@ -7,9 +7,11 @@ import OnboardingProgress from '@/components/onboarding/OnboardingProgress';
 import { QuestionnaireData } from '@/lib/types/onboarding';
 import { Card } from '@/components/ui/card';
 import { authFetch } from '@/lib/api/auth-fetch';
+import { useI18n } from '@/lib/hooks/useI18n';
 
 export default function QuestionnairePage() {
   const router = useRouter();
+  const { t } = useI18n('onboarding');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +27,7 @@ export default function QuestionnairePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to save questionnaire');
+        throw new Error(errorData.error?.message || t('questionnaire.submitError'));
       }
 
       const result = await response.json();
@@ -35,7 +37,7 @@ export default function QuestionnairePage() {
           : '/simulations/new'
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : t('questionnaire.genericError'));
       setIsSubmitting(false);
     }
   };
@@ -46,10 +48,8 @@ export default function QuestionnairePage() {
         <OnboardingProgress currentStep="questionnaire" />
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Tell us about your business</h1>
-          <p className="mt-2 text-gray-600">
-            This helps us create realistic practice scenarios tailored to your industry
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('questionnaire.pageTitle')}</h1>
+          <p className="mt-2 text-gray-600">{t('questionnaire.pageSubtitle')}</p>
         </div>
 
         {error && (
@@ -63,7 +63,7 @@ export default function QuestionnairePage() {
         </Card>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>This takes about 3 minutes. You can always update this information later.</p>
+          <p>{t('questionnaire.footer')}</p>
         </div>
       </div>
     </div>

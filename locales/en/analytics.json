@@ -1,6 +1,11 @@
 {
   "title": "Analytics",
-  "subtitle": "View detailed performance metrics",
+  "subtitle": "Track conversations, leads, and performance metrics",
+  "period": {
+    "7d": "7 days",
+    "30d": "30 days",
+    "90d": "90 days"
+  },
   "overview": "Overview",
   "metrics": {
     "totalLeads": "Total Leads",
@@ -8,7 +13,17 @@
     "conversionRate": "Conversion Rate",
     "avgScore": "Average Score",
     "topPerformingSimulation": "Top Performing Simulation",
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "conversations": "Conversations",
+    "qualified": "Qualified",
+    "avgScoreShort": "Avg Score",
+    "responseTime": "Response Time"
+  },
+  "distribution": {
+    "title": "Lead Distribution",
+    "hot": "Hot",
+    "warm": "Warm",
+    "cold": "Cold"
   },
   "charts": {
     "leadQualification": "Lead Qualification Trend",

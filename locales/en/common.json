@@ -73,5 +73,32 @@
     "noData": "No data yet",
     "noResults": "No results found",
     "tryAgain": "Try again"
+  },
+  "home": {
+    "title": "SalesBrain",
+    "tagline": "AI-powered lead qualification platform",
+    "launch": "Getting ready to launch..."
+  },
+  "loadingScreen": {
+    "title": "Loading",
+    "subtitle": "Setting up your dashboard..."
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{current}} of {{total}}"
+  },
+  "filters": {
+    "all": "All",
+    "allStatus": "All Status",
+    "allQualifications": "All Qualifications"
+  },
+  "units": {
+    "min": "min",
+    "messages": "messages",
+    "msgs": "msgs",
+    "score": "Score",
+    "conversation": "conversation",
+    "conversations": "conversations"
   }
 }

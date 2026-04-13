@@ -24,6 +24,12 @@ import errorsEn from './locales/en/errors.json';
 import errorsHe from './locales/he/errors.json';
 import validationEn from './locales/en/validation.json';
 import validationHe from './locales/he/validation.json';
+import onboardingEn from './locales/en/onboarding.json';
+import onboardingHe from './locales/he/onboarding.json';
+import widgetEn from './locales/en/widget.json';
+import widgetHe from './locales/he/widget.json';
+import adminEn from './locales/en/admin.json';
+import adminHe from './locales/he/admin.json';
 
 const resources = {
   en: {
@@ -38,6 +44,9 @@ const resources = {
     settings: settingsEn,
     errors: errorsEn,
     validation: validationEn,
+    onboarding: onboardingEn,
+    widget: widgetEn,
+    admin: adminEn,
   },
   he: {
     common: commonHe,
@@ -51,13 +60,18 @@ const resources = {
     settings: settingsHe,
     errors: errorsHe,
     validation: validationHe,
+    onboarding: onboardingHe,
+    widget: widgetHe,
+    admin: adminHe,
   },
 };
 
 if (!i18n.isInitialized) {
+  // Always start with 'en' so SSR and the first client render match (avoids hydration errors).
+  // I18nProvider applies localStorage language in useEffect after mount.
   i18n.use(initReactI18next).init({
     resources,
-    lng: typeof window !== 'undefined' ? localStorage.getItem('language') || 'en' : 'en',
+    lng: 'en',
     fallbackLng: 'en',
     defaultNS: 'common',
     ns: [
@@ -72,6 +86,9 @@ if (!i18n.isInitialized) {
       'settings',
       'errors',
       'validation',
+      'onboarding',
+      'widget',
+      'admin',
     ],
     interpolation: {
       escapeValue: false,

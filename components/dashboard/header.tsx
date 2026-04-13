@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useI18n } from "@/lib/hooks/useI18n";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { rtlMirrorIcon } from "@/lib/i18n/rtl-icons";
 import {
   LogOut,
   Settings,
@@ -50,7 +51,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { t } = useI18n('common');
+  const { t, isHebrew } = useI18n('common');
 
   const pageTitle = getTitleFromPathname(pathname)
     .split("-")
@@ -84,7 +85,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
         {/* Mobile Menu Button */}
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="lg:hidden p-2 -ms-2 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label={t('header.openMenu')}
         >
           <Menu className="w-5 h-5 text-gray-600" />
@@ -101,7 +102,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
           className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           aria-label={t('header.notifications')}
         >
-          <Bell className="w-5 h-5 flip-rtl" />
+          <Bell className="w-5 h-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-danger-500 rounded-full" />
         </button>
 
@@ -130,7 +131,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
           {/* Dropdown Menu */}
           {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50">
+            <div className="absolute end-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50">
               {/* User Info */}
               <div className="px-4 py-3 border-b border-gray-100">
                 <p className="text-sm font-medium text-gray-900">{user?.name}</p>
@@ -140,18 +141,20 @@ export function Header({ onMenuToggle }: HeaderProps) {
               {/* Menu Items */}
               <div className="py-2">
                 <button
+                  type="button"
                   onClick={handleProfileClick}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-start"
                 >
-                  <User className="w-4 h-4 flex-shrink-0" />
+                  <User className="w-4 h-4 shrink-0" aria-hidden />
                   {t('menu.profile')}
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleSettingsClick}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-start"
                 >
-                  <Settings className="w-4 h-4 flex-shrink-0" />
+                  <Settings className="w-4 h-4 shrink-0" aria-hidden />
                   {t('menu.settings')}
                 </button>
 
@@ -162,10 +165,11 @@ export function Header({ onMenuToggle }: HeaderProps) {
               {/* Divider */}
               <div className="border-t border-gray-100 py-2">
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-danger-600 hover:bg-danger-50 transition-colors text-start"
                 >
-                  <LogOut className="w-4 h-4 flex-shrink-0" />
+                  <LogOut className={rtlMirrorIcon(isHebrew, 'w-4 h-4 shrink-0')} aria-hidden />
                   {t('menu.signOut')}
                 </button>
               </div>

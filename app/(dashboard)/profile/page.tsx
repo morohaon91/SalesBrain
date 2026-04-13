@@ -21,6 +21,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useI18n } from '@/lib/hooks/useI18n';
+import { rtlMirrorIcon } from '@/lib/i18n/rtl-icons';
 
 type TabType = 'basic-info' | 'extracted-patterns';
 
@@ -52,6 +54,7 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { t, isHebrew } = useI18n(['profile', 'common']);
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -128,7 +131,7 @@ export default function ProfilePage() {
         // No simulations yet
         setAlertMessage({
           type: 'info',
-          text: 'No simulations yet. Complete simulations to build your profile automatically.',
+          text: t('messages.noSimulationsInfo'),
         });
         setTimeout(() => setAlertMessage(null), 5000);
       }
@@ -166,7 +169,7 @@ export default function ProfilePage() {
   };
 
   const handleResetToDefaults = async () => {
-    if (!confirm('Reset all Basic Info to template defaults?')) return;
+    if (!confirm(t('messages.resetConfirm'))) return;
     try {
       await resetProfileMutation.mutateAsync();
     } catch (err) {
@@ -187,7 +190,7 @@ export default function ProfilePage() {
       <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
         <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-danger-900">Failed to load profile</p>
+          <p className="text-sm font-medium text-danger-900">{t('messages.loadError')}</p>
         </div>
       </div>
     );
@@ -199,17 +202,17 @@ export default function ProfilePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            Business Profile
+            {t('businessProfile.title')}
           </h1>
           <p className="text-gray-600 text-sm sm:text-base mt-1">
-            Manage your business information and extracted patterns
+            {t('businessProfile.subtitle')}
           </p>
         </div>
 
         <div className="flex gap-2 flex-wrap flex-shrink-0">
           <Button variant="outline" className="flex items-center gap-2 text-sm whitespace-nowrap">
             <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">{t('businessProfile.export')}</span>
           </Button>
         </div>
       </div>
@@ -218,7 +221,7 @@ export default function ProfilePage() {
       {saveSuccess && (
         <div className="bg-success-50 border border-success-200 rounded-lg p-4 flex gap-3 animate-in fade-in">
           <CheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-success-900">Changes saved successfully!</p>
+            <p className="text-sm text-success-900">{t('messages.saveSuccess')}</p>
         </div>
       )}
 
@@ -257,7 +260,7 @@ export default function ProfilePage() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            Basic Info
+            {t('businessProfile.tabBasic')}
           </button>
           <button
             onClick={() => setActiveTab('extracted-patterns')}
@@ -267,7 +270,7 @@ export default function ProfilePage() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            Extracted Patterns
+            {t('businessProfile.tabExtracted')}
           </button>
         </div>
       </div>
@@ -278,10 +281,10 @@ export default function ProfilePage() {
           <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                Business Information
+                {t('businessProfile.businessInfoTitle')}
               </h2>
               <p className="text-sm text-gray-600">
-                Edit your business details. These help create realistic simulations.
+                {t('businessProfile.businessInfoHint')}
               </p>
             </div>
 
@@ -289,7 +292,7 @@ export default function ProfilePage() {
               {/* Industry */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Industry
+                  {t('businessProfile.industry')}
                 </label>
                 <Select
                   value={industry}
@@ -299,37 +302,37 @@ export default function ProfilePage() {
                   className="w-full"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Change this to get different simulation scenarios
+                  {t('businessProfile.industryHint')}
                 </p>
               </div>
 
               {/* Service Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Service Description
+                  {t('businessProfile.serviceDescription')}
                 </label>
                 <Textarea
                   value={serviceDescription}
                   onChange={(e) => setServiceDescription(e.target.value)}
-                  placeholder="What services do you offer?"
+                  placeholder={t('businessProfile.servicePlaceholder')}
                   rows={4}
                   disabled={isSaving}
                   className="w-full"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Describe what you do. Used to create realistic client questions.
+                  {t('businessProfile.serviceHint')}
                 </p>
               </div>
 
               {/* Target Client Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Client Type
+                  {t('businessProfile.targetClient')}
                 </label>
                 <Input
                   value={targetClientType}
                   onChange={(e) => setTargetClientType(e.target.value)}
-                  placeholder="Who is your ideal client?"
+                  placeholder={t('businessProfile.targetPlaceholder')}
                   disabled={isSaving}
                 />
               </div>
@@ -337,12 +340,12 @@ export default function ProfilePage() {
               {/* Typical Budget Range */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Typical Budget Range
+                  {t('businessProfile.budgetRange')}
                 </label>
                 <Input
                   value={typicalBudgetRange}
                   onChange={(e) => setTypicalBudgetRange(e.target.value)}
-                  placeholder="What budget do clients typically have?"
+                  placeholder={t('businessProfile.budgetPlaceholder')}
                   disabled={isSaving}
                 />
               </div>
@@ -350,7 +353,7 @@ export default function ProfilePage() {
               {/* Common Questions */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Common Client Questions
+                  {t('businessProfile.commonQuestions')}
                 </label>
                 <div className="space-y-2">
                   {commonQuestions.map((question, index) => (
@@ -358,7 +361,7 @@ export default function ProfilePage() {
                       <Input
                         value={question}
                         onChange={(e) => handleUpdateQuestion(index, e.target.value)}
-                        placeholder="e.g., What's your pricing?"
+                        placeholder={t('businessProfile.questionPlaceholder')}
                         disabled={isSaving}
                       />
                       <Button
@@ -367,7 +370,7 @@ export default function ProfilePage() {
                         disabled={isSaving}
                         className="flex-shrink-0"
                       >
-                        Remove
+                        {t('businessProfile.remove')}
                       </Button>
                     </div>
                   ))}
@@ -378,7 +381,7 @@ export default function ProfilePage() {
                   disabled={isSaving}
                   className="mt-2 w-full"
                 >
-                  + Add Question
+                  {t('businessProfile.addQuestion')}
                 </Button>
               </div>
             </div>
@@ -393,10 +396,10 @@ export default function ProfilePage() {
                 {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
+                    {t('businessProfile.saving')}
                   </>
                 ) : (
-                  'Save Changes'
+                  t('actions.save')
                 )}
               </Button>
               <Button
@@ -404,7 +407,7 @@ export default function ProfilePage() {
                 variant="outline"
                 disabled={isSaving}
               >
-                Reset to Defaults
+                {t('businessProfile.resetDefaults')}
               </Button>
             </div>
           </div>
@@ -414,11 +417,10 @@ export default function ProfilePage() {
           <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                Extracted Patterns
+                {t('businessProfile.extractedTitle')}
               </h2>
               <p className="text-sm text-gray-600">
-                Your business profile is automatically built from your simulations.
-                Complete more simulations to improve accuracy.
+                {t('businessProfile.extractedIntro')}
               </p>
             </div>
 
@@ -426,9 +428,9 @@ export default function ProfilePage() {
             {/* Shareable lead chat link (after go-live) */}
             {profile?.leadConversationsActive && profile?.leadChatPath && (
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-sm font-semibold text-slate-900 mb-1">Lead chat link</h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('businessProfile.leadChatTitle')}</h3>
                 <p className="text-xs text-slate-600 mb-2">
-                  Send this URL to a prospect to test the AI as it speaks for your business (same profile as go-live).
+                  {t('businessProfile.leadChatHint')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                   <code className="flex-1 text-xs bg-white border rounded px-2 py-1.5 break-all">
@@ -443,7 +445,7 @@ export default function ProfilePage() {
                       void navigator.clipboard.writeText(url);
                     }}
                   >
-                    Copy link
+                    {t('businessProfile.copyLink')}
                   </Button>
                   <Button
                     type="button"
@@ -454,7 +456,7 @@ export default function ProfilePage() {
                       window.open(url, '_blank', 'noopener,noreferrer');
                     }}
                   >
-                    Open
+                    {t('businessProfile.open')}
                   </Button>
                 </div>
               </div>
@@ -469,12 +471,13 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <Zap className="h-6 w-6 text-blue-600 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="font-semibold text-blue-900">Your profile is ready to go live! ({pct}% complete)</p>
-                      <p className="text-sm text-blue-700 mt-0.5">Review your extracted patterns and approve to activate AI lead conversations.</p>
+                      <p className="font-semibold text-blue-900">{t('businessProfile.readinessTitle', { pct })}</p>
+                      <p className="text-sm text-blue-700 mt-0.5">{t('businessProfile.readinessBody')}</p>
                     </div>
                     <Link href="/profile/approve">
-                      <Button size="sm" className="whitespace-nowrap">
-                        Review &amp; Approve <ArrowRight className="h-4 w-4 ml-1" />
+                      <Button size="sm" className="whitespace-nowrap inline-flex items-center gap-1.5">
+                        <span>{t('businessProfile.reviewApprove')}</span>
+                        <ArrowRight className={rtlMirrorIcon(isHebrew, 'h-4 w-4 shrink-0')} aria-hidden />
                       </Button>
                     </Link>
                   </div>
@@ -484,7 +487,7 @@ export default function ProfilePage() {
                 return (
                   <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
                     <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <p className="text-sm font-medium text-green-900">Your AI is live and actively qualifying leads.</p>
+                    <p className="text-sm font-medium text-green-900">{t('businessProfile.liveBanner')}</p>
                   </div>
                 );
               }
@@ -494,7 +497,7 @@ export default function ProfilePage() {
             {/* Completion Progress */}
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-gray-900">Profile Completion</span>
+                <span className="font-semibold text-gray-900">{t('businessProfile.completionLabel')}</span>
                 <span className="text-2xl font-bold text-primary-600">
                   {profile?.completionPercentage ?? 0}%
                 </span>
@@ -511,14 +514,20 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center justify-between text-sm text-gray-600">
                 <span>
-                  {profile?.simulationCount ?? 0} simulation{(profile?.simulationCount ?? 0) !== 1 ? 's' : ''} completed
+                  {(profile?.simulationCount ?? 0) === 1
+                    ? t('businessProfile.oneSimDone')
+                    : t('businessProfile.manySimDone', { count: profile?.simulationCount ?? 0 })}
                   {profile?.lastExtractedAt
-                    ? ` · Last extracted ${new Date(profile.lastExtractedAt).toLocaleDateString()}`
+                    ? t('businessProfile.lastExtracted', {
+                        date: new Date(profile.lastExtractedAt).toLocaleDateString(),
+                      })
                     : ''}
                 </span>
                 {(profile?.completionPercentage ?? 0) < 70 && (
                   <span className="text-blue-600 font-medium">
-                    {70 - (profile?.completionPercentage ?? 0)}% to go-live threshold
+                    {t('businessProfile.toGoLive', {
+                      pct: 70 - (profile?.completionPercentage ?? 0),
+                    })}
                   </span>
                 )}
               </div>
@@ -526,13 +535,13 @@ export default function ProfilePage() {
               {profile?.completionBreakdown && (
                 <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 border-t border-gray-200 pt-3">
                   {[
-                    ['Questionnaire', profile.completionBreakdown.questionnaire, 20],
-                    ['Communication', profile.completionBreakdown.communicationStyle, 15],
-                    ['Pricing logic', profile.completionBreakdown.pricingLogic, 15],
-                    ['Qualification', profile.completionBreakdown.qualificationCriteria, 15],
-                    ['Objections', profile.completionBreakdown.objectionHandling, 15],
-                    ['Decision making', profile.completionBreakdown.decisionMaking, 10],
-                    ['Business facts', profile.completionBreakdown.businessFacts, 10],
+                    [t('businessProfile.breakdownQuestionnaire'), profile.completionBreakdown.questionnaire, 20],
+                    [t('businessProfile.breakdownCommunication'), profile.completionBreakdown.communicationStyle, 15],
+                    [t('businessProfile.breakdownPricing'), profile.completionBreakdown.pricingLogic, 15],
+                    [t('businessProfile.breakdownQualification'), profile.completionBreakdown.qualificationCriteria, 15],
+                    [t('businessProfile.breakdownObjections'), profile.completionBreakdown.objectionHandling, 15],
+                    [t('businessProfile.breakdownDecision'), profile.completionBreakdown.decisionMaking, 10],
+                    [t('businessProfile.breakdownFacts'), profile.completionBreakdown.businessFacts, 10],
                   ].map(([label, pts, max]) => (
                     <div key={label as string} className="flex justify-between">
                       <span>{label as string}</span>
@@ -552,12 +561,12 @@ export default function ProfilePage() {
                 {profile?.communicationStyle && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">
-                      Communication Style
+                      {t('businessProfile.commStyle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                       {profile.communicationStyle.tone && (
                         <div>
-                          <span className="text-sm text-gray-600">Tone:</span>
+                          <span className="text-sm text-gray-600">{t('businessProfile.tone')}</span>
                           <p className="font-medium text-gray-900">
                             {profile.communicationStyle.tone}
                           </p>
@@ -565,7 +574,7 @@ export default function ProfilePage() {
                       )}
                       {profile.communicationStyle.style && (
                         <div>
-                          <span className="text-sm text-gray-600">Style:</span>
+                          <span className="text-sm text-gray-600">{t('businessProfile.style')}</span>
                           <p className="font-medium text-gray-900">
                             {profile.communicationStyle.style}
                           </p>
@@ -573,7 +582,7 @@ export default function ProfilePage() {
                       )}
                       {profile.communicationStyle.keyPhrases?.length > 0 && (
                         <div>
-                          <span className="text-sm text-gray-600">Key Phrases:</span>
+                          <span className="text-sm text-gray-600">{t('businessProfile.keyPhrases')}</span>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {profile.communicationStyle.keyPhrases.map(
                               (phrase: string, i: number) => (
@@ -595,13 +604,15 @@ export default function ProfilePage() {
                 {/* Pricing Logic */}
                 {profile?.pricingLogic && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Pricing Logic</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">{t('businessProfile.pricingLogic')}</h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                       {profile.pricingLogic.minBudget && (
                         <div className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
-                            Minimum budget: ${profile.pricingLogic.minBudget.toLocaleString()}
+                            {t('businessProfile.minBudget', {
+                              amount: profile.pricingLogic.minBudget.toLocaleString(),
+                            })}
                           </span>
                         </div>
                       )}
@@ -609,7 +620,9 @@ export default function ProfilePage() {
                         <div className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
-                            Maximum budget: ${profile.pricingLogic.maxBudget.toLocaleString()}
+                            {t('businessProfile.maxBudget', {
+                              amount: profile.pricingLogic.maxBudget.toLocaleString(),
+                            })}
                           </span>
                         </div>
                       )}
@@ -617,7 +630,9 @@ export default function ProfilePage() {
                         (factor: string, i: number) => (
                           <div key={i} className="flex items-start gap-2">
                             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">Flexible on: {factor}</span>
+                            <span className="text-sm">
+                              {t('businessProfile.flexibleOn', { factor })}
+                            </span>
                           </div>
                         )
                       )}
@@ -629,13 +644,13 @@ export default function ProfilePage() {
                 {profile?.qualificationCriteria && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">
-                      Qualification Criteria
+                      {t('businessProfile.qualificationTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                       {profile.qualificationCriteria.dealBreakers?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            Deal Breakers:
+                            {t('businessProfile.dealBreakers')}
                           </h4>
                           <ul className="space-y-1">
                             {profile.qualificationCriteria.dealBreakers.map(
@@ -653,7 +668,7 @@ export default function ProfilePage() {
                       {profile.qualificationCriteria.greenFlags?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            Green Flags:
+                            {t('businessProfile.greenFlags')}
                           </h4>
                           <ul className="space-y-1">
                             {profile.qualificationCriteria.greenFlags.map(
@@ -675,7 +690,7 @@ export default function ProfilePage() {
                 {profile?.objectionHandling && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">
-                      Objection Handling
+                      {t('businessProfile.objectionTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                       {Object.entries(profile.objectionHandling).map(
@@ -698,13 +713,13 @@ export default function ProfilePage() {
                 {profile?.decisionMakingPatterns && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">
-                      Decision Making Patterns
+                      {t('businessProfile.decisionTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                       {profile.decisionMakingPatterns.whenToSayYes?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            When to Say Yes:
+                            {t('businessProfile.whenYes')}
                           </h4>
                           <ul className="space-y-1">
                             {profile.decisionMakingPatterns.whenToSayYes.map(
@@ -722,7 +737,7 @@ export default function ProfilePage() {
                       {profile.decisionMakingPatterns.whenToSayNo?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            When to Say No:
+                            {t('businessProfile.whenNo')}
                           </h4>
                           <ul className="space-y-1">
                             {profile.decisionMakingPatterns.whenToSayNo.map(
@@ -740,7 +755,7 @@ export default function ProfilePage() {
                       {profile.decisionMakingPatterns.warningSignsToWatch?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            Warning Signs to Watch:
+                            {t('businessProfile.warningSigns')}
                           </h4>
                           <ul className="space-y-1">
                             {profile.decisionMakingPatterns.warningSignsToWatch.map(
@@ -767,11 +782,13 @@ export default function ProfilePage() {
                     className="flex items-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    {reExtractMutation.isPending ? 'Re-extracting...' : 'Re-extract Patterns'}
+                    {reExtractMutation.isPending
+                      ? t('businessProfile.reextracting')
+                      : t('businessProfile.reextract')}
                   </Button>
                   <Button variant="outline" className="flex items-center gap-2">
                     <Download className="w-4 h-4" />
-                    Export Profile
+                    {t('businessProfile.exportProfile')}
                   </Button>
                 </div>
               </div>
@@ -779,17 +796,16 @@ export default function ProfilePage() {
               <div className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Profile Not Yet Built
+                  {t('businessProfile.notBuiltTitle')}
                 </h3>
                 <p className="text-gray-600 max-w-md mx-auto mb-4">
-                  Complete simulations to train your AI and build your business profile.
-                  The system will extract your:
+                  {t('businessProfile.notBuiltBody')}
                 </p>
                 <ul className="text-left inline-block text-gray-600 space-y-1">
-                  <li>• Pricing logic and negotiation style</li>
-                  <li>• Communication tone and preferences</li>
-                  <li>• Ideal client characteristics</li>
-                  <li>• Deal breakers and requirements</li>
+                  <li>• {t('businessProfile.bullet1')}</li>
+                  <li>• {t('businessProfile.bullet2')}</li>
+                  <li>• {t('businessProfile.bullet3')}</li>
+                  <li>• {t('businessProfile.bullet4')}</li>
                 </ul>
                 <div className="flex flex-col gap-3 items-center mt-6">
                   <Button
@@ -799,13 +815,15 @@ export default function ProfilePage() {
                     className="flex items-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    {reExtractMutation.isPending ? 'Checking for updates...' : 'Check for Updates'}
+                    {reExtractMutation.isPending
+                      ? t('businessProfile.checkingUpdates')
+                      : t('businessProfile.checkUpdates')}
                   </Button>
                   <Button
                     onClick={() => router.push('/simulations/new')}
                     className="bg-primary-600 hover:bg-primary-700 text-white"
                   >
-                    Start Your First Simulation
+                    {t('businessProfile.startFirstSim')}
                   </Button>
                 </div>
               </div>

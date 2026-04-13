@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useI18n } from "@/lib/hooks/useI18n";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/shared/message-bubble";
@@ -35,22 +36,10 @@ type ConversationDetail = {
   }>;
 };
 
-function qualificationLabel(status: string): string {
-  switch (status) {
-    case "QUALIFIED":
-      return "Qualified";
-    case "UNQUALIFIED":
-      return "Unqualified";
-    case "MAYBE":
-      return "Maybe";
-    default:
-      return "Unknown";
-  }
-}
-
 export default function ConversationDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { t } = useI18n(["conversations", "common"]);
   const conversationId = params.id as string;
   const [isQualified, setIsQualified] = useState(false);
   const [ownerMessage, setOwnerMessage] = useState("");
@@ -69,18 +58,24 @@ export default function ConversationDetailPage() {
     refetchOnMount: "always",
   });
 
+  const statusLabel = (raw: string) =>
+    t(`conversations:conversationStatus.${raw}`, { defaultValue: raw });
+
+  const qualificationLabel = (status: string) =>
+    t(`conversations:qualification.${status}`, { defaultValue: status });
+
   const handleTakeover = async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/v1/conversations/${conversationId}/takeover`, {
-        method: 'POST',
+        method: "POST",
       });
-      if (!res.ok) throw new Error('Failed to take over');
+      if (!res.ok) throw new Error("Failed to take over");
       await refetch();
       setOwnerMessage("");
     } catch (err) {
-      console.error('Takeover error:', err);
-      alert('Failed to take over conversation');
+      console.error("Takeover error:", err);
+      alert(t("conversations:alerts.takeoverFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -91,16 +86,16 @@ export default function ConversationDetailPage() {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/v1/conversations/${conversationId}/owner-message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: ownerMessage }),
       });
-      if (!res.ok) throw new Error('Failed to send message');
+      if (!res.ok) throw new Error("Failed to send message");
       setOwnerMessage("");
       await refetch();
     } catch (err) {
-      console.error('Send message error:', err);
-      alert('Failed to send message');
+      console.error("Send message error:", err);
+      alert(t("conversations:alerts.sendFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -120,17 +115,19 @@ export default function ConversationDetailPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 text-gray-700"
+          className="p-2 -ms-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 text-gray-700"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back
+          {t("conversations:detail.back")}
         </button>
         <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
           <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-danger-900">Could not load conversation</p>
+            <p className="font-medium text-danger-900">{t("conversations:detail.loadError")}</p>
             <p className="text-sm text-danger-700 mt-1">
-              {error instanceof Error ? error.message : "It may have been removed or you may not have access."}
+              {error instanceof Error
+                ? error.message
+                : t("conversations:detail.loadErrorHint")}
             </p>
           </div>
         </div>
@@ -140,13 +137,12 @@ export default function ConversationDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3 min-w-0">
           <button
             type="button"
             onClick={() => router.back()}
-            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            className="p-2 -ms-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -161,59 +157,52 @@ export default function ConversationDetailPage() {
         <div className="flex gap-2 flex-wrap flex-shrink-0">
           <Button variant="outline" className="text-sm">
             <Flag className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Flag</span>
+            <span className="hidden sm:inline">{t("conversations:actions.flag")}</span>
           </Button>
           <Button className="bg-primary-600 hover:bg-primary-700 text-white text-sm whitespace-nowrap">
-            <span className="hidden sm:inline">Add to CRM</span>
-            <span className="sm:hidden">Add CRM</span>
+            <span className="hidden sm:inline">{t("conversations:actions.addCrm")}</span>
+            <span className="sm:hidden">{t("conversations:actions.addCrmShort")}</span>
           </Button>
         </div>
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Conversation Transcript */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Conversation Info */}
           <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
               <div>
-                <p className="text-xs font-medium text-gray-600">Status</p>
+                <p className="text-xs font-medium text-gray-600">{t("conversations:detail.status")}</p>
                 <p className="text-sm font-semibold text-gray-900 mt-1 break-words">
-                  {conversation.status}
+                  {statusLabel(conversation.status)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-600">Duration</p>
+                <p className="text-xs font-medium text-gray-600">{t("conversations:detail.duration")}</p>
                 <p className="text-sm font-semibold text-gray-900 mt-1">
-                  {Math.round(conversation.duration / 60)} min
+                  {Math.round(conversation.duration / 60)} {t("common:units.min")}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-600">Messages</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">
-                  {conversation.messageCount}
-                </p>
+                <p className="text-xs font-medium text-gray-600">{t("conversations:detail.messages")}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{conversation.messageCount}</p>
               </div>
             </div>
 
-            {/* Summary */}
             <div className="border-t border-gray-200 pt-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                Summary
+                {t("conversations:detail.summary")}
               </h3>
               <p className="text-sm text-gray-600">{conversation.summary}</p>
             </div>
           </div>
 
-          {/* Messages */}
           <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Conversation
+              {t("conversations:detail.conversation")}
             </h3>
 
             {conversation.messages.length === 0 ? (
-              <p className="text-sm text-gray-500">No messages in this thread yet.</p>
+              <p className="text-sm text-gray-500">{t("conversations:detail.noMessages")}</p>
             ) : (
               conversation.messages.map((msg) => (
                 <MessageBubble
@@ -227,44 +216,41 @@ export default function ConversationDetailPage() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* PHASE 2: CLOSER Progress (if available) */}
           {conversation.closerProgress && (
             <CloserProgressIndicator progress={conversation.closerProgress} />
           )}
 
-          {/* PHASE 2: Objections Summary (if available) */}
-          {conversation.objectionsRaised && conversation.objectionsRaised.length > 0 && conversation.objectionsHandled && (
-            <ObjectionsSummary
-              objectionsRaised={conversation.objectionsRaised}
-              objectionsHandled={conversation.objectionsHandled}
-            />
-          )}
+          {conversation.objectionsRaised &&
+            conversation.objectionsRaised.length > 0 &&
+            conversation.objectionsHandled && (
+              <ObjectionsSummary
+                objectionsRaised={conversation.objectionsRaised}
+                objectionsHandled={conversation.objectionsHandled}
+              />
+            )}
 
-          {/* PHASE 1: Scoring Breakdown (if available) */}
           {conversation.scoringBreakdown && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Scoring Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                {t("conversations:detail.scoringDetails")}
+              </h3>
               <ScoringBreakdown breakdown={conversation.scoringBreakdown} />
             </div>
           )}
 
-          {/* Lead Score (Fallback for conversations without breakdown) */}
           {!conversation.scoringBreakdown && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Lead Score
+                {t("conversations:detail.leadScore")}
               </h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-600">
-                      Overall
+                      {t("conversations:detail.overall")}
                     </span>
-                    <span className="text-2xl font-bold text-primary-600">
-                      {conversation.leadScore}
-                    </span>
+                    <span className="text-2xl font-bold text-primary-600">{conversation.leadScore}</span>
                   </div>
                   <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
@@ -277,14 +263,15 @@ export default function ConversationDetailPage() {
             </div>
           )}
 
-          {/* Qualification Status */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Qualification
+              {t("conversations:detail.qualification")}
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">Status</p>
+                <p className="text-sm font-medium text-gray-600 mb-2">
+                  {t("conversations:detail.status")}
+                </p>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
                   {qualificationLabel(conversation.qualificationStatus)}
                 </span>
@@ -296,27 +283,28 @@ export default function ConversationDetailPage() {
                   onClick={() => setIsQualified(!isQualified)}
                   className="w-full bg-success-600 hover:bg-success-700 text-white"
                 >
-                  {isQualified ? "Mark as Unqualified" : "Confirm Qualified"}
+                  {isQualified
+                    ? t("conversations:detail.markUnqualified")
+                    : t("conversations:detail.confirmQualified")}
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Manual Takeover (Phase 1c) */}
           {conversation.status === "ACTIVE" && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Take Over
+                {t("conversations:detail.takeOverTitle")}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Pause AI and respond directly to the lead.
-              </p>
+              <p className="text-sm text-gray-600 mb-4">{t("conversations:detail.takeOverBody")}</p>
               <Button
                 onClick={handleTakeover}
                 disabled={isLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {isLoading ? "Taking over..." : "Take Over Conversation"}
+                {isLoading
+                  ? t("conversations:detail.takeOverLoading")
+                  : t("conversations:detail.takeOverBtn")}
               </Button>
             </div>
           )}
@@ -324,15 +312,13 @@ export default function ConversationDetailPage() {
           {conversation.status === "MANUAL" && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                ✓ You're in Control
+                {t("conversations:detail.inControlTitle")}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                You are responding directly to the lead. AI is paused.
-              </p>
+              <p className="text-sm text-gray-600 mb-4">{t("conversations:detail.inControlBody")}</p>
               <textarea
                 value={ownerMessage}
                 onChange={(e) => setOwnerMessage(e.target.value)}
-                placeholder="Type your message..."
+                placeholder={t("conversations:detail.messagePlaceholder")}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 mb-3"
               />
@@ -341,23 +327,22 @@ export default function ConversationDetailPage() {
                 disabled={isLoading || !ownerMessage.trim()}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                {isLoading ? "Sending..." : "Send Message"}
+                {isLoading ? t("conversations:detail.sending") : t("conversations:detail.sendMessage")}
               </Button>
             </div>
           )}
 
-          {/* Owner Notes */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Owner Notes
+              {t("conversations:detail.ownerNotes")}
             </h3>
             <textarea
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={4}
-              placeholder="Add notes for your team…"
+              placeholder={t("conversations:detail.notesPlaceholder")}
             />
             <Button className="w-full mt-3 bg-primary-600 hover:bg-primary-700 text-white">
-              Save Notes
+              {t("conversations:detail.saveNotes")}
             </Button>
           </div>
         </div>

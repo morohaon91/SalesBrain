@@ -140,8 +140,9 @@ export default function ValidatePatternsPage() {
   if (error && !patterns) {
     return (
       <div className="space-y-4 p-6">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back
+        <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
+          <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
+          <span>Back</span>
         </Button>
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
@@ -160,8 +161,9 @@ export default function ValidatePatternsPage() {
   if (!patterns) {
     return (
       <div className="space-y-4 p-6">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back
+        <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
+          <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
+          <span>Back</span>
         </Button>
         <Card>
           <CardHeader>
@@ -191,8 +193,9 @@ export default function ValidatePatternsPage() {
           <h1 className="text-3xl font-bold">Review Extracted Patterns</h1>
           <p className="text-gray-600 mt-1">Approve or reject patterns from your simulation</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back
+        <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
+          <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
+          <span>Back</span>
         </Button>
       </div>
 

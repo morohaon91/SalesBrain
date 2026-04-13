@@ -33,15 +33,39 @@ body {
    FLIP DIRECTIONAL ICONS ONLY
    =========================================================================== */
 
-/* Flip arrow icons that point left/right */
-[dir='rtl'] .flip-rtl {
+/*
+ * Explicit mirror utility — use on Lucide directional icons in Hebrew (see rtlMirrorIcon).
+ * Duplicated here so the rule always ships with globals (not only via Tailwind plugin).
+ */
+.flip-rtl {
   transform: scaleX(-1);
+  transform-origin: center;
 }
 
-/* Specific icons that should flip */
-[dir='rtl'] [class*='ArrowRight'],
-[dir='rtl'] [class*='ChevronRight'] {
+/*
+ * Directional Lucide icons — mirror in RTL.
+ * Use [class*="..."] because Lucide emits multiple classes (e.g. "lucide lucide-arrow-right h-4 w-4")
+ * and a strict .lucide-arrow-right compound selector can fail depending on bundler output.
+ */
+html[dir='rtl'] svg[class*='lucide-arrow-right'],
+html[dir='rtl'] svg[class*='lucide-chevron-right'],
+html[dir='rtl'] svg[class*='lucide-arrow-left'],
+html[dir='rtl'] svg[class*='lucide-chevron-left'],
+[dir='rtl'] svg[class*='lucide-arrow-right'],
+[dir='rtl'] svg[class*='lucide-chevron-right'],
+[dir='rtl'] svg[class*='lucide-arrow-left'],
+[dir='rtl'] svg[class*='lucide-chevron-left'] {
   transform: scaleX(-1);
+  transform-origin: center;
+}
+
+/* If lang is Hebrew but dir was not updated yet, still flip (defensive) */
+html[lang='he'] svg[class*='lucide-arrow-right'],
+html[lang='he'] svg[class*='lucide-chevron-right'],
+html[lang='he'] svg[class*='lucide-arrow-left'],
+html[lang='he'] svg[class*='lucide-chevron-left'] {
+  transform: scaleX(-1);
+  transform-origin: center;
 }
 
 /* ============================================================================

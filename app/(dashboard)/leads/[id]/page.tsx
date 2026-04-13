@@ -86,7 +86,7 @@ export default function LeadDetailPage() {
         <div className="flex items-start gap-3 min-w-0">
           <button
             onClick={() => router.back()}
-            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            className="p-2 -ms-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>

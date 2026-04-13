@@ -1,10 +1,22 @@
 {
   "title": "Leads",
-  "subtitle": "View and manage qualified leads",
+  "subtitle": "Qualified leads from conversations",
   "list": {
     "empty": "No leads found",
     "search": "Search leads",
-    "filter": "Filter by status"
+    "filter": "Filter by status",
+    "searchPlaceholder": "Search by name, email, company...",
+    "noneFound": "No leads found",
+    "adjustFilters": "Try adjusting your filters",
+    "startConversations": "Start conversations to generate leads",
+    "failedLoad": "Failed to load leads",
+    "tryAgain": "Please try again"
+  },
+  "stats": {
+    "total": "Total Leads",
+    "new": "New",
+    "contacted": "Contacted",
+    "avgScore": "Avg Score"
   },
   "columns": {
     "name": "Name",
@@ -14,6 +26,16 @@
     "status": "Status",
     "date": "Date",
     "actions": "Actions"
+  },
+  "leadStatus": {
+    "NEW": "New",
+    "CONTACTED": "Contacted",
+    "QUALIFIED": "Qualified"
+  },
+  "sort": {
+    "score": "Highest Score",
+    "date": "Latest",
+    "name": "Name (A-Z)"
   },
   "status": {
     "qualified": "Qualified",
@@ -26,6 +48,9 @@
     "contact": "Contact",
     "edit": "Edit",
     "export": "Export"
+  },
+  "badges": {
+    "needsReview": "Needs Review"
   },
   "detail": {
     "information": "Lead Information",

@@ -5,11 +5,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send } from 'lucide-react';
+import { useI18n } from '@/lib/hooks/useI18n';
 
 type ChatLine = { role: 'ai' | 'lead'; content: string };
 
 export default function PublicLeadChatPage() {
   const params = useParams();
+  const { t } = useI18n('widget');
   const widgetApiKey = params.widgetApiKey as string;
 
   const [loading, setLoading] = useState(true);
@@ -37,16 +39,16 @@ export default function PublicLeadChatPage() {
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setError(data?.error?.message || 'Could not start chat');
+          setError(data?.error?.message || t('publicChat.couldNotStart'));
           return;
         }
         const d = data.data;
         setConversationId(d.conversationId);
-        setBusinessName(d.businessName || 'Business');
+        setBusinessName(d.businessName || t('publicChat.businessFallback'));
         setGreeting(d.greeting || '');
-        setMessages([{ role: 'ai', content: d.greeting || 'Hi!' }]);
+        setMessages([{ role: 'ai', content: d.greeting || t('publicChat.greetingFallback') }]);
       } catch {
-        if (!cancelled) setError('Network error');
+        if (!cancelled) setError(t('publicChat.networkError'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -54,7 +56,7 @@ export default function PublicLeadChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [widgetApiKey]);
+  }, [widgetApiKey, t, base]);
 
   const endChat = useCallback(async () => {
     if (!conversationId || ended || ending) return;
@@ -68,16 +70,16 @@ export default function PublicLeadChatPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error?.message || 'Could not end chat');
+        setError(data?.error?.message || t('publicChat.couldNotEnd'));
         return;
       }
       setEnded(true);
     } catch {
-      setError('Network error');
+      setError(t('publicChat.networkError'));
     } finally {
       setEnding(false);
     }
-  }, [base, conversationId, ended, ending, widgetApiKey]);
+  }, [base, conversationId, ended, ending, widgetApiKey, t]);
 
   const send = useCallback(async () => {
     const text = input.trim();
@@ -94,7 +96,7 @@ export default function PublicLeadChatPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error?.message || 'Send failed');
+        setError(data?.error?.message || t('publicChat.sendFailed'));
         return;
       }
       const reply = data.data?.reply as string;
@@ -102,11 +104,11 @@ export default function PublicLeadChatPage() {
         setMessages((m) => [...m, { role: 'ai', content: reply }]);
       }
     } catch {
-      setError('Network error');
+      setError(t('publicChat.networkError'));
     } finally {
       setSending(false);
     }
-  }, [conversationId, ended, input, sending, widgetApiKey]);
+  }, [conversationId, ended, input, sending, widgetApiKey, t, base]);
 
   if (loading) {
     return (
@@ -121,9 +123,7 @@ export default function PublicLeadChatPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
         <div className="max-w-md rounded-lg border border-red-200 bg-red-50 p-6 text-center text-red-800">
           <p className="font-medium">{error}</p>
-          <p className="mt-2 text-sm text-red-700">
-            If you are the owner: approve your profile (go live) under Profile, then try again.
-          </p>
+          <p className="mt-2 text-sm text-red-700">{t('publicChat.ownerHint')}</p>
         </div>
       </div>
     );
@@ -134,9 +134,7 @@ export default function PublicLeadChatPage() {
       <header className="border-b bg-white px-4 py-3 shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">{businessName}</h1>
-          <p className="text-xs text-slate-500">
-            Replies use this business&apos;s approved profile and questionnaire — not a generic chatbot.
-          </p>
+          <p className="text-xs text-slate-500">{t('publicChat.profileBlurb')}</p>
         </div>
         {conversationId && !ended && (
           <Button
@@ -147,14 +145,14 @@ export default function PublicLeadChatPage() {
             onClick={() => void endChat()}
           >
             {ending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            End chat
+            {t('publicChat.endChat')}
           </Button>
         )}
       </header>
 
       {ended && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-sm text-amber-900">
-          This chat has ended. The business can see this thread on their Conversations page.
+          {t('publicChat.chatEndedBanner')}
         </div>
       )}
 
@@ -178,7 +176,7 @@ export default function PublicLeadChatPage() {
         {sending && (
           <div className="flex justify-start">
             <div className="rounded-2xl bg-white border px-4 py-2 text-slate-500 text-sm flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Thinking…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t('publicChat.thinking')}
             </div>
           </div>
         )}
@@ -190,7 +188,7 @@ export default function PublicLeadChatPage() {
 
       <div className="border-t bg-white p-4 max-w-2xl mx-auto w-full">
         {ended ? (
-          <p className="text-sm text-slate-500 text-center">You can close this tab.</p>
+          <p className="text-sm text-slate-500 text-center">{t('publicChat.closeTab')}</p>
         ) : (
           <form
             className="flex gap-2"
@@ -202,7 +200,7 @@ export default function PublicLeadChatPage() {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message…"
+              placeholder={t('publicChat.placeholder')}
               rows={2}
               className="flex-1 resize-none"
               disabled={sending || !conversationId || ended}

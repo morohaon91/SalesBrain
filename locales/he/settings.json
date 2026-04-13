@@ -1,13 +1,76 @@
 {
   "title": "הגדרות",
-  "subtitle": "ניהול ההעדפות שלך",
+  "subtitle": "ניהול החשבון, המנוי וההעדפות",
+  "page": {
+    "tabs": {
+      "account": "חשבון",
+      "subscription": "מנוי",
+      "widget": "וידג'ט",
+      "security": "אבטחה"
+    },
+    "account": {
+      "infoTitle": "פרטי חשבון",
+      "fullName": "שם מלא",
+      "email": "כתובת דוא\"ל",
+      "emailLocked": "לא ניתן לשנות דוא\"ל",
+      "role": "תפקיד בחשבון",
+      "ownerWorkspace": "בעלים של סביבת העבודה",
+      "teamTitle": "הוספת חברי צוות",
+      "teamPlaceholder": "team@example.com",
+      "sendInvite": "שלח הזמנה",
+      "saveChanges": "שמור שינויים",
+      "saved": "נשמר"
+    },
+    "subscription": {
+      "currentPlan": "תוכנית נוכחית",
+      "trialPlan": "תוכנית ניסיון",
+      "trialRemaining": "נותרו 14 ימים (פגה ב-31 במרץ 2026)",
+      "featSimulations": "סימולציות ללא הגבלה",
+      "featAnalytics": "אנליטיקה בסיסית",
+      "featTeam": "חבר צוות אחד",
+      "upgradeTitle": "מוכנים לשדרג?",
+      "upgradeBody": "קבלו תכונות מתקדמות וקריאות API ללא הגבלה",
+      "viewPlans": "צפו בתוכניות",
+      "billingHistory": "היסטוריית חיובים",
+      "billingEmpty": "אין חיובים עדיין. התחילו בניסיון, שדרגו כשמתאים."
+    },
+    "widget": {
+      "configTitle": "תצורת וידג'ט",
+      "apiKey": "מפתח API לווידג'ט",
+      "apiKeyHint": "השתמשו במפתח זה להטמעת הווידג'ט באתר",
+      "embedCode": "קוד הטמעה",
+      "preview": "תצוגה מקדימה של וידג'ט",
+      "previewButton": "תצוגה מקדימה",
+      "helpTitle": "צריכים עזרה בהגדרת הווידג'ט?",
+      "helpBody": "עיינו ב",
+      "helpLink": "תיעוד הווידג'ט",
+      "helpSuffix": "לאפשרויות התאמה מתקדמות"
+    },
+    "security": {
+      "passwordTitle": "סיסמה ואבטחה",
+      "currentPassword": "סיסמה נוכחית",
+      "newPassword": "סיסמה חדשה",
+      "confirmPassword": "אישור סיסמה",
+      "updatePassword": "עדכן סיסמה",
+      "sessionsTitle": "סשנים פעילים",
+      "currentSession": "סשן נוכחי",
+      "sessionMeta": "Chrome ב-Windows • פעיל עכשיו",
+      "signOutAll": "התנתק מכל הסשנים",
+      "twoFactorTitle": "אימות דו-שלבי",
+      "twoFactorBody": "הוסיפו שכבת אבטחה נוספת לחשבון",
+      "enable2fa": "הפעל 2FA",
+      "dangerTitle": "אזור מסוכן",
+      "dangerBody": "מחיקת חשבון: מחיקה קבועה של החשבון וכל הנתונים. לא ניתן לבטל.",
+      "deleteAccount": "מחק חשבון"
+    }
+  },
   "general": {
     "title": "הגדרות כלליות",
     "language": "שפה",
     "timezone": "אזור זמן",
     "theme": "ערכת נושא",
     "lightMode": "בהיר",
-    "darkMode": "אפל",
+    "darkMode": "כהה",
     "autoMode": "אוטומטי"
   },
   "privacy": {
@@ -15,39 +78,39 @@
     "dataSharing": "אפשר שיתוף נתונים",
     "analytics": "אנליטיקה",
     "cookies": "עוגיות",
-    "cookieDetails": "עוגיות חיוניות מופעלות תמיד"
+    "cookieDetails": "עוגיות חיוניות תמיד פעילות"
   },
   "integrations": {
     "title": "אינטגרציות",
     "slack": "Slack",
     "salesforce": "Salesforce",
     "hubspot": "HubSpot",
-    "disconnect": "התנתק",
-    "connect": "התחבר"
+    "disconnect": "נתק",
+    "connect": "חבר"
   },
   "api": {
     "title": "מפתחות API",
     "key": "מפתח API",
     "secret": "מפתח סודי",
-    "generate": "יצור מפתח חדש",
+    "generate": "צור מפתח חדש",
     "revoke": "בטל מפתח",
-    "created": "נוצרה"
+    "created": "נוצר"
   },
   "billing": {
     "title": "חיוב",
     "plan": "תוכנית נוכחית",
     "usage": "שימוש",
-    "nextBilling": "תאריך החיוב הבא",
+    "nextBilling": "תאריך חיוב הבא",
     "viewInvoices": "צפה בחשבוניות",
     "upgradePlan": "שדרג תוכנית"
   },
   "actions": {
     "save": "שמור הגדרות",
     "cancel": "ביטול",
-    "reset": "אפס לברירות מחדל"
+    "reset": "איפוס לברירות מחדל"
   },
   "messages": {
     "saveSuccess": "ההגדרות נשמרו בהצלחה",
-    "saveError": "נכשל בשמירת ההגדרות"
+    "saveError": "שמירת ההגדרות נכשלה"
   }
 }

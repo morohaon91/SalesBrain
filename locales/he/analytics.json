@@ -1,26 +1,41 @@
 {
   "title": "אנליטיקה",
-  "subtitle": "צפה במדדי ביצוע מפורטים",
+  "subtitle": "מעקב אחר שיחות, לידים ומדדי ביצועים",
+  "period": {
+    "7d": "7 ימים",
+    "30d": "30 יום",
+    "90d": "90 יום"
+  },
   "overview": "סקירה",
   "metrics": {
     "totalLeads": "סה\"כ לידים",
     "qualifiedLeads": "לידים מוסמכים",
-    "conversionRate": "שיעור ההמרה",
-    "avgScore": "ניקוד ממוצע",
-    "topPerformingSimulation": "סימולציה מביצעת הטובה ביותר",
-    "recentActivity": "פעילות אחרונה"
+    "conversionRate": "שיעור המרה",
+    "avgScore": "ציון ממוצע",
+    "topPerformingSimulation": "הסימולציה המובילה",
+    "recentActivity": "פעילות אחרונה",
+    "conversations": "שיחות",
+    "qualified": "מוסמכים",
+    "avgScoreShort": "ציון ממוצע",
+    "responseTime": "זמן תגובה"
+  },
+  "distribution": {
+    "title": "התפלגות לידים",
+    "hot": "חם",
+    "warm": "חמים",
+    "cold": "קר"
   },
   "charts": {
-    "leadQualification": "מגמת הסמכת ליד",
+    "leadQualification": "מגמת הסמכת לידים",
     "conversionBySimulation": "המרה לפי סימולציה",
-    "leadDistribution": "הפצת ליד",
-    "timeSeriesAnalysis": "ניתוח סדרות זמן"
+    "leadDistribution": "התפלגות לידים",
+    "timeSeriesAnalysis": "ניתוח סדרת זמן"
   },
   "filters": {
     "dateRange": "טווח תאריכים",
     "simulation": "סימולציה",
     "status": "סטטוס",
-    "apply": "החל סננים"
+    "apply": "החל מסננים"
   },
   "export": {
     "csv": "ייצוא כ-CSV",
@@ -28,7 +43,7 @@
     "excel": "ייצוא כ-Excel"
   },
   "messages": {
-    "noData": "אין נתוני אנליטיקה זמינים",
-    "loading": "טעינת אנליטיקה..."
+    "noData": "אין נתוני אנליטיקה",
+    "loading": "טוען אנליטיקה..."
   }
 }

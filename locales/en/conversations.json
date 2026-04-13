@@ -1,10 +1,22 @@
 {
   "title": "Conversations",
-  "subtitle": "View and manage all conversations",
+  "subtitle": "All lead conversations and interactions",
   "list": {
     "empty": "No conversations yet",
     "search": "Search conversations",
-    "filter": "Filter by status"
+    "filter": "Filter by status",
+    "searchPlaceholder": "Search by name or email...",
+    "noneFound": "No conversations found",
+    "adjustFilters": "Try adjusting your filters",
+    "startSimulation": "Start a simulation to create conversations",
+    "failedLoad": "Failed to load conversations",
+    "tryAgain": "Please try again"
+  },
+  "stats": {
+    "total": "Total",
+    "active": "Active",
+    "qualified": "Qualified",
+    "avgScore": "Avg Score"
   },
   "columns": {
     "participant": "Participant",
@@ -12,6 +24,18 @@
     "date": "Date",
     "status": "Status",
     "actions": "Actions"
+  },
+  "conversationStatus": {
+    "ACTIVE": "Active",
+    "ENDED": "Ended",
+    "ABANDONED": "Abandoned",
+    "MANUAL": "Manual takeover"
+  },
+  "qualification": {
+    "QUALIFIED": "Qualified",
+    "UNQUALIFIED": "Unqualified",
+    "MAYBE": "Maybe",
+    "UNKNOWN": "Unknown"
   },
   "status": {
     "active": "Active",
@@ -22,7 +46,44 @@
     "view": "View",
     "archive": "Archive",
     "delete": "Delete",
-    "export": "Export"
+    "export": "Export",
+    "analyze": "Analyze",
+    "flag": "Flag",
+    "addCrm": "Add to CRM",
+    "addCrmShort": "Add CRM"
+  },
+  "detail": {
+    "back": "Back",
+    "loadError": "Could not load conversation",
+    "loadErrorHint": "It may have been removed or you may not have access.",
+    "status": "Status",
+    "duration": "Duration",
+    "messages": "Messages",
+    "summary": "Summary",
+    "conversation": "Conversation",
+    "noMessages": "No messages in this thread yet.",
+    "scoringDetails": "Scoring Details",
+    "leadScore": "Lead Score",
+    "overall": "Overall",
+    "qualification": "Qualification",
+    "markUnqualified": "Mark as Unqualified",
+    "confirmQualified": "Confirm Qualified",
+    "takeOverTitle": "Take Over",
+    "takeOverBody": "Pause AI and respond directly to the lead.",
+    "takeOverBtn": "Take Over Conversation",
+    "takeOverLoading": "Taking over...",
+    "inControlTitle": "You're in control",
+    "inControlBody": "You are responding directly to the lead. AI is paused.",
+    "messagePlaceholder": "Type your message...",
+    "sendMessage": "Send Message",
+    "sending": "Sending...",
+    "ownerNotes": "Owner Notes",
+    "notesPlaceholder": "Add notes for your team…",
+    "saveNotes": "Save Notes"
+  },
+  "alerts": {
+    "takeoverFailed": "Failed to take over conversation",
+    "sendFailed": "Failed to send message"
   },
   "messages": {
     "deleteConfirm": "Are you sure you want to delete this conversation?",

@@ -1,0 +1,17 @@
+{
+  "login": {
+    "title": "SalesBrain Admin",
+    "subtitle": "Platform Administration",
+    "email": "Email Address",
+    "password": "Password",
+    "submit": "Sign In",
+    "signingIn": "Signing in...",
+    "failed": "Login failed",
+    "tryAgain": "Login failed. Please try again.",
+    "placeholderEmail": "admin@example.com"
+  },
+  "dashboard": {
+    "title": "Admin Dashboard",
+    "welcome": "Welcome to the platform admin area"
+  }
+}

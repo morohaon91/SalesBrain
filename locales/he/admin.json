@@ -1,0 +1,17 @@
+{
+  "login": {
+    "title": "מנהל SalesBrain",
+    "subtitle": "ניהול פלטפורמה",
+    "email": "כתובת דוא\"ל",
+    "password": "סיסמה",
+    "submit": "כניסה",
+    "signingIn": "מתחבר...",
+    "failed": "הכניסה נכשלה",
+    "tryAgain": "הכניסה נכשלה. נסה שוב.",
+    "placeholderEmail": "admin@example.com"
+  },
+  "dashboard": {
+    "title": "לוח בקרת מנהל",
+    "welcome": "ברוכים הבאים לאזור ניהול הפלטפורמה"
+  }
+}

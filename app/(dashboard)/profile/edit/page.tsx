@@ -87,14 +87,15 @@ export default function ProfileEditPage() {
     <div className="max-w-4xl mx-auto p-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          <Button variant="ghost" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+            <span>Back</span>
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">Edit Profile Patterns</h1>
         </div>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Save Changes
+        <Button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden /> : <Save className="h-4 w-4 shrink-0" aria-hidden />}
+          <span>Save Changes</span>
         </Button>
       </div>
 

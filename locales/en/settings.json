@@ -1,6 +1,69 @@
 {
   "title": "Settings",
-  "subtitle": "Manage your preferences",
+  "subtitle": "Manage your account, subscription, and preferences",
+  "page": {
+    "tabs": {
+      "account": "Account",
+      "subscription": "Subscription",
+      "widget": "Widget",
+      "security": "Security"
+    },
+    "account": {
+      "infoTitle": "Account Information",
+      "fullName": "Full Name",
+      "email": "Email Address",
+      "emailLocked": "Email cannot be changed",
+      "role": "Account Role",
+      "ownerWorkspace": "Owner of this workspace",
+      "teamTitle": "Add Team Members",
+      "teamPlaceholder": "team@example.com",
+      "sendInvite": "Send Invite",
+      "saveChanges": "Save Changes",
+      "saved": "Saved"
+    },
+    "subscription": {
+      "currentPlan": "Current Plan",
+      "trialPlan": "TRIAL PLAN",
+      "trialRemaining": "14 days remaining (expires Mar 31, 2026)",
+      "featSimulations": "Unlimited simulations",
+      "featAnalytics": "Basic analytics",
+      "featTeam": "1 team member",
+      "upgradeTitle": "Ready to upgrade?",
+      "upgradeBody": "Get advanced features and unlimited API calls",
+      "viewPlans": "View Plans",
+      "billingHistory": "Billing History",
+      "billingEmpty": "No billing yet. Start with trial, upgrade when ready."
+    },
+    "widget": {
+      "configTitle": "Widget Configuration",
+      "apiKey": "Widget API Key",
+      "apiKeyHint": "Use this key to embed the widget on your website",
+      "embedCode": "Embed Code",
+      "preview": "Widget Preview",
+      "previewButton": "Preview Widget",
+      "helpTitle": "Need help setting up the widget?",
+      "helpBody": "Check our",
+      "helpLink": "widget documentation",
+      "helpSuffix": "for advanced customization options"
+    },
+    "security": {
+      "passwordTitle": "Password & Security",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "updatePassword": "Update Password",
+      "sessionsTitle": "Active Sessions",
+      "currentSession": "Current Session",
+      "sessionMeta": "Chrome on Windows • Active now",
+      "signOutAll": "Sign Out All Sessions",
+      "twoFactorTitle": "Two-Factor Authentication",
+      "twoFactorBody": "Add an extra layer of security to your account",
+      "enable2fa": "Enable 2FA",
+      "dangerTitle": "Danger Zone",
+      "dangerBody": "Delete Account: Permanently delete your account and all data. This action cannot be undone.",
+      "deleteAccount": "Delete Account"
+    }
+  },
   "general": {
     "title": "General Settings",
     "language": "Language",

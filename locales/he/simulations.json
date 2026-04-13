@@ -1,17 +1,41 @@
 {
   "title": "סימולציות",
-  "subtitle": "יצירה וניהול סימולציות AI",
+  "subtitle": "תרגול שיחות לאימון ה-AI שלך",
   "list": {
-    "empty": "אין סימולציות עדיין",
+    "empty": "אין עדיין סימולציות",
     "search": "חיפוש סימולציות",
-    "filter": "סנן לפי סטטוס"
+    "filter": "סינון לפי סטטוס",
+    "noneFound": "לא נמצאו סימולציות",
+    "trainHint": "התחילו סימולציה ראשונה לאימון פרופיל ה-AI",
+    "failedLoad": "טעינת הסימולציות נכשלה",
+    "tryAgain": "נסו שוב"
+  },
+  "stats": {
+    "total": "סה\"כ",
+    "completed": "הושלמו",
+    "messages": "הודעות",
+    "avgQuality": "איכות ממוצעת"
+  },
+  "scenarioTypes": {
+    "PRICE_SENSITIVE": "רגיש למחיר",
+    "TIME_CONSTRAINED": "מוגבל בזמן",
+    "BUDGET_FOCUSED": "ממוקד תקציב"
+  },
+  "simStatus": {
+    "COMPLETED": "הושלם",
+    "IN_PROGRESS": "בתהליך"
+  },
+  "filters": {
+    "all": "כל הסימולציות",
+    "completed": "הושלמו",
+    "inProgress": "בתהליך"
   },
   "columns": {
     "name": "שם",
     "type": "סוג",
     "leads": "לידים",
     "status": "סטטוס",
-    "created": "נוצרה",
+    "created": "נוצר",
     "actions": "פעולות"
   },
   "status": {
@@ -22,28 +46,41 @@
   },
   "actions": {
     "start": "התחל סימולציה",
-    "view": "צפה בפרטים",
-    "edit": "עריכה",
+    "view": "פרטים",
+    "edit": "ערוך",
     "delete": "מחק",
-    "duplicate": "שכפול"
+    "duplicate": "שכפל",
+    "new": "סימולציה חדשה",
+    "newShort": "חדש"
   },
   "create": {
     "title": "יצירת סימולציה חדשה",
-    "name": "שם סימולציה",
+    "name": "שם הסימולציה",
     "description": "תיאור",
     "script": "תסריט AI",
     "leads": "בחר לידים",
-    "submit": "יצירת סימולציה"
+    "submit": "צור סימולציה"
   },
   "detail": {
     "overview": "סקירה",
     "progress": "התקדמות",
     "results": "תוצאות",
-    "transcript": "תמלול"
+    "transcript": "תמליל"
+  },
+  "listMeta": {
+    "completedOn": "הושלם ב-{{date}}",
+    "inProgress": "בתהליך..."
+  },
+  "howTo": {
+    "title": "איך להשתמש בסימולציות",
+    "step1": "התחילו סימולציה - בחרו תרחיש (רגישות למחיר, מגבלת זמן וכו')",
+    "step2": "שוחחו עם ה-AI - כמו עם לקוח אמיתי",
+    "step3": "ה-AI לומד - המערכת מנתחת את התגובות ומחלצת כללי עסק",
+    "step4": "הפרופיל נבנה - חזרו על סימולציות לשיפור הדיוק"
   },
   "messages": {
     "createSuccess": "הסימולציה נוצרה בהצלחה",
     "startSuccess": "הסימולציה התחילה",
-    "deleteConfirm": "האם אתה בטוח שברצונך למחוק סימולציה זו?"
+    "deleteConfirm": "למחוק סימולציה זו?"
   }
 }

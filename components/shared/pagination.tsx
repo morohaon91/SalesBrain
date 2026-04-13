@@ -21,20 +21,22 @@ export function Pagination({
         <Button
           variant="outline"
           size="sm"
+          className="inline-flex items-center gap-1.5"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
+          <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+          <span>Previous</span>
         </Button>
         <Button
           variant="outline"
           size="sm"
+          className="inline-flex items-center gap-1.5"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          Next
-          <ChevronRight className="h-4 w-4" />
+          <span>Next</span>
+          <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
         </Button>
       </div>
     </div>
