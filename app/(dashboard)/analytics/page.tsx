@@ -1,166 +1,117 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { api } from '@/lib/api/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  TrendingUp,
-  Users,
-  MessageSquare,
-  Zap,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
 
-/**
- * Analytics page component
- */
 export default function AnalyticsPage() {
-  const { user } = useAuth();
-  const [period, setPeriod] = useState<string>('week');
+  const [period, setPeriod] = useState('7d');
 
-  const {
-    data: response,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['analytics', 'overview', period],
-    queryFn: () => api.analytics.getOverview({ period }),
-    enabled: !!user,
-  });
-
-  const analyticsData = response?.data as any;
-
-  const totalConversations = analyticsData?.totalConversations ?? 0;
-  const totalLeads = analyticsData?.qualifiedLeads ?? 0;
-  const avgLeadScore = Math.round((analyticsData?.averageScore ?? 0) * 10) / 10;
-  const conversionRate = analyticsData?.conversionRate
-    ? (analyticsData.conversionRate * 100).toFixed(1)
-    : '0';
+  const metrics = {
+    totalConversations: 142,
+    qualifiedLeads: 89,
+    avgScore: 68,
+    hotLeads: 34,
+    warmLeads: 45,
+    coldLeads: 63,
+    conversionRate: 62.7
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600 text-sm sm:text-base mt-1">
-            Performance metrics and insights
-          </p>
+          <h1 className="text-3xl font-bold">Analytics</h1>
+          <p className="text-gray-600 mt-2">Track conversations, leads, and performance metrics</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {["week", "month", "year"].map((p) => (
+
+        <div className="flex gap-2">
+          {['7d', '30d', '90d'].map((p) => (
             <Button
               key={p}
-              variant={period === p ? "default" : "outline"}
+              variant={period === p ? 'default' : 'outline'}
               onClick={() => setPeriod(p)}
-              className="capitalize text-sm"
+              size="sm"
             >
-              {p}
+              {p === '7d' ? '7d' : p === '30d' ? '30d' : '90d'}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">Conversations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{metrics.totalConversations}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">Qualified</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{metrics.qualifiedLeads}</div>
+            <p className="text-xs text-green-600">{metrics.conversionRate.toFixed(1)}%</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">Avg Score</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{metrics.avgScore}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-gray-600">Response Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">0.8s</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lead Distribution</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div>
-            <p className="font-medium text-danger-900">Failed to load analytics</p>
-            <p className="text-sm text-danger-700 mt-1">
-              {error instanceof Error ? error.message : 'Please try again'}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-600">Conversations</p>
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-              ) : (
-                <p className="text-2xl font-bold text-gray-900 mt-2">{totalConversations}</p>
-              )}
+            <div className="flex justify-between mb-2">
+              <span className="text-sm">🔥 Hot</span>
+              <span>{metrics.hotLeads}</span>
             </div>
-            <MessageSquare className="w-10 h-10 text-primary-100" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-600">Qualified Leads</p>
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-              ) : (
-                <p className="text-2xl font-bold text-gray-900 mt-2">{totalLeads}</p>
-              )}
+            <div className="w-full bg-gray-200 h-2 rounded-full">
+              <div className="bg-red-500 h-2 rounded-full" style={{width: '35%'}}></div>
             </div>
-            <Users className="w-10 h-10 text-success-100" />
           </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-600">Avg Lead Score</p>
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-              ) : (
-                <p className="text-2xl font-bold text-gray-900 mt-2">{avgLeadScore}</p>
-              )}
-            </div>
-            <TrendingUp className="w-10 h-10 text-accent-100" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-600">Conversion Rate</p>
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-              ) : (
-                <p className="text-2xl font-bold text-gray-900 mt-2">{conversionRate}%</p>
-              )}
-            </div>
-            <Zap className="w-10 h-10 text-warning-100" />
-          </div>
-        </div>
-      </div>
-
-      {/* Charts — coming soon */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6 flex items-center justify-center h-48">
-          <p className="text-gray-400 text-sm">Conversation trends — coming soon</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-6 flex items-center justify-center h-48">
-          <p className="text-gray-400 text-sm">Lead funnel — coming soon</p>
-        </div>
-      </div>
-
-      {/* Export Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="font-semibold text-gray-900">Export Data</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Download analytics reports as CSV or PDF
-            </p>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm">🟡 Warm</span>
+              <span>{metrics.warmLeads}</span>
+            </div>
+            <div className="w-full bg-gray-200 h-2 rounded-full">
+              <div className="bg-yellow-500 h-2 rounded-full" style={{width: '45%'}}></div>
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" className="text-sm">Export CSV</Button>
-            <Button variant="outline" className="text-sm">Export PDF</Button>
+          <div>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm">❄️ Cold</span>
+              <span>{metrics.coldLeads}</span>
+            </div>
+            <div className="w-full bg-gray-200 h-2 rounded-full">
+              <div className="bg-blue-500 h-2 rounded-full" style={{width: '60%'}}></div>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

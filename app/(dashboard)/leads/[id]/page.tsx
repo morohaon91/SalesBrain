@@ -50,7 +50,7 @@ export default function LeadDetailPage() {
     enabled: !!leadId,
   });
 
-  const lead = data as LeadDetail | undefined;
+  const lead = (data as any)?.data as LeadDetail | undefined;
 
   // Initialize local state once data loads
   if (lead && notes === undefined) setNotes(lead.ownerNotes ?? "");

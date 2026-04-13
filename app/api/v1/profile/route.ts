@@ -42,7 +42,6 @@ interface ProfileResponse {
     // Progress
     completionPercentage?: number;
     simulationCount?: number;
-    embeddingsCount: number;
   };
   error?: {
     code: string;
@@ -106,7 +105,6 @@ export const GET = withAuth(
               id: uuidv4(),
               isComplete: false,
               completionScore: 0,
-              embeddingsCount: 0,
             },
             meta: { timestamp, requestId },
           },
@@ -164,7 +162,6 @@ export const GET = withAuth(
             completionBreakdown: liveCompletion,
             simulationCount: profile.simulationCount || 0,
             lastExtractedAt: profile.lastExtractedAt?.toISOString() ?? null,
-            embeddingsCount: profile.embeddingsCount || 0,
 
             // Shareable lead chat (public /l/[widgetApiKey] — requires go-live)
             widgetApiKey: tenantRow?.widgetApiKey ?? null,
@@ -294,7 +291,6 @@ export const PATCH = withAuth(
             objectionHandling: profile.objectionHandling as any,
             completionPercentage: profile.completionPercentage || 0,
             simulationCount: profile.simulationCount || 0,
-            embeddingsCount: profile.embeddingsCount || 0,
           },
           meta: { timestamp, requestId },
         },

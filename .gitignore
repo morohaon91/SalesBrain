@@ -24,10 +24,13 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# Local env files
+# # Local env files
 .env
 .env.local
 .env.*.local
+
+# Local tool overrides (may contain API keys)
+.claude/settings.local.json
 
 # IDE
 .vscode/
@@ -48,3 +51,6 @@ Thumbs.db
 # Testing
 .playwright/
 test-results/
+
+# # Docs
+Docs/

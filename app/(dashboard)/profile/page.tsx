@@ -59,6 +59,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabType>('basic-info');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
   const [origin, setOrigin] = useState('');
 
   useEffect(() => {
@@ -117,10 +118,20 @@ export default function ProfilePage() {
 
   const reExtractMutation = useMutation({
     mutationFn: () => api.profile.reExtract(),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+
+      if (data?.data?.simulationsProcessed > 0) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        // No simulations yet
+        setAlertMessage({
+          type: 'info',
+          text: 'No simulations yet. Complete simulations to build your profile automatically.',
+        });
+        setTimeout(() => setAlertMessage(null), 5000);
+      }
     },
   });
 
@@ -208,6 +219,30 @@ export default function ProfilePage() {
         <div className="bg-success-50 border border-success-200 rounded-lg p-4 flex gap-3 animate-in fade-in">
           <CheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-success-900">Changes saved successfully!</p>
+        </div>
+      )}
+
+      {/* Alert Message */}
+      {alertMessage && (
+        <div
+          className={`rounded-lg p-4 flex gap-3 animate-in fade-in ${
+            alertMessage.type === 'info'
+              ? 'bg-blue-50 border border-blue-200'
+              : 'bg-danger-50 border border-danger-200'
+          }`}
+        >
+          {alertMessage.type === 'info' ? (
+            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          ) : (
+            <XCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+          )}
+          <p
+            className={`text-sm ${
+              alertMessage.type === 'info' ? 'text-blue-900' : 'text-danger-900'
+            }`}
+          >
+            {alertMessage.text}
+          </p>
         </div>
       )}
 

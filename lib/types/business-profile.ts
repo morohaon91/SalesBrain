@@ -226,6 +226,5 @@ export interface BusinessProfile {
   completionScore: number;
   lastExtractedAt?: Date | null;
   embeddedMessageCount: number;
-  pineconeNamespace?: string | null;
   embeddingsCount: number;
 }

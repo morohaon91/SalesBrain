@@ -8,6 +8,8 @@ import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
 import { extractPatternsFromSimulation } from '@/lib/ai/extract-patterns';
 import { mergePatterns, mergeOwnerVoiceExamples, mergeBusinessFacts } from '@/lib/ai/merge-patterns';
+import { generateCloserExtractionPrompt } from '@/lib/ai/prompts/closer-extraction';
+import { createChatCompletion } from '@/lib/ai/client';
 import {
   calculateCompletionPercentage,
   calculateQualityScore
@@ -94,6 +96,30 @@ async function handler(req: AuthenticatedRequest) {
       simulation.scenarioType
     );
 
+    // 4b. Extract CLOSER Framework from the same simulation
+    const transcript = simulation.messages
+      .map((m) => `${m.role === 'BUSINESS_OWNER' ? 'Owner' : 'Client'}: ${m.content}`)
+      .join('\n');
+
+    let closerFramework: any = null;
+    try {
+      const closerExtractionPrompt = generateCloserExtractionPrompt(transcript);
+      const closerResponse = await createChatCompletion(
+        [{ role: 'user', content: closerExtractionPrompt }],
+        'You are extracting sales framework patterns from a conversation. Return ONLY valid JSON, no markdown.',
+        { temperature: 0.3, maxTokens: 3000 }
+      );
+
+      // Parse CLOSER framework response
+      let closerJsonStr = closerResponse.content;
+      closerJsonStr = closerJsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      closerFramework = JSON.parse(closerJsonStr);
+      console.log('✅ CLOSER framework extracted successfully');
+    } catch (closerError) {
+      console.warn('⚠️  Failed to extract CLOSER framework:', closerError);
+      closerFramework = null;
+    }
+
     // 5. Get existing profile patterns
     const existingProfile = businessProfile;
 
@@ -103,8 +129,7 @@ async function handler(req: AuthenticatedRequest) {
           pricingLogic: existingProfile.pricingLogic as any,
           qualificationCriteria: existingProfile.qualificationCriteria as any,
           objectionHandling: existingProfile.objectionHandling as any,
-          decisionMakingPatterns: existingProfile.decisionMakingPatterns as any,
-          knowledgeBase: existingProfile.knowledgeBase as any
+          decisionMakingPatterns: existingProfile.decisionMakingPatterns as any
         }
       : null;
 
@@ -160,7 +185,9 @@ async function handler(req: AuthenticatedRequest) {
           qualificationCriteria: mergedPatterns.qualificationCriteria as any,
           objectionHandling: mergedPatterns.objectionHandling as any,
           decisionMakingPatterns: mergedPatterns.decisionMakingPatterns as any,
-          knowledgeBase: mergedPatterns.knowledgeBase as any,
+
+          // CLOSER Framework (used for actual conversations)
+          ...(closerFramework ? { closerFramework: closerFramework as any } : {}),
 
           // Phase 5: Triple extraction fields
           ownerVoiceExamples: mergedVoiceExamples as any,
@@ -188,6 +215,7 @@ async function handler(req: AuthenticatedRequest) {
         success: true,
         data: {
           extractedPatterns: mergedPatterns,
+          closerFramework,
           qualityScore,
           completionPercentage,
           simulationCount: newSimulationCount

@@ -46,7 +46,7 @@ async function handler(req: AuthenticatedRequest) {
     });
 
     // Build typed profile for suggestion
-    const typedProfile: BusinessProfile = {
+    const typedProfile: any = {
       id: profile.id,
       tenantId: profile.tenantId,
       createdAt: profile.createdAt,
@@ -79,8 +79,6 @@ async function handler(req: AuthenticatedRequest) {
       completionScore: profile.completionScore,
       lastExtractedAt: profile.lastExtractedAt,
       embeddedMessageCount: profile.embeddedMessageCount,
-      pineconeNamespace: profile.pineconeNamespace,
-      embeddingsCount: profile.embeddingsCount,
     };
 
     const suggestion = suggestNextScenario(typedProfile);

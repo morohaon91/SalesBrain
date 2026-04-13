@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
  * AI Configuration
  */
 export const AI_CONFIG = {
-  model: "claude-sonnet-4-20250514",
+  model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
   maxTokens: 300,
   temperature: 0.8,
   topP: 0.9,

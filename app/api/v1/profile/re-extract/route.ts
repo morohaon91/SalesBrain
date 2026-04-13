@@ -9,6 +9,8 @@ import { prisma } from '@/lib/prisma';
 import { extractPatternsFromSimulation } from '@/lib/ai/extract-patterns';
 import { mergePatterns, mergeOwnerVoiceExamples } from '@/lib/ai/merge-patterns';
 import { calculateProfileCompletion } from '@/lib/utils/profile-completion';
+import { generateCloserExtractionPrompt } from '@/lib/ai/prompts/closer-extraction';
+import { createChatCompletion } from '@/lib/ai/client';
 import { v4 as uuidv4 } from 'uuid';
 
 async function handler(req: AuthenticatedRequest) {
@@ -34,14 +36,19 @@ async function handler(req: AuthenticatedRequest) {
     if (completedSimulations.length === 0) {
       return NextResponse.json(
         {
-          success: false,
-          error: {
-            code: 'NO_COMPLETED_SIMULATIONS',
-            message: 'No completed simulations to analyze'
+          success: true,
+          data: {
+            extractedPatterns: null,
+            closerFramework: null,
+            completionPercentage: 0,
+            simulationCount: 0,
+            simulationsProcessed: 0,
+            simulationsTotal: 0,
+            message: 'No simulations yet'
           },
           meta: { timestamp, requestId }
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
@@ -70,6 +77,7 @@ async function handler(req: AuthenticatedRequest) {
     // (re-extraction is a manual action — we extract from all completed sims)
     let mergedPatterns: any = null;
     let mergedVoiceExamples: any = profile.ownerVoiceExamples ?? null;
+    let closerFramework: any = null;
     let successCount = 0;
 
     for (const simulation of completedSimulations) {
@@ -88,6 +96,28 @@ async function handler(req: AuthenticatedRequest) {
         const newVoice = (extracted as any).verbatimVoiceExamples ?? null;
         if (newVoice) {
           mergedVoiceExamples = mergeOwnerVoiceExamples(mergedVoiceExamples, newVoice);
+        }
+
+        // Extract CLOSER Framework from this simulation
+        try {
+          const transcript = simulation.messages
+            .map((m) => `${m.role === 'BUSINESS_OWNER' ? 'Owner' : 'Client'}: ${m.content}`)
+            .join('\n');
+
+          const closerExtractionPrompt = generateCloserExtractionPrompt(transcript);
+          const closerResponse = await createChatCompletion(
+            [{ role: 'user', content: closerExtractionPrompt }],
+            'You are extracting sales framework patterns from a conversation. Return ONLY valid JSON, no markdown.',
+            { temperature: 0.3, maxTokens: 3000 }
+          );
+
+          let closerJsonStr = closerResponse.content;
+          closerJsonStr = closerJsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          closerFramework = JSON.parse(closerJsonStr);
+          console.log(`✅ CLOSER framework extracted from simulation ${simulation.id}`);
+        } catch (closerError) {
+          console.warn(`⚠️  Failed to extract CLOSER framework from simulation ${simulation.id}:`, closerError);
+          // Continue - CLOSER extraction is optional
         }
       } catch (error) {
         console.error(`Failed to extract from simulation ${simulation.id}:`, error);
@@ -132,6 +162,8 @@ async function handler(req: AuthenticatedRequest) {
         objectionHandling: mergedPatterns.objectionHandling,
         decisionMakingPatterns: mergedPatterns.decisionMakingPatterns,
         ownerVoiceExamples: mergedVoiceExamples as any,
+        // CLOSER Framework (use if extracted)
+        ...(closerFramework ? { closerFramework: closerFramework as any } : {}),
         simulationCount: successCount,
         completionPercentage,
         completionScore: completionPercentage,
@@ -145,6 +177,7 @@ async function handler(req: AuthenticatedRequest) {
         success: true,
         data: {
           extractedPatterns: mergedPatterns,
+          closerFramework,
           completionPercentage,
           simulationCount: successCount,
           simulationsProcessed: successCount,

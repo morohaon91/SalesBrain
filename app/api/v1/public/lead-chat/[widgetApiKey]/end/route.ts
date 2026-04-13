@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { createChatCompletion } from '@/lib/ai/client';
+import { scoreConversation } from '@/lib/scoring/hybrid-scorer';
 
 const bodySchema = z.object({
   conversationId: z.string().uuid(),
@@ -40,10 +41,14 @@ export async function POST(
 
     const { conversationId } = parsed.data;
 
-    // Load conversation with messages
+    // Load conversation with messages and tenant's business profile
     const conversation = await prisma.conversation.findFirst({
       where: { id: conversationId, tenantId: tenant.id, status: 'ACTIVE' },
       include: { messages: { orderBy: { createdAt: 'asc' } } },
+    });
+
+    const businessProfile = await prisma.businessProfile.findFirst({
+      where: { tenantId: tenant.id },
     });
 
     if (!conversation) {
@@ -67,7 +72,7 @@ export async function POST(
       return NextResponse.json({ success: true, data: { ended: true } });
     }
 
-    // AI analysis: extract structured data from conversation
+    // PHASE 1: Hybrid Scoring + Basic Info Extraction
     let analysis = {
       leadName: null as string | null,
       leadEmail: null as string | null,
@@ -77,9 +82,48 @@ export async function POST(
       keyTopics: [] as string[],
     };
 
+    let scoringBreakdown: any = null;
+
     if (conversation.messages.length > 0) {
       try {
-        const analysisPrompt = `You are analyzing a lead conversation transcript. Extract the following information and respond with ONLY valid JSON, no markdown, no explanation.
+        // Use hybrid scorer if business profile exists, otherwise fall back to basic analysis
+        if (businessProfile) {
+          scoringBreakdown = await scoreConversation(transcript, businessProfile);
+
+          // Extract basic info for backward compatibility
+          const basicInfoPrompt = `Extract name and email from this conversation.
+
+Transcript:
+${transcript}
+
+Return JSON:
+{
+  "leadName": "name or null",
+  "leadEmail": "email or null"
+}`;
+
+          const basicResponse = await createChatCompletion(
+            [{ role: 'user', content: basicInfoPrompt }],
+            'You are a data extraction assistant.',
+            { maxTokens: 100, temperature: 0.1 }
+          );
+
+          const basicParsed = JSON.parse(basicResponse.content || '{}');
+
+          analysis = {
+            leadName: basicParsed.leadName ?? null,
+            leadEmail: basicParsed.leadEmail ?? null,
+            summary: `${basicParsed.summary || ''}\n\nScore: ${scoringBreakdown.totalScore}/100 (${scoringBreakdown.temperature.toUpperCase()})`,
+            leadScore: scoringBreakdown.totalScore,
+            qualificationStatus:
+              scoringBreakdown.temperature === 'hot' ? 'QUALIFIED' :
+              scoringBreakdown.temperature === 'warm' ? 'MAYBE' :
+              'UNQUALIFIED',
+            keyTopics: scoringBreakdown.qualificationAnalysis.greenFlagsMatched || [],
+          };
+        } else {
+          // Fallback to basic analysis if no business profile
+          const analysisPrompt = `You are analyzing a lead conversation transcript. Extract the following information and respond with ONLY valid JSON, no markdown, no explanation.
 
 Transcript:
 ${transcript}
@@ -96,23 +140,24 @@ Return this exact JSON structure:
 
 Scoring guide: 80-100 = clearly interested, good fit, ready to move forward; 50-79 = interested but some uncertainty; 20-49 = lukewarm or poor fit; 0-19 = not interested or wrong fit.`;
 
-        const aiResponse = await createChatCompletion(
-          [{ role: 'user', content: analysisPrompt }],
-          'You are a precise data extraction assistant. Always respond with valid JSON only.',
-          { maxTokens: 400, temperature: 0.2 }
-        );
+          const aiResponse = await createChatCompletion(
+            [{ role: 'user', content: analysisPrompt }],
+            'You are a precise data extraction assistant. Always respond with valid JSON only.',
+            { maxTokens: 400, temperature: 0.2 }
+          );
 
-        const parsed = JSON.parse(aiResponse.content);
-        analysis = {
-          leadName: parsed.leadName ?? null,
-          leadEmail: parsed.leadEmail ?? null,
-          summary: parsed.summary || 'No summary available',
-          leadScore: typeof parsed.leadScore === 'number' ? Math.min(100, Math.max(0, parsed.leadScore)) : 0,
-          qualificationStatus: ['QUALIFIED', 'UNQUALIFIED', 'MAYBE', 'UNKNOWN'].includes(parsed.qualificationStatus)
-            ? parsed.qualificationStatus
-            : 'UNKNOWN',
-          keyTopics: Array.isArray(parsed.keyTopics) ? parsed.keyTopics : [],
-        };
+          const parsed = JSON.parse(aiResponse.content);
+          analysis = {
+            leadName: parsed.leadName ?? null,
+            leadEmail: parsed.leadEmail ?? null,
+            summary: parsed.summary || 'No summary available',
+            leadScore: typeof parsed.leadScore === 'number' ? Math.min(100, Math.max(0, parsed.leadScore)) : 0,
+            qualificationStatus: ['QUALIFIED', 'UNQUALIFIED', 'MAYBE', 'UNKNOWN'].includes(parsed.qualificationStatus)
+              ? parsed.qualificationStatus
+              : 'UNKNOWN',
+            keyTopics: Array.isArray(parsed.keyTopics) ? parsed.keyTopics : [],
+          };
+        }
       } catch (e) {
         console.error('lead-chat analysis error:', e);
         // Continue with defaults — don't fail the whole end request
@@ -145,6 +190,7 @@ Scoring guide: 80-100 = clearly interested, good fit, ready to move forward; 50-
         leadScore: analysis.leadScore,
         qualificationStatus: analysis.qualificationStatus,
         keyTopics: analysis.keyTopics,
+        scoringBreakdown: scoringBreakdown, // PHASE 1: Store full scoring breakdown
       },
     });
 

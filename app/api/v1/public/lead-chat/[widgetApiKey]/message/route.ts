@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { ConversationStatus } from '@prisma/client';
 import { createChatCompletion } from '@/lib/ai/client';
 import { buildLeadAssistantSystemPrompt } from '@/lib/ai/prompts/lead-assistant';
+import { generateCloserResponse, type CloserProgress } from '@/lib/ai/closer-conversation';
 
 const bodySchema = z.object({
   conversationId: z.string().uuid(),
@@ -60,7 +62,6 @@ export async function POST(
       where: {
         id: conversationId,
         tenantId: tenant.id,
-        status: 'ACTIVE',
       },
       include: {
         messages: { orderBy: { createdAt: 'asc' } },
@@ -74,6 +75,7 @@ export async function POST(
       );
     }
 
+    // Store lead message
     await prisma.conversationMessage.create({
       data: {
         conversationId,
@@ -82,9 +84,29 @@ export async function POST(
       },
     });
 
-    const profile = tenant.profiles[0] ?? null;
-    const systemPrompt = buildLeadAssistantSystemPrompt(tenant, profile);
+    // If in MANUAL mode, don't generate AI response
+    if (conversation.status === ConversationStatus.MANUAL) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          reply: null,
+          status: 'MANUAL_MODE',
+          note: 'This conversation is in manual control. The owner will respond.',
+        },
+      });
+    }
 
+    // Check if conversation is still active for AI
+    if (conversation.status !== ConversationStatus.ACTIVE) {
+      return NextResponse.json(
+        { success: false, error: { code: 'CONVERSATION_ENDED', message: 'This conversation has ended' } },
+        { status: 403 }
+      );
+    }
+
+    const profile = tenant.profiles[0] ?? null;
+
+    // Prepare message history in format expected by generateCloserResponse
     const history = conversation.messages.map((m) => ({
       role: (m.role === 'LEAD' ? 'user' : 'assistant') as 'user' | 'assistant',
       content: m.content,
@@ -92,10 +114,30 @@ export async function POST(
 
     history.push({ role: 'user', content });
 
-    const ai = await createChatCompletion(history, systemPrompt, {
-      maxTokens: 600,
-      temperature: 0.7,
-    });
+    // Get current CLOSER progress from conversation
+    let closerProgress: CloserProgress | null = null;
+    if (conversation.closerProgress) {
+      closerProgress = conversation.closerProgress as any as CloserProgress;
+    }
+
+    // Use CLOSER framework
+    // Add businessName from tenant to profile for system prompt
+    const profileWithBusiness = {
+      ...profile,
+      businessName: tenant.businessName
+    };
+
+    const closerResponse = await generateCloserResponse(
+      history,
+      profileWithBusiness,
+      closerProgress
+    );
+
+    const ai = {
+      content: closerResponse.response,
+      tokensUsed: 0,  // TODO: Track from actual API call
+      latencyMs: 0,   // TODO: Measure actual latency
+    };
 
     await prisma.conversationMessage.create({
       data: {
@@ -107,9 +149,13 @@ export async function POST(
       },
     });
 
+    // Update conversation with CLOSER progress
     await prisma.conversation.update({
       where: { id: conversationId },
-      data: { lastActivityAt: new Date() },
+      data: {
+        lastActivityAt: new Date(),
+        closerProgress: closerResponse.updatedProgress as any,
+      },
     });
 
     return NextResponse.json({
