@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth, AuthenticatedRequest } from "@/lib/auth/middleware";
-import { triggerAsyncExtraction } from "@/lib/simulations/extraction-queue";
+import { triggerAsyncExtraction } from "@/lib/extraction/extraction-engine";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -106,8 +106,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       },
     });
 
-    // Phase 7: Trigger async extraction using extraction-queue
-    triggerAsyncExtraction(simulationId, tenantId);
+    // Trigger async extraction (new universal engine)
+    triggerAsyncExtraction(simulationId);
 
     return NextResponse.json(
       {

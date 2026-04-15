@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { validateQuestionnaireData } from '@/lib/onboarding/questionnaire-validator';
 import { initializeProfile } from '@/lib/onboarding/profile-initializer';
-import { suggestNextScenario } from '@/lib/templates/scenario-suggester';
+import { getNextRecommendedScenario } from '@/lib/scenarios/mandatory-scenarios';
 import { prisma } from '@/lib/prisma';
-import type { BusinessProfile } from '@/lib/types/business-profile';
 
 async function handler(req: AuthenticatedRequest) {
   try {
@@ -45,50 +44,14 @@ async function handler(req: AuthenticatedRequest) {
       data: { onboardingStep: 'simulations' },
     });
 
-    // Build typed profile for suggestion
-    const typedProfile: any = {
-      id: profile.id,
-      tenantId: profile.tenantId,
-      createdAt: profile.createdAt,
-      updatedAt: profile.updatedAt,
-      industry: profile.industry,
-      serviceDescription: profile.serviceDescription,
-      targetClientType: profile.targetClientType,
-      typicalBudgetRange: profile.typicalBudgetRange,
-      commonClientQuestions: profile.commonClientQuestions,
-      yearsExperience: profile.yearsExperience,
-      serviceOfferings: profile.serviceOfferings,
-      specializations: profile.specializations,
-      certifications: profile.certifications,
-      serviceArea: profile.serviceArea,
-      teamSize: profile.teamSize,
-      communicationStyle: null,
-      pricingLogic: null,
-      qualificationCriteria: null,
-      objectionHandling: null,
-      decisionMakingPatterns: null,
-      ownerVoiceExamples: null,
-      profileApprovalStatus: 'PENDING',
-      approvedAt: null,
-      goLiveAt: null,
-      completedScenarios: profile.completedScenarios,
-      suggestedNextScenario: profile.suggestedNextScenario,
-      simulationCount: profile.simulationCount,
-      completionPercentage: profile.completionPercentage,
-      isComplete: profile.isComplete,
-      completionScore: profile.completionScore,
-      lastExtractedAt: profile.lastExtractedAt,
-      embeddedMessageCount: profile.embeddedMessageCount,
-    };
-
-    const suggestion = suggestNextScenario(typedProfile);
+    const suggestion = getNextRecommendedScenario(profile.completedScenarios || []);
 
     return NextResponse.json({
       success: true,
       profileId: profile.id,
       completionPercentage: profile.completionPercentage,
       nextStep: 'simulations',
-      suggestedScenario: suggestion?.scenario.id ?? null,
+      suggestedScenario: suggestion?.id ?? null,
     });
   } catch (error) {
     console.error('Questionnaire submission error:', error);

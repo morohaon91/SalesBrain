@@ -1,16 +1,13 @@
 /**
  * POST /api/v1/profile/re-extract
- * Re-analyze all completed simulations and merge patterns
+ * Re-analyze all completed simulations and merge patterns (universal engine).
  */
 
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
-import { extractPatternsFromSimulation } from '@/lib/ai/extract-patterns';
-import { mergePatterns, mergeOwnerVoiceExamples } from '@/lib/ai/merge-patterns';
-import { calculateProfileCompletion } from '@/lib/utils/profile-completion';
-import { generateCloserExtractionPrompt } from '@/lib/ai/prompts/closer-extraction';
-import { createChatCompletion } from '@/lib/ai/client';
+import { extractRawFromMessages, mergeAll } from '@/lib/extraction/extraction-engine';
+import { calculateProfileCompletion } from '@/lib/extraction/completion';
 import { v4 as uuidv4 } from 'uuid';
 
 async function handler(req: AuthenticatedRequest) {
@@ -19,18 +16,10 @@ async function handler(req: AuthenticatedRequest) {
   const timestamp = new Date().toISOString();
 
   try {
-    // 1. Get all completed simulations
     const completedSimulations = await prisma.simulation.findMany({
-      where: {
-        tenantId,
-        status: 'COMPLETED'
-      },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' }
-        }
-      },
-      orderBy: { createdAt: 'asc' }
+      where: { tenantId, status: 'COMPLETED' },
+      include: { messages: { orderBy: { createdAt: 'asc' } } },
+      orderBy: { createdAt: 'asc' },
     });
 
     if (completedSimulations.length === 0) {
@@ -39,165 +28,114 @@ async function handler(req: AuthenticatedRequest) {
           success: true,
           data: {
             extractedPatterns: null,
-            closerFramework: null,
             completionPercentage: 0,
             simulationCount: 0,
             simulationsProcessed: 0,
             simulationsTotal: 0,
-            message: 'No simulations yet'
+            message: 'No simulations yet',
           },
-          meta: { timestamp, requestId }
+          meta: { timestamp, requestId },
         },
         { status: 200 }
       );
     }
 
-    // 2. Get business profile
-    const profile = await prisma.businessProfile.findUnique({
-      where: { tenantId }
-    });
-
+    const profile = await prisma.businessProfile.findUnique({ where: { tenantId } });
     if (!profile) {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code: 'PROFILE_NOT_FOUND',
-            message: 'Business profile not found'
-          },
-          meta: { timestamp, requestId }
+          error: { code: 'PROFILE_NOT_FOUND', message: 'Business profile not found' },
+          meta: { timestamp, requestId },
         },
         { status: 404 }
       );
     }
 
-    const industry = profile.industry || 'business_consulting';
+    // Start from a blank slate — full re-extraction overwrites.
+    let accumulated = {
+      communicationStyle: null,
+      objectionHandling: null,
+      qualificationCriteria: null,
+      decisionMakingPatterns: null,
+      pricingLogic: null,
+      ownerVoiceExamples: null,
+    } as Parameters<typeof mergeAll>[0];
 
-    // 3. Extract patterns from each simulation, bypassing the quality gate
-    // (re-extraction is a manual action — we extract from all completed sims)
-    let mergedPatterns: any = null;
-    let mergedVoiceExamples: any = profile.ownerVoiceExamples ?? null;
-    let closerFramework: any = null;
     let successCount = 0;
+    const completedScenarioIds = new Set<string>(profile.completedScenarios ?? []);
 
-    for (const simulation of completedSimulations) {
-      if (simulation.messages.length < 4) continue;
-
+    for (const sim of completedSimulations) {
+      if (sim.messages.length < 4) continue;
       try {
-        const extracted = await extractPatternsFromSimulation(
-          simulation.messages,
-          industry,
-          simulation.scenarioType
-        );
-
+        const raw = await extractRawFromMessages(sim.messages, sim.scenarioType, accumulated);
+        accumulated = mergeAll(accumulated, raw, sim.scenarioType);
+        completedScenarioIds.add(sim.scenarioType);
         successCount++;
-        mergedPatterns = mergePatterns(mergedPatterns, extracted);
-
-        const newVoice = (extracted as any).verbatimVoiceExamples ?? null;
-        if (newVoice) {
-          mergedVoiceExamples = mergeOwnerVoiceExamples(mergedVoiceExamples, newVoice);
-        }
-
-        // Extract CLOSER Framework from this simulation
-        try {
-          const transcript = simulation.messages
-            .map((m) => `${m.role === 'BUSINESS_OWNER' ? 'Owner' : 'Client'}: ${m.content}`)
-            .join('\n');
-
-          const closerExtractionPrompt = generateCloserExtractionPrompt(transcript);
-          const closerResponse = await createChatCompletion(
-            [{ role: 'user', content: closerExtractionPrompt }],
-            'You are extracting sales framework patterns from a conversation. Return ONLY valid JSON, no markdown.',
-            { temperature: 0.3, maxTokens: 3000 }
-          );
-
-          let closerJsonStr = closerResponse.content;
-          closerJsonStr = closerJsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-          closerFramework = JSON.parse(closerJsonStr);
-          console.log(`✅ CLOSER framework extracted from simulation ${simulation.id}`);
-        } catch (closerError) {
-          console.warn(`⚠️  Failed to extract CLOSER framework from simulation ${simulation.id}:`, closerError);
-          // Continue - CLOSER extraction is optional
-        }
       } catch (error) {
-        console.error(`Failed to extract from simulation ${simulation.id}:`, error);
-        continue;
+        console.error(`Re-extract failed for simulation ${sim.id}:`, error);
       }
     }
 
-    if (!mergedPatterns || successCount === 0) {
+    if (successCount === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code: 'EXTRACTION_FAILED',
-            message: 'Could not extract patterns from any simulation'
-          },
-          meta: { timestamp, requestId }
+          error: { code: 'EXTRACTION_FAILED', message: 'Could not extract patterns from any simulation' },
+          meta: { timestamp, requestId },
         },
         { status: 500 }
       );
     }
 
-    // 4. Calculate completion using the depth-based algorithm (same as everywhere else)
-    const updatedProfileShape = {
+    const breakdown = calculateProfileCompletion({
       ...profile,
-      communicationStyle: mergedPatterns.communicationStyle,
-      pricingLogic: mergedPatterns.pricingLogic,
-      qualificationCriteria: mergedPatterns.qualificationCriteria,
-      objectionHandling: mergedPatterns.objectionHandling,
-      decisionMakingPatterns: mergedPatterns.decisionMakingPatterns,
-      ownerVoiceExamples: mergedVoiceExamples,
-      simulationCount: successCount,
-    };
-    const completionPercentage = calculateProfileCompletion(updatedProfileShape).total;
+      ...accumulated,
+    });
 
-    // 5. Update profile with merged data
     await prisma.businessProfile.update({
       where: { tenantId },
       data: {
-        communicationStyle: mergedPatterns.communicationStyle,
-        pricingLogic: mergedPatterns.pricingLogic,
-        qualificationCriteria: mergedPatterns.qualificationCriteria,
-        objectionHandling: mergedPatterns.objectionHandling,
-        decisionMakingPatterns: mergedPatterns.decisionMakingPatterns,
-        ownerVoiceExamples: mergedVoiceExamples as any,
-        // CLOSER Framework (use if extracted)
-        ...(closerFramework ? { closerFramework: closerFramework as any } : {}),
+        communicationStyle: accumulated.communicationStyle as any,
+        objectionHandling: accumulated.objectionHandling as any,
+        qualificationCriteria: accumulated.qualificationCriteria as any,
+        decisionMakingPatterns: accumulated.decisionMakingPatterns as any,
+        pricingLogic: accumulated.pricingLogic as any,
+        ownerVoiceExamples: accumulated.ownerVoiceExamples as any,
         simulationCount: successCount,
-        completionPercentage,
-        completionScore: completionPercentage,
+        completedScenarios: Array.from(completedScenarioIds),
+        completionPercentage: breakdown.total,
+        completionScore: breakdown.total,
+        isComplete: breakdown.total >= 100,
         lastExtractedAt: new Date(),
-        isComplete: completionPercentage >= 100,
-      }
+      },
     });
 
     return NextResponse.json(
       {
         success: true,
         data: {
-          extractedPatterns: mergedPatterns,
-          closerFramework,
-          completionPercentage,
+          extractedPatterns: accumulated,
+          completionPercentage: breakdown.total,
+          completionBreakdown: breakdown,
           simulationCount: successCount,
           simulationsProcessed: successCount,
           simulationsTotal: completedSimulations.length,
         },
-        meta: { timestamp, requestId }
+        meta: { timestamp, requestId },
       },
       { status: 200 }
     );
   } catch (error: any) {
     console.error('Re-extraction error:', error);
-
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'RE_EXTRACTION_FAILED',
-          message: error.message || 'Failed to re-extract patterns'
+          message: error.message || 'Failed to re-extract patterns',
         },
-        meta: { timestamp, requestId }
+        meta: { timestamp, requestId },
       },
       { status: 500 }
     );

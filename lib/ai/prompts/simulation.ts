@@ -177,16 +177,16 @@ ${
   businessProfile?.communicationStyle
     ? `BUSINESS OWNER COMMUNICATION STYLE:
 The business owner tends to communicate: ${(businessProfile.communicationStyle as any).tone || 'professionally'}
-${(businessProfile.communicationStyle as any).formality ? `Formality level: ${(businessProfile.communicationStyle as any).formality}/5` : ''}
-${(businessProfile.communicationStyle as any).keyPhrases ? `Uses key phrases like: ${((businessProfile.communicationStyle as any).keyPhrases as string[]).join(', ')}` : ''}`
+${(businessProfile.communicationStyle as any).energyLevel ? `Energy level: ${(businessProfile.communicationStyle as any).energyLevel}` : ''}
+${(businessProfile.communicationStyle as any).commonPhrases ? `Uses common phrases like: ${((businessProfile.communicationStyle as any).commonPhrases as string[]).join(', ')}` : ''}`
     : ''
 }
 
 ${
   businessProfile?.qualificationCriteria
     ? `LEAD QUALIFICATION:
-Deal breakers for the business owner: ${((businessProfile.qualificationCriteria as any).dealBreakers as string[] || []).join(', ') || 'None defined yet'}
-Green flags they look for: ${((businessProfile.qualificationCriteria as any).greenFlags as string[] || []).join(', ') || 'None defined yet'}`
+Deal breakers for the business owner: ${(((businessProfile.qualificationCriteria as any).dealBreakers as any[]) || []).map((d: any) => d?.rule ?? d).filter(Boolean).join(', ') || 'None defined yet'}
+Green flags they look for: ${(((businessProfile.qualificationCriteria as any).greenFlags as any[]) || []).map((g: any) => g?.description ?? g?.flagType ?? g).filter(Boolean).join(', ') || 'None defined yet'}`
     : ''
 }
 

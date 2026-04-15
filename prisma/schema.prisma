@@ -188,7 +188,6 @@ model BusinessProfile {
   completionPercentage Int       @default(20)
   lastExtractedAt      DateTime?
   simulationCount      Int       @default(0)
-  embeddedMessageCount Int       @default(0)
 
 
   @@unique([tenantId])

@@ -6,7 +6,7 @@ import { createChatCompletion } from "@/lib/ai/client";
 import {
   generateSimulationPrompt,
 } from "@/lib/ai/prompts";
-import { getScenarioById } from "@/lib/templates/industry-scenarios";
+import { getScenarioById } from "@/lib/scenarios/mandatory-scenarios";
 import { generateLiveFeedback } from "@/lib/simulations/live-feedback-generator";
 import { calculateLiveQualityScore } from "@/lib/simulations/quality-scorer";
 import { v4 as uuidv4 } from "uuid";
@@ -185,26 +185,28 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         businessProfile
       );
     } else {
-      // New-style scenario ID (e.g. "construction_premium_skeptic")
-      // Rebuild the persona-aware prompt with owner context so the AI
-      // never drifts to a different industry on follow-up turns
+      // New universal scenario ID. Rebuild persona-aware prompt
+      // with owner context so AI never drifts to a different industry.
       const scenario = getScenarioById(simulation.scenarioType);
-      const ownerIndustry = businessProfile.industry ?? (scenario?.industry ?? 'your industry');
+      const ownerIndustry = businessProfile.industry ?? 'your industry';
       const ownerService = (businessProfile as any).serviceDescription ?? `professional ${ownerIndustry} services`;
       const ownerTargetClient = (businessProfile as any).targetClientType ?? 'businesses and homeowners';
       const ownerBudgetRange = (businessProfile as any).typicalBudgetRange ?? 'varies by project';
 
-      // Reconstruct persona details from saved personaDetails or fall back to generic
       const personaDetails = simulation.personaDetails as Record<string, any> | null;
       const personaName = personaDetails?.name ?? 'the client';
-      const personaAge = personaDetails?.age ?? '';
-      const personality = Array.isArray(personaDetails?.personality) ? personaDetails.personality.join(', ') : '';
+      const personaRole = personaDetails?.role ?? '';
+      const personaCompany = personaDetails?.company ?? '';
+      const personality = personaDetails?.personality ?? '';
+      const communicationStyle = personaDetails?.communicationStyle ?? '';
+      const technicalLevel = personaDetails?.technicalLevel ?? '';
       const painPoints = Array.isArray(personaDetails?.painPoints) ? personaDetails.painPoints.join(', ') : '';
-      const budgetMin = personaDetails?.budget?.min;
-      const budgetMax = personaDetails?.budget?.max;
+      const budget = personaDetails?.budget ?? '';
       const timeline = personaDetails?.timeline ?? '';
+      const priorExperience = personaDetails?.priorExperience ?? '';
+      const objections = Array.isArray(personaDetails?.objectionsToRaise) ? personaDetails.objectionsToRaise.join(', ') : '';
 
-      systemPrompt = `You are roleplaying as a potential CLIENT named ${personaName}${personaAge ? `, age ${personaAge}` : ''} reaching out to a ${ownerIndustry} professional.
+      systemPrompt = `You are roleplaying as a potential CLIENT named ${personaName} reaching out to a ${ownerIndustry} professional.
 
 THE BUSINESS YOU ARE CONTACTING:
 - Industry: ${ownerIndustry}
@@ -213,11 +215,17 @@ THE BUSINESS YOU ARE CONTACTING:
 - Typical budget range they work with: ${ownerBudgetRange}
 
 YOUR CLIENT PERSONA:
-${scenario ? `- Scenario: ${scenario.name}\n- Your situation: ${scenario.teaser.replace('Incoming lead: ', '')}` : ''}
+${scenario ? `- Scenario: ${scenario.name}\n- Situation: ${scenario.description}` : ''}
+${personaRole ? `- Role: ${personaRole}` : ''}
+${personaCompany ? `- Company type: ${personaCompany}` : ''}
 ${personality ? `- Personality: ${personality}` : ''}
+${communicationStyle ? `- Communication style: ${communicationStyle}` : ''}
+${technicalLevel ? `- Technical level: ${technicalLevel}` : ''}
 ${painPoints ? `- Main concerns: ${painPoints}` : ''}
-${budgetMin !== undefined ? `- Budget: $${Number(budgetMin).toLocaleString()} - $${Number(budgetMax ?? budgetMin).toLocaleString()}` : ''}
+${budget ? `- Budget: ${budget}` : ''}
 ${timeline ? `- Timeline: ${timeline}` : ''}
+${priorExperience ? `- Prior experience: ${priorExperience}` : ''}
+${objections ? `- Objections to raise naturally: ${objections}` : ''}
 
 CRITICAL RULES:
 - You are ALWAYS a client contacting a ${ownerIndustry} professional — NEVER change this industry

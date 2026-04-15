@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma, setTenantContext, clearTenantContext } from '@/lib/prisma';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
-import { calculateProfileCompletion } from '@/lib/utils/profile-completion';
+import { calculateProfileCompletion } from '@/lib/extraction/completion';
+import { unwrapScalarObjects } from '@/lib/extraction/extraction-engine';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ProfileResponse {
@@ -144,13 +145,13 @@ export const GET = withAuth(
             teamSize: profile.teamSize,
             certifications: profile.certifications,
 
-            // Extracted fields
-            communicationStyle: profile.communicationStyle as any,
-            pricingLogic: profile.pricingLogic as any,
-            qualificationCriteria: profile.qualificationCriteria as any,
-            objectionHandling: profile.objectionHandling as any,
-            decisionMakingPatterns: profile.decisionMakingPatterns as any,
-            ownerVoiceExamples: profile.ownerVoiceExamples as any,
+            // Extracted fields (unwrap any AI-wrapped scalars for legacy rows)
+            communicationStyle: unwrapScalarObjects(profile.communicationStyle),
+            pricingLogic: unwrapScalarObjects(profile.pricingLogic),
+            qualificationCriteria: unwrapScalarObjects(profile.qualificationCriteria),
+            objectionHandling: unwrapScalarObjects(profile.objectionHandling),
+            decisionMakingPatterns: unwrapScalarObjects(profile.decisionMakingPatterns),
+            ownerVoiceExamples: unwrapScalarObjects(profile.ownerVoiceExamples),
 
             // Approval
             profileApprovalStatus: profile.profileApprovalStatus,

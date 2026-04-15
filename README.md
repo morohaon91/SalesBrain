@@ -91,6 +91,8 @@ Password: Demo123!
 │   └── page.tsx           # Home page
 ├── components/            # React components
 ├── lib/                   # Utilities & helpers
+│   ├── extraction/       # Profile extraction engine, prompts, Zod schemas
+│   ├── scenarios/        # Personas and mandatory simulation scenarios
 │   ├── prisma.ts         # Prisma client singleton
 │   ├── utils.ts          # Helper functions
 │   └── prisma-middleware.ts
@@ -196,6 +198,8 @@ npx prisma migrate dev --name init
 - [Database Schema](./Docs/01-DATABASE-SCHEMA.md)
 - [Setup Guide](./Docs/12-NATIVE-SETUP-GUIDE.md)
 - [Technical Planning](./Docs/MVP%20TECHNICAL%20PLANNING.md)
+- [Business verticals & simulation logic](./Docs/business-verticals-and-simulation-logic.md)
+- [Prompts directory audit (2026-04-15)](./Docs/audit-prompts-directory-2026-04-15.md)
 
 ## License
 

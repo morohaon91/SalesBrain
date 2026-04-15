@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import ScenarioSelection from '@/components/simulation/ScenarioSelection';
+import ScenarioSelection, { ScenarioSuggestionPayload } from '@/components/simulation/ScenarioSelection';
+import { ScenarioCardData } from '@/components/simulation/ScenarioCard';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { IndustryScenario, ScenarioSuggestion } from '@/lib/types/scenarios';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function NewSimulationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [scenarios, setScenarios] = useState<IndustryScenario[]>([]);
-  const [suggestion, setSuggestion] = useState<ScenarioSuggestion | null>(null);
+  const [scenarios, setScenarios] = useState<ScenarioCardData[]>([]);
+  const [suggestion, setSuggestion] = useState<ScenarioSuggestionPayload | null>(null);
   const [completedScenarios, setCompletedScenarios] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);

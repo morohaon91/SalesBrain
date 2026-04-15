@@ -567,24 +567,32 @@ export default function ProfilePage() {
                       {profile.communicationStyle.tone && (
                         <div>
                           <span className="text-sm text-gray-600">{t('businessProfile.tone')}</span>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 capitalize">
                             {profile.communicationStyle.tone}
                           </p>
                         </div>
                       )}
-                      {profile.communicationStyle.style && (
+                      {profile.communicationStyle.energyLevel && (
                         <div>
-                          <span className="text-sm text-gray-600">{t('businessProfile.style')}</span>
-                          <p className="font-medium text-gray-900">
-                            {profile.communicationStyle.style}
+                          <span className="text-sm text-gray-600">Energy</span>
+                          <p className="font-medium text-gray-900 capitalize">
+                            {profile.communicationStyle.energyLevel}
                           </p>
                         </div>
                       )}
-                      {profile.communicationStyle.keyPhrases?.length > 0 && (
+                      {profile.communicationStyle.verbosityPattern && (
                         <div>
-                          <span className="text-sm text-gray-600">{t('businessProfile.keyPhrases')}</span>
+                          <span className="text-sm text-gray-600">Verbosity</span>
+                          <p className="font-medium text-gray-900 capitalize">
+                            {profile.communicationStyle.verbosityPattern}
+                          </p>
+                        </div>
+                      )}
+                      {profile.communicationStyle.commonPhrases?.length > 0 && (
+                        <div>
+                          <span className="text-sm text-gray-600">Common Phrases</span>
                           <div className="flex flex-wrap gap-2 mt-1">
-                            {profile.communicationStyle.keyPhrases.map(
+                            {profile.communicationStyle.commonPhrases.map(
                               (phrase: string, i: number) => (
                                 <span
                                   key={i}
@@ -606,35 +614,43 @@ export default function ProfilePage() {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">{t('businessProfile.pricingLogic')}</h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                      {profile.pricingLogic.minBudget && (
+                      {profile.pricingLogic.minimumBudget && (
                         <div className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
-                            {t('businessProfile.minBudget', {
-                              amount: profile.pricingLogic.minBudget.toLocaleString(),
-                            })}
+                            Minimum: ${profile.pricingLogic.minimumBudget.toLocaleString()}
                           </span>
                         </div>
                       )}
-                      {profile.pricingLogic.maxBudget && (
+                      {profile.pricingLogic.preferredBudgetRange && (
                         <div className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
-                            {t('businessProfile.maxBudget', {
-                              amount: profile.pricingLogic.maxBudget.toLocaleString(),
-                            })}
+                            Preferred range: {profile.pricingLogic.preferredBudgetRange}
                           </span>
                         </div>
                       )}
-                      {profile.pricingLogic.flexibilityFactors?.map(
-                        (factor: string, i: number) => (
-                          <div key={i} className="flex items-start gap-2">
+                      {profile.pricingLogic.flexibleOn?.map(
+                        (item: string, i: number) => (
+                          <div key={`flex-${i}`} className="flex items-start gap-2">
                             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">
-                              {t('businessProfile.flexibleOn', { factor })}
-                            </span>
+                            <span className="text-sm">Flexible on: {item}</span>
                           </div>
                         )
+                      )}
+                      {profile.pricingLogic.notFlexibleOn?.map(
+                        (item: string, i: number) => (
+                          <div key={`nf-${i}`} className="flex items-start gap-2">
+                            <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm">Not flexible on: {item}</span>
+                          </div>
+                        )
+                      )}
+                      {profile.pricingLogic.priceDefenseStrategy && (
+                        <div className="pt-2">
+                          <span className="text-xs text-gray-600">Price defense:</span>
+                          <p className="text-sm">{profile.pricingLogic.priceDefenseStrategy}</p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -654,10 +670,10 @@ export default function ProfilePage() {
                           </h4>
                           <ul className="space-y-1">
                             {profile.qualificationCriteria.dealBreakers.map(
-                              (db: string, i: number) => (
+                              (db: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-sm">{db}</span>
+                                  <span className="text-sm">{db.rule ?? db}</span>
                                 </li>
                               )
                             )}
@@ -672,10 +688,26 @@ export default function ProfilePage() {
                           </h4>
                           <ul className="space-y-1">
                             {profile.qualificationCriteria.greenFlags.map(
-                              (gf: string, i: number) => (
+                              (gf: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-sm">{gf}</span>
+                                  <span className="text-sm">{gf.description ?? gf.flagType ?? gf}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+
+                      {profile.qualificationCriteria.redFlags?.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Red Flags</h4>
+                          <ul className="space-y-1">
+                            {profile.qualificationCriteria.redFlags.map(
+                              (rf: any, i: number) => (
+                                <li key={i} className="flex items-start gap-2">
+                                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                                  <span className="text-sm">{rf.description ?? rf.flagType ?? rf}</span>
                                 </li>
                               )
                             )}
@@ -693,15 +725,22 @@ export default function ProfilePage() {
                       {t('businessProfile.objectionTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                      {Object.entries(profile.objectionHandling).map(
-                        ([type, response], i) => (
-                          <div key={i}>
-                            <span className="text-sm font-medium text-gray-700">
-                              {type.replace(/([A-Z])/g, ' $1').trim()}:
+                      {(profile.objectionHandling.playbooks ?? []).map(
+                        (pb: any, i: number) => (
+                          <div key={i} className="border-b last:border-b-0 pb-2 last:pb-0">
+                            <span className="text-sm font-medium text-gray-700 capitalize">
+                              {pb.objectionType}
                             </span>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {response as string}
-                            </p>
+                            {pb.responseStrategy && (
+                              <p className="text-sm text-gray-600 mt-1">{pb.responseStrategy}</p>
+                            )}
+                            {pb.responseExamples?.length > 0 && (
+                              <ul className="mt-1 space-y-1">
+                                {pb.responseExamples.slice(0, 2).map((ex: string, j: number) => (
+                                  <li key={j} className="text-xs text-gray-500 italic">"{ex}"</li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
                         )
                       )}
@@ -716,13 +755,11 @@ export default function ProfilePage() {
                       {t('businessProfile.decisionTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                      {profile.decisionMakingPatterns.whenToSayYes?.length > 0 && (
+                      {profile.decisionMakingPatterns.discovery?.firstQuestions?.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            {t('businessProfile.whenYes')}
-                          </h4>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Discovery Questions</h4>
                           <ul className="space-y-1">
-                            {profile.decisionMakingPatterns.whenToSayYes.map(
+                            {profile.decisionMakingPatterns.discovery.firstQuestions.map(
                               (item: string, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -734,39 +771,29 @@ export default function ProfilePage() {
                         </div>
                       )}
 
-                      {profile.decisionMakingPatterns.whenToSayNo?.length > 0 && (
+                      {profile.decisionMakingPatterns.valuePositioning?.primaryValueLens && (
                         <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            {t('businessProfile.whenNo')}
-                          </h4>
-                          <ul className="space-y-1">
-                            {profile.decisionMakingPatterns.whenToSayNo.map(
-                              (item: string, i: number) => (
-                                <li key={i} className="flex items-start gap-2">
-                                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-sm">{item}</span>
-                                </li>
-                              )
-                            )}
-                          </ul>
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Primary Value Lens</h4>
+                          <p className="text-sm capitalize">{profile.decisionMakingPatterns.valuePositioning.primaryValueLens}</p>
                         </div>
                       )}
 
-                      {profile.decisionMakingPatterns.warningSignsToWatch?.length > 0 && (
+                      {profile.decisionMakingPatterns.closing?.preferredNextStep && (
                         <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            {t('businessProfile.warningSigns')}
-                          </h4>
-                          <ul className="space-y-1">
-                            {profile.decisionMakingPatterns.warningSignsToWatch.map(
-                              (item: string, i: number) => (
-                                <li key={i} className="flex items-start gap-2">
-                                  <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-sm">{item}</span>
-                                </li>
-                              )
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Preferred Close</h4>
+                          <p className="text-sm capitalize">
+                            {profile.decisionMakingPatterns.closing.preferredNextStep}
+                            {profile.decisionMakingPatterns.closing.ctaDirectness && (
+                              <span className="text-gray-500"> ({profile.decisionMakingPatterns.closing.ctaDirectness})</span>
                             )}
-                          </ul>
+                          </p>
+                        </div>
+                      )}
+
+                      {profile.decisionMakingPatterns.pain?.painApproach && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Pain Approach</h4>
+                          <p className="text-sm capitalize">{profile.decisionMakingPatterns.pain.painApproach}</p>
                         </div>
                       )}
                     </div>

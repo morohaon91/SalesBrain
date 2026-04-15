@@ -6,16 +6,8 @@
  * New code should use lib/templates/industry-scenarios.ts instead.
  */
 
-// Re-export new scenario system for convenience
-export {
-  INDUSTRY_SCENARIOS,
-  INDUSTRY_LIST,
-  getScenariosForIndustry,
-  getScenarioById,
-  getAllScenarios,
-} from './industry-scenarios';
-export { generatePersona, getPersonaDisplayData } from './persona-generator';
-export { suggestNextScenario, getAllSuggestions, analyzeProfileGaps } from './scenario-suggester';
+// Note: scenario system moved to lib/scenarios/mandatory-scenarios.ts
+// This file retains legacy INDUSTRY_TEMPLATES used by the old enum-based simulation path.
 
 export interface ScenarioPersona {
   clientType: string;

@@ -37,9 +37,12 @@ export default function ProfilePreview({ profile }: ProfilePreviewProps) {
   const qc = profile.qualificationCriteria;
   const oh = profile.objectionHandling;
 
+  const flagLabels = (flags: any[]) => (flags ?? []).map((f) => f.flagType || f.description).filter(Boolean);
+  const dealBreakerLabels = (dbs: any[]) => (dbs ?? []).map((d) => d.rule).filter(Boolean);
+  const playbookLabels = (pbs: any[]) => (pbs ?? []).map((p) => p.objectionType).filter(Boolean);
+
   return (
     <div className="space-y-6">
-      {/* Business Info */}
       <Section title="Business Information">
         <Card className="p-4 space-y-2 text-sm">
           <div><span className="text-gray-500">Industry:</span> <span className="font-medium">{profile.industry ?? '—'}</span></div>
@@ -51,37 +54,48 @@ export default function ProfilePreview({ profile }: ProfilePreviewProps) {
         </Card>
       </Section>
 
-      {/* Communication Style */}
       {cs && (
         <Section title="Communication Style">
           <Card className="p-4 space-y-2 text-sm">
-            <div><span className="text-gray-500">Tone:</span> <span className="font-medium capitalize">{cs.tone}</span></div>
-            <div><span className="text-gray-500">Style:</span> <span className="font-medium capitalize">{cs.style}</span></div>
-            <div className="pt-1"><TagList items={cs.keyPhrases ?? []} /></div>
+            <div><span className="text-gray-500">Tone:</span> <span className="font-medium capitalize">{cs.tone ?? '—'}</span></div>
+            <div><span className="text-gray-500">Energy:</span> <span className="font-medium capitalize">{cs.energyLevel ?? '—'}</span></div>
+            <div><span className="text-gray-500">Verbosity:</span> <span className="font-medium capitalize">{cs.verbosityPattern ?? '—'}</span></div>
+            <div className="pt-1"><span className="text-gray-500 block mb-1">Common Phrases:</span><TagList items={cs.commonPhrases ?? []} /></div>
           </Card>
         </Section>
       )}
 
-      {/* Pricing Logic */}
       {pl && (
         <Section title="Pricing Logic">
           <Card className="p-4 space-y-2 text-sm">
-            {(pl.minBudget || pl.typicalRange) && (
-              <div><span className="text-gray-500">Budget Range:</span> <span className="font-medium">{pl.typicalRange ?? `$${pl.minBudget?.toLocaleString()} - $${pl.maxBudget?.toLocaleString()}`}</span></div>
+            {(pl.minimumBudget || pl.preferredBudgetRange) && (
+              <div>
+                <span className="text-gray-500">Budget:</span>{' '}
+                <span className="font-medium">
+                  {pl.preferredBudgetRange ?? `$${pl.minimumBudget?.toLocaleString()}+`}
+                </span>
+              </div>
             )}
-            <div><span className="text-gray-500">Flexibility:</span> <TagList items={pl.flexibilityFactors ?? []} /></div>
-            <div><span className="text-gray-500">Deal-Breakers:</span> <TagList items={pl.dealBreakers ?? []} /></div>
+            <div><span className="text-gray-500 block mb-1">Flexible On:</span><TagList items={pl.flexibleOn ?? []} /></div>
+            <div><span className="text-gray-500 block mb-1">Not Flexible On:</span><TagList items={pl.notFlexibleOn ?? []} /></div>
           </Card>
         </Section>
       )}
 
-      {/* Qualification */}
       {qc && (
         <Section title="Qualification Criteria">
           <Card className="p-4 space-y-3 text-sm">
-            <div><span className="text-gray-500 block mb-1">Must-Haves:</span><TagList items={qc.mustHaves ?? []} /></div>
-            <div><span className="text-gray-500 block mb-1">Green Flags:</span><TagList items={qc.greenFlags ?? []} /></div>
-            <div><span className="text-gray-500 block mb-1">Deal-Breakers:</span><TagList items={qc.dealBreakers ?? []} /></div>
+            <div><span className="text-gray-500 block mb-1">Green Flags:</span><TagList items={flagLabels(qc.greenFlags)} /></div>
+            <div><span className="text-gray-500 block mb-1">Red Flags:</span><TagList items={flagLabels(qc.redFlags)} /></div>
+            <div><span className="text-gray-500 block mb-1">Deal-Breakers:</span><TagList items={dealBreakerLabels(qc.dealBreakers)} /></div>
+          </Card>
+        </Section>
+      )}
+
+      {oh && (
+        <Section title="Objection Handling">
+          <Card className="p-4 text-sm">
+            <div><span className="text-gray-500 block mb-1">Playbooks:</span><TagList items={playbookLabels(oh.playbooks)} /></div>
           </Card>
         </Section>
       )}

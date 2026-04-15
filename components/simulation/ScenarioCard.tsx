@@ -1,29 +1,41 @@
 'use client';
 
-import { IndustryScenario } from '@/lib/types/scenarios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Target } from 'lucide-react';
+import { Clock, CheckCircle } from 'lucide-react';
+
+export interface ScenarioCardData {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedDuration: number; // minutes
+  isMandatory?: boolean;
+  isCompleted?: boolean;
+  orderIndex?: number;
+  scenarioType?: string;
+}
 
 interface ScenarioCardProps {
-  scenario: IndustryScenario;
+  scenario: ScenarioCardData;
   onSelect: () => void;
   isRecommended?: boolean;
   isCompleted?: boolean;
 }
 
-const DIFFICULTY_COLORS = {
-  easy: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  hard: 'bg-red-100 text-red-800',
+const DIFFICULTY_COLORS: Record<string, string> = {
+  beginner: 'bg-green-100 text-green-800',
+  intermediate: 'bg-yellow-100 text-yellow-800',
+  advanced: 'bg-red-100 text-red-800',
 };
 
 export default function ScenarioCard({ scenario, onSelect, isRecommended, isCompleted }: ScenarioCardProps) {
+  const completed = isCompleted ?? scenario.isCompleted;
   return (
     <Card
       className={[
         'p-6 transition-shadow',
-        isCompleted ? 'opacity-60' : 'hover:shadow-lg',
+        completed ? 'opacity-60' : 'hover:shadow-lg',
         isRecommended ? 'ring-2 ring-blue-500' : '',
       ].join(' ')}
     >
@@ -34,8 +46,9 @@ export default function ScenarioCard({ scenario, onSelect, isRecommended, isComp
           </span>
         </div>
       )}
-      {isCompleted && (
-        <div className="mb-3">
+      {completed && (
+        <div className="mb-3 flex items-center gap-1">
+          <CheckCircle className="h-4 w-4 text-gray-500" />
           <span className="inline-block px-3 py-1 bg-gray-300 text-gray-700 text-xs font-semibold rounded-full">
             Completed
           </span>
@@ -43,39 +56,28 @@ export default function ScenarioCard({ scenario, onSelect, isRecommended, isComp
       )}
 
       <h3 className="text-lg font-semibold text-gray-900 mb-2">{scenario.name}</h3>
-      <p className="text-sm text-gray-600 mb-4">{scenario.teaser}</p>
+      <p className="text-sm text-gray-600 mb-4">{scenario.description}</p>
 
       <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4" />
-          {scenario.estimatedDuration}
+          ~{scenario.estimatedDuration} min
         </div>
-        <span className={`px-2 py-1 rounded text-xs font-medium ${DIFFICULTY_COLORS[scenario.difficulty]}`}>
+        <span className={`px-2 py-1 rounded text-xs font-medium ${DIFFICULTY_COLORS[scenario.difficulty] ?? ''}`}>
           {scenario.difficulty}
         </span>
-      </div>
-
-      <div className="mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
-          <Target className="h-4 w-4" />
-          <span className="font-medium">What you'll practice:</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {scenario.focusAreas.slice(0, 3).map((area, i) => (
-            <span key={i} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-              {area.replace(/_/g, ' ')}
-            </span>
-          ))}
-        </div>
+        {scenario.isMandatory && (
+          <span className="px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700">Required</span>
+        )}
       </div>
 
       <Button
         onClick={onSelect}
         className="w-full"
         variant={isRecommended ? 'default' : 'outline'}
-        disabled={isCompleted}
+        disabled={completed}
       >
-        {isCompleted ? 'Already Completed' : 'Start Simulation'}
+        {completed ? 'Already Completed' : 'Start Simulation'}
       </Button>
     </Card>
   );

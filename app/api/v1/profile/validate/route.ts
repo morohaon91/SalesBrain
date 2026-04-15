@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, type AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
+import { unwrapScalarObjects } from '@/lib/extraction/extraction-engine';
 
 /**
  * GET /api/v1/profile/validate
@@ -52,7 +53,7 @@ async function handleGetValidation(req: AuthenticatedRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        ...(recentExtraction.extractedPatterns as any),
+        ...unwrapScalarObjects(recentExtraction.extractedPatterns),
         simulationId: recentExtraction.id,
         scenarioType: recentExtraction.scenarioType
       }

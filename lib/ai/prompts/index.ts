@@ -7,7 +7,6 @@
 export * from './config';
 export * from './templates';
 export * from './simulation';
-export * from './pattern-extraction';
 export * from './utils/validation';
 
 /**
@@ -15,7 +14,6 @@ export * from './utils/validation';
  */
 export const AVAILABLE_PROMPTS = [
   'simulation',
-  'patternExtraction',
   'leadQualification',
   'summarization',
   'intentDetection',

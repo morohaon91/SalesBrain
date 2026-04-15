@@ -7,23 +7,34 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, AlertTriangle, Loader2, ArrowLeft } from 'lucide-react';
 import instance from '@/lib/api/client';
-import type { ExtractedPatterns } from '@/lib/types/business-profile';
+import type { RawExtractionResponse } from '@/lib/extraction/schemas';
+
+type PendingPayload = (RawExtractionResponse & {
+  simulationId: string;
+  scenarioType: string;
+}) | null;
 
 interface PendingPatterns {
   success: boolean;
-  data: (ExtractedPatterns & {
-    simulationId: string;
-    scenarioType: string;
-  }) | null;
+  data: PendingPayload;
 }
 
 interface ApprovalStatus {
   [key: string]: 'approved' | 'rejected' | 'pending';
 }
 
+const CATEGORIES = [
+  { id: 'communication', label: 'Communication', key: 'communicationStyle' },
+  { id: 'pricing', label: 'Pricing', key: 'pricingLogic' },
+  { id: 'qualification', label: 'Qualification', key: 'qualificationCriteria' },
+  { id: 'objections', label: 'Objections', key: 'objectionHandling' },
+  { id: 'decision', label: 'Decision Making', key: 'decisionMakingPatterns' },
+  { id: 'voice', label: 'Voice Examples', key: 'ownerVoiceExamples' },
+] as const;
+
 export default function ValidatePatternsPage() {
   const router = useRouter();
-  const [patterns, setPatterns] = useState<ExtractedPatterns | null>(null);
+  const [patterns, setPatterns] = useState<RawExtractionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus>({});
@@ -43,12 +54,9 @@ export default function ValidatePatternsPage() {
 
       if (data.data) {
         setPatterns(data.data);
-        // Initialize all patterns as pending
         const initial: ApprovalStatus = {};
-        Object.keys(data.data).forEach(key => {
-          if (key !== 'simulationId' && key !== 'scenarioType') {
-            initial[key] = 'pending';
-          }
+        CATEGORIES.forEach((c) => {
+          if ((data.data as any)[c.key]) initial[c.key] = 'pending';
         });
         setApprovalStatus(initial);
       } else {
@@ -63,17 +71,11 @@ export default function ValidatePatternsPage() {
 
   const approveField = async (field: string) => {
     if (!patterns) return;
-
     try {
       setSavingField(field);
       const value = (patterns as any)[field];
-
       await instance.post('/profile/validate/approve', { field, value });
-
-      setApprovalStatus(prev => ({
-        ...prev,
-        [field]: 'approved'
-      }));
+      setApprovalStatus((prev) => ({ ...prev, [field]: 'approved' }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve field');
     } finally {
@@ -84,13 +86,8 @@ export default function ValidatePatternsPage() {
   const rejectField = async (field: string) => {
     try {
       setSavingField(field);
-
       await instance.post('/profile/validate/reject', { field });
-
-      setApprovalStatus(prev => ({
-        ...prev,
-        [field]: 'rejected'
-      }));
+      setApprovalStatus((prev) => ({ ...prev, [field]: 'rejected' }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reject field');
     } finally {
@@ -101,20 +98,11 @@ export default function ValidatePatternsPage() {
   const approveAll = async () => {
     try {
       setSavingAll(true);
-
       await instance.post('/profile/validate/approve-all', {});
-
-      // Mark all as approved
       const newStatus: ApprovalStatus = {};
-      Object.keys(approvalStatus).forEach(key => {
-        newStatus[key] = 'approved';
-      });
+      Object.keys(approvalStatus).forEach((k) => (newStatus[k] = 'approved'));
       setApprovalStatus(newStatus);
-
-      // Redirect after success
-      setTimeout(() => {
-        router.push('/profile');
-      }, 1000);
+      setTimeout(() => router.push('/profile'), 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve all patterns');
     } finally {
@@ -122,7 +110,7 @@ export default function ValidatePatternsPage() {
     }
   };
 
-  const approvedCount = Object.values(approvalStatus).filter(s => s === 'approved').length;
+  const approvedCount = Object.values(approvalStatus).filter((s) => s === 'approved').length;
   const totalCount = Object.keys(approvalStatus).length;
   const allApproved = approvedCount === totalCount && totalCount > 0;
 
@@ -178,13 +166,7 @@ export default function ValidatePatternsPage() {
     );
   }
 
-  const categories = [
-    { id: 'communication', label: 'Communication', key: 'communicationStyle' },
-    { id: 'pricing', label: 'Pricing', key: 'pricingLogic' },
-    { id: 'qualification', label: 'Qualification', key: 'qualificationCriteria' },
-    { id: 'objections', label: 'Objections', key: 'objectionHandling' },
-    { id: 'decision', label: 'Decision Making', key: 'decisionMakingPatterns' }
-  ].filter(cat => (patterns as any)[cat.key]);
+  const categories = CATEGORIES.filter((cat) => (patterns as any)[cat.key]);
 
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto">
@@ -203,7 +185,9 @@ export default function ValidatePatternsPage() {
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900">Progress: {approvedCount}/{totalCount} approved</p>
+              <p className="text-sm font-medium text-blue-900">
+                Progress: {approvedCount}/{totalCount} approved
+              </p>
               <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all"
@@ -212,11 +196,7 @@ export default function ValidatePatternsPage() {
               </div>
             </div>
             {allApproved && (
-              <Button
-                onClick={approveAll}
-                disabled={savingAll}
-                className="ml-4 bg-green-600 hover:bg-green-700"
-              >
+              <Button onClick={approveAll} disabled={savingAll} className="ml-4 bg-green-600 hover:bg-green-700">
                 {savingAll ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 Complete
               </Button>
@@ -236,9 +216,8 @@ export default function ValidatePatternsPage() {
         </Card>
       )}
 
-      {/* Category Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {categories.map(cat => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
@@ -253,9 +232,8 @@ export default function ValidatePatternsPage() {
         ))}
       </div>
 
-      {/* Active Category Content */}
       <div className="space-y-4">
-        {categories.map(cat => {
+        {categories.map((cat) => {
           if (activeCategory !== cat.id) return null;
           const pattern = (patterns as any)[cat.key];
           const status = approvalStatus[cat.key];
@@ -274,69 +252,30 @@ export default function ValidatePatternsPage() {
         })}
       </div>
 
-      {/* Quality and Notes */}
-      {patterns.conversationQuality && (
+      {typeof (patterns as any).overallQuality === 'number' && (
         <Card>
           <CardHeader>
-            <CardTitle>Conversation Quality</CardTitle>
+            <CardTitle>Extraction Quality</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Completeness Score</p>
-                <p className="text-2xl font-bold">{patterns.conversationQuality.completenessScore}/100</p>
+                <p className="text-sm font-medium text-gray-600">Overall Quality</p>
+                <p className="text-2xl font-bold">{(patterns as any).overallQuality}/100</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Conversation Flow</p>
-                <p className="text-sm font-medium">{patterns.conversationQuality.conversationFlow || 'Not assessed'}</p>
+                <p className="text-sm font-medium text-gray-600">Extraction Confidence</p>
+                <p className="text-2xl font-bold">{(patterns as any).extractionConfidence ?? 0}/100</p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {patterns.extractionNotes && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Feedback</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {patterns.extractionNotes.strengths && patterns.extractionNotes.strengths.length > 0 && (
-              <div>
-                <h4 className="font-medium text-green-700 mb-2">✓ Strengths</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  {patterns.extractionNotes.strengths.map((s, i) => (
-                    <li key={i} className="text-green-700">{s}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {patterns.extractionNotes.weaknesses && patterns.extractionNotes.weaknesses.length > 0 && (
-              <div>
-                <h4 className="font-medium text-orange-700 mb-2">⚠ Areas for Improvement</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  {patterns.extractionNotes.weaknesses.map((w, i) => (
-                    <li key={i} className="text-orange-700">{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {patterns.extractionNotes.suggestions && patterns.extractionNotes.suggestions.length > 0 && (
-              <div>
-                <h4 className="font-medium text-blue-700 mb-2">💡 Suggestions</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  {patterns.extractionNotes.suggestions.map((s, i) => (
-                    <li key={i} className="text-blue-700">{s}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <div className="flex gap-3">
-        <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button variant="outline" onClick={() => router.back()}>
+          Cancel
+        </Button>
         <Button
           onClick={approveAll}
           disabled={!allApproved || savingAll}
@@ -363,11 +302,23 @@ function PatternCard({ title, pattern, status, onApprove, onReject, isSaving }: 
   const getStatusBadge = () => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle2 className="w-3 h-3 mr-1" /> Approved</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            <CheckCircle2 className="w-3 h-3 mr-1" /> Approved
+          </Badge>
+        );
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> Rejected</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800">
+            <XCircle className="w-3 h-3 mr-1" /> Rejected
+          </Badge>
+        );
       default:
-        return <Badge variant="outline"><AlertTriangle className="w-3 h-3 mr-1" /> Pending</Badge>;
+        return (
+          <Badge variant="outline">
+            <AlertTriangle className="w-3 h-3 mr-1" /> Pending
+          </Badge>
+        );
     }
   };
 
@@ -386,12 +337,7 @@ function PatternCard({ title, pattern, status, onApprove, onReject, isSaving }: 
           </pre>
         </div>
         <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onReject}
-            disabled={isSaving || status === 'rejected'}
-          >
+          <Button variant="outline" size="sm" onClick={onReject} disabled={isSaving || status === 'rejected'}>
             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             Reject
           </Button>

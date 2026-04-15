@@ -1,26 +1,25 @@
 /**
- * Depth-Based Profile Completion Calculator
+ * Depth-Based Profile Completion Calculator — new-schema edition.
  *
  * Weights:
- * - Questionnaire complete: 20%
- * - Communication style:    15%
- * - Pricing logic:          15%
- * - Qualification criteria: 15%
- * - Objection handling:     15%
- * - Decision making:        10%
- * - Business facts:         10%
- * Total: 100%
+ * - Questionnaire:          20%
+ * - Communication Style:    15%
+ * - Pricing Logic:          15%
+ * - Qualification Criteria: 15%
+ * - Objection Handling:     15%
+ * - Decision Making:        10%
+ * - Business Facts:         10%
  */
 
 export interface CompletionBreakdown {
-  questionnaire: number;      // 0-20
-  communicationStyle: number; // 0-15
-  pricingLogic: number;       // 0-15
-  qualificationCriteria: number; // 0-15
-  objectionHandling: number;  // 0-15
-  decisionMaking: number;     // 0-10
-  businessFacts: number;      // 0-10
-  total: number;              // 0-100
+  questionnaire: number;
+  communicationStyle: number;
+  pricingLogic: number;
+  qualificationCriteria: number;
+  objectionHandling: number;
+  decisionMaking: number;
+  businessFacts: number;
+  total: number;
 }
 
 function hasMinItems(arr: unknown, min: number): boolean {
@@ -52,9 +51,9 @@ export function calculateProfileCompletion(profile: Record<string, any>): Comple
   let communicationStyle = 0;
   if (cs) {
     if (hasValue(cs.tone)) communicationStyle += 3;
-    if (hasValue(cs.style)) communicationStyle += 3;
-    if (hasMinItems(cs.keyPhrases, 3)) communicationStyle += 4;
-    if (hasMinItems(profile.ownerVoiceExamples, 3)) communicationStyle += 5;
+    if (hasMinItems(cs.commonPhrases, 3)) communicationStyle += 4;
+    if ((cs.evidenceCount ?? 0) >= 3) communicationStyle += 4;
+    if (hasMinItems(cs.humorExamples, 1) || hasMinItems(cs.empathyExamples, 1)) communicationStyle += 4;
   }
   communicationStyle = Math.min(communicationStyle, 15);
 
@@ -62,9 +61,9 @@ export function calculateProfileCompletion(profile: Record<string, any>): Comple
   const pl = profile.pricingLogic;
   let pricingLogic = 0;
   if (pl) {
-    if (hasValue(pl.minBudget) || hasValue(pl.typicalRange)) pricingLogic += 5;
-    if (hasMinItems(pl.flexibilityFactors, 1)) pricingLogic += 5;
-    if (hasMinItems(pl.dealBreakers, 1)) pricingLogic += 5;
+    if (hasValue(pl.minimumBudget) || hasValue(pl.preferredBudgetRange)) pricingLogic += 5;
+    if (hasValue(pl.priceDefenseStrategy)) pricingLogic += 5;
+    if (hasMinItems(pl.flexibleOn, 1) || hasMinItems(pl.notFlexibleOn, 1)) pricingLogic += 5;
   }
   pricingLogic = Math.min(pricingLogic, 15);
 
@@ -72,9 +71,9 @@ export function calculateProfileCompletion(profile: Record<string, any>): Comple
   const qc = profile.qualificationCriteria;
   let qualificationCriteria = 0;
   if (qc) {
-    if (hasMinItems(qc.mustHaves, 2)) qualificationCriteria += 5;
     if (hasMinItems(qc.greenFlags, 2)) qualificationCriteria += 5;
-    if (hasMinItems(qc.dealBreakers, 2)) qualificationCriteria += 5;
+    if (hasMinItems(qc.redFlags, 1)) qualificationCriteria += 5;
+    if (hasMinItems(qc.dealBreakers, 1)) qualificationCriteria += 5;
   }
   qualificationCriteria = Math.min(qualificationCriteria, 15);
 
@@ -82,10 +81,8 @@ export function calculateProfileCompletion(profile: Record<string, any>): Comple
   const oh = profile.objectionHandling;
   let objectionHandling = 0;
   if (oh) {
-    if (hasValue(oh.priceObjection) && oh.priceObjection !== 'not_demonstrated') objectionHandling += 4;
-    if (hasValue(oh.timelineObjection) && oh.timelineObjection !== 'not_demonstrated') objectionHandling += 4;
-    if (hasValue(oh.qualityObjection) && oh.qualityObjection !== 'not_demonstrated') objectionHandling += 4;
-    if (hasValue(oh.scopeObjection) && oh.scopeObjection !== 'not_demonstrated') objectionHandling += 3;
+    const playbookCount = Array.isArray(oh.playbooks) ? oh.playbooks.length : 0;
+    objectionHandling += Math.min(15, playbookCount * 5);
   }
   objectionHandling = Math.min(objectionHandling, 15);
 
@@ -93,19 +90,27 @@ export function calculateProfileCompletion(profile: Record<string, any>): Comple
   const dm = profile.decisionMakingPatterns;
   let decisionMaking = 0;
   if (dm) {
-    if (hasMinItems(dm.whenToSayYes, 1)) decisionMaking += 5;
-    if (hasMinItems(dm.warningSignsToWatch, 1)) decisionMaking += 5;
+    if (hasMinItems(dm.discovery?.firstQuestions, 3)) decisionMaking += 3;
+    if (hasValue(dm.valuePositioning?.primaryValueLens)) decisionMaking += 3;
+    if (hasValue(dm.closing?.preferredNextStep)) decisionMaking += 4;
   }
   decisionMaking = Math.min(decisionMaking, 10);
 
   // ── Business Facts (10%) ─────────────────────────────────────────────────
   let businessFacts = 0;
   if (hasValue(profile.yearsExperience)) businessFacts += 3;
-  if (hasMinItems(profile.serviceOfferings, 1) || hasMinItems(profile.certifications, 1)) businessFacts += 4;
+  if (hasMinItems(profile.serviceOfferings, 1)) businessFacts += 4;
   if (hasMinItems(profile.certifications, 1)) businessFacts += 3;
   businessFacts = Math.min(businessFacts, 10);
 
-  const total = questionnaire + communicationStyle + pricingLogic + qualificationCriteria + objectionHandling + decisionMaking + businessFacts;
+  const total =
+    questionnaire +
+    communicationStyle +
+    pricingLogic +
+    qualificationCriteria +
+    objectionHandling +
+    decisionMaking +
+    businessFacts;
 
   return {
     questionnaire,

@@ -3,7 +3,7 @@
  * 70% completion gate for go-live
  */
 
-import { calculateProfileCompletion, CompletionBreakdown } from './profile-completion';
+import { calculateProfileCompletion, CompletionBreakdown } from '@/lib/extraction/completion';
 
 export interface ReadinessCheckResult {
   isReady: boolean;

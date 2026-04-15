@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
-import { getScenariosForIndustry } from '@/lib/templates/industry-scenarios';
-import { suggestNextScenario } from '@/lib/templates/scenario-suggester';
-import type { BusinessProfile } from '@/lib/types/business-profile';
+import {
+  getMandatoryScenarios,
+  getNextRecommendedScenario,
+} from '@/lib/scenarios/mandatory-scenarios';
 
 async function handler(req: AuthenticatedRequest) {
   try {
@@ -20,52 +21,41 @@ async function handler(req: AuthenticatedRequest) {
       );
     }
 
-    const scenarios = getScenariosForIndustry(profile.industry ?? '');
+    const allScenarios = getMandatoryScenarios();
+    const completedIds = profile.completedScenarios || [];
+    const nextRecommended = getNextRecommendedScenario(completedIds);
 
-    // Map profile to our BusinessProfile type
-    const typedProfile: BusinessProfile = {
-      id: profile.id,
-      tenantId: profile.tenantId,
-      createdAt: profile.createdAt,
-      updatedAt: profile.updatedAt,
-      industry: profile.industry,
-      serviceDescription: profile.serviceDescription,
-      targetClientType: profile.targetClientType,
-      typicalBudgetRange: profile.typicalBudgetRange,
-      commonClientQuestions: profile.commonClientQuestions,
-      yearsExperience: profile.yearsExperience,
-      serviceOfferings: profile.serviceOfferings,
-      specializations: profile.specializations,
-      certifications: profile.certifications,
-      serviceArea: profile.serviceArea,
-      teamSize: profile.teamSize,
-      communicationStyle: profile.communicationStyle as any,
-      pricingLogic: profile.pricingLogic as any,
-      qualificationCriteria: profile.qualificationCriteria as any,
-      objectionHandling: profile.objectionHandling as any,
-      decisionMakingPatterns: profile.decisionMakingPatterns as any,
-      ownerVoiceExamples: profile.ownerVoiceExamples as any,
-      profileApprovalStatus: profile.profileApprovalStatus as any,
-      approvedAt: profile.approvedAt,
-      goLiveAt: profile.goLiveAt,
-      completedScenarios: profile.completedScenarios,
-      suggestedNextScenario: profile.suggestedNextScenario,
-      simulationCount: profile.simulationCount,
-      completionPercentage: profile.completionPercentage,
-      isComplete: profile.isComplete,
-      completionScore: profile.completionScore,
-      lastExtractedAt: profile.lastExtractedAt,
-      embeddedMessageCount: profile.embeddedMessageCount,
-    };
+    const scenarios = allScenarios.map((s) => ({
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      difficulty: s.difficulty,
+      estimatedDuration: s.estimatedDuration,
+      isMandatory: s.isMandatory,
+      isCompleted: completedIds.includes(s.id),
+      orderIndex: s.orderIndex,
+      scenarioType: s.scenarioType,
+    }));
 
-    const suggestion = suggestNextScenario(typedProfile);
+    const suggestion = nextRecommended
+      ? {
+          scenarioId: nextRecommended.id,
+          scenarioName: nextRecommended.name,
+          reason: `Next in sequence — ${nextRecommended.purpose}`,
+        }
+      : null;
 
     return NextResponse.json({
       success: true,
       scenarios,
       suggestion,
-      completedScenarios: profile.completedScenarios,
+      completedScenarios: completedIds,
       industry: profile.industry,
+      completionStats: {
+        completed: completedIds.length,
+        total: allScenarios.length,
+        percentage: Math.round((completedIds.length / allScenarios.length) * 100),
+      },
     });
   } catch (error) {
     console.error('Scenarios endpoint error:', error);

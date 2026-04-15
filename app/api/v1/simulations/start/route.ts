@@ -3,18 +3,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { withAuth, AuthenticatedRequest } from "@/lib/auth/middleware";
 import { createChatCompletion } from "@/lib/ai/client";
-import {
-  getScenarioConfig,
-  generateSimulationPrompt,
-} from "@/lib/ai/prompts";
-import { getScenarioById } from "@/lib/templates/industry-scenarios";
-import { generatePersona } from "@/lib/templates/persona-generator";
+import { getScenarioConfig, generateSimulationPrompt } from "@/lib/ai/prompts";
+import { getScenarioById } from "@/lib/scenarios/mandatory-scenarios";
+import { generateUniversalPersona } from "@/lib/scenarios/persona-generator-v2";
 import { v4 as uuidv4 } from "uuid";
 
 const startSimulationSchema = z.object({
-  // Legacy: old enum-style scenario type
   scenarioType: z.string().optional(),
-  // New: scenario ID from industry-scenarios.ts
   scenarioId: z.string().optional(),
 });
 
@@ -51,10 +46,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    let personaDetails: Record<string, unknown> | null = null;
-    let resolvedScenarioType = scenarioType ?? scenarioId ?? 'PRICE_SENSITIVE';
-
-    // New path: scenarioId from industry-scenarios.ts
+    // New universal scenario path
     if (scenarioId) {
       const scenario = getScenarioById(scenarioId);
       if (!scenario) {
@@ -64,15 +56,11 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         );
       }
 
-      const persona = generatePersona(scenario);
-      personaDetails = persona as unknown as Record<string, unknown>;
-      resolvedScenarioType = scenarioId;
+      const ownerIndustry = businessProfile.industry ?? 'Business Consulting';
+      const persona = generateUniversalPersona(scenario, ownerIndustry);
 
-      // Build persona-aware system prompt — MUST include owner's business context
-      // so Claude never invents unrelated industries
-      const ownerIndustry = businessProfile.industry ?? scenario.industry;
       const ownerService = businessProfile.serviceDescription ?? `professional ${ownerIndustry} services`;
-      const ownerTargetClient = (businessProfile as any).targetClientType ?? 'homeowners and businesses';
+      const ownerTargetClient = (businessProfile as any).targetClientType ?? 'businesses and homeowners';
       const ownerBudgetRange = (businessProfile as any).typicalBudgetRange ?? 'varies by project';
 
       const personaPrompt = `You are roleplaying as a potential CLIENT reaching out to a ${ownerIndustry} professional.
@@ -84,13 +72,19 @@ THE BUSINESS YOU ARE CONTACTING:
 - Typical budget range they work with: ${ownerBudgetRange}
 
 YOUR CLIENT PERSONA:
-- Name: ${persona.name}, age ${persona.age}
+- Name: ${persona.name}
+- Role: ${persona.role}
+- Company type: ${persona.company}
 - Scenario: ${scenario.name}
-- Your situation: ${scenario.teaser.replace('Incoming lead: ', '')}
-- Your personality: ${persona.personality.join(', ')}
-- Your main concerns: ${persona.painPoints.join(', ')}
-- Your budget: $${persona.budget.min.toLocaleString()} - $${persona.budget.max.toLocaleString()} (${persona.budget.flexibility} flexibility)
+- Your situation: ${scenario.description}
+- Personality: ${persona.personality}
+- Communication style: ${persona.communicationStyle}
+- Technical level: ${persona.technicalLevel}
+- Main concerns: ${persona.painPoints.join(', ')}
+- Your budget: ${persona.budget}
 - Your timeline: ${persona.timeline}
+- Prior experience: ${persona.priorExperience}
+${persona.objectionsToRaise.length > 0 ? `- Objections to raise naturally: ${persona.objectionsToRaise.join(', ')}` : ''}
 
 CRITICAL RULES:
 - You are ALWAYS contacting a ${ownerIndustry} professional — NEVER change this industry
@@ -99,7 +93,7 @@ CRITICAL RULES:
 - Keep responses conversational (2-4 sentences max)
 - Gradually reveal concerns — don't dump everything at once
 
-Start the simulation now with this opening: "${persona.openingLine}"`;
+Start the simulation now with this opening: "${persona.openingMessage}"`;
 
       const aiResponse = await createChatCompletion(
         [{ role: "user", content: "Start the simulation with your opening line as the client." }],
@@ -107,10 +101,12 @@ Start the simulation now with this opening: "${persona.openingLine}"`;
         { maxTokens: 300, temperature: 0.8 }
       );
 
+      const personaDetails = persona as unknown as Record<string, unknown>;
+
       const simulation = await prisma.simulation.create({
         data: {
           tenantId,
-          scenarioType: resolvedScenarioType,
+          scenarioType: scenarioId,
           status: "IN_PROGRESS",
           duration: 0,
           aiPersona: personaDetails as any,
@@ -135,8 +131,8 @@ Start the simulation now with this opening: "${persona.openingLine}"`;
           success: true,
           data: {
             simulationId: simulation.id,
-            scenarioType: resolvedScenarioType,
-            persona: { name: persona.name, teaser: scenario.teaser },
+            scenarioType: scenarioId,
+            persona: { name: persona.name, teaser: scenario.description },
             initialMessage: aiResponse.content,
             status: simulation.status,
           },

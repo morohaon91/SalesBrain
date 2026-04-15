@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { authFetch } from '@/lib/api/auth-fetch';
 import SimulationSummary from '@/components/simulation/SimulationSummary';
 import { Loader2 } from 'lucide-react';
-import { calculateProfileCompletion } from '@/lib/utils/profile-completion';
+import { calculateProfileCompletion } from '@/lib/extraction/completion';
 
 export default function SimulationSummaryPage() {
   const params = useParams();

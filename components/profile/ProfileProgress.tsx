@@ -1,7 +1,7 @@
 'use client';
 
 import { Progress } from '@/components/ui/progress';
-import { CompletionBreakdown } from '@/lib/utils/profile-completion';
+import { CompletionBreakdown } from '@/lib/extraction/completion';
 
 interface ProfileProgressProps {
   breakdown: CompletionBreakdown;

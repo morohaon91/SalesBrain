@@ -11,9 +11,9 @@ export function buildLeadAssistantSystemPrompt(
 ): string {
   const cs = profile?.communicationStyle as Record<string, unknown> | null;
   const tone = typeof cs?.tone === 'string' ? cs.tone : 'professional and friendly';
-  const style = typeof cs?.style === 'string' ? cs.style : 'clear and helpful';
-  const keyPhrases = Array.isArray(cs?.keyPhrases)
-    ? (cs!.keyPhrases as string[]).filter(Boolean).slice(0, 8)
+  const verbosity = typeof cs?.verbosityPattern === 'string' ? cs.verbosityPattern : 'balanced';
+  const commonPhrases = Array.isArray(cs?.commonPhrases)
+    ? (cs!.commonPhrases as string[]).filter(Boolean).slice(0, 8)
     : [];
 
   const service = profile?.serviceDescription?.trim() || tenant.industry || 'our services';
@@ -49,10 +49,10 @@ export function buildLeadAssistantSystemPrompt(
     ``,
     `VOICE & STYLE (match this consistently):`,
     `- Tone: ${tone}`,
-    `- Style: ${style}`,
+    `- Verbosity: ${verbosity}`,
   );
-  if (keyPhrases.length > 0) {
-    lines.push(`- Favor phrasing similar to: ${keyPhrases.map((p) => `"${p}"`).join(', ')}`);
+  if (commonPhrases.length > 0) {
+    lines.push(`- Favor phrasing similar to: ${commonPhrases.map((p) => `"${p}"`).join(', ')}`);
   }
 
   if (tenant.aiTransparency) {

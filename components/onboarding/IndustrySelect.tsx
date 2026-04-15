@@ -1,7 +1,7 @@
 'use client';
 
 import { Select } from '@/components/ui/select';
-import { INDUSTRY_LIST } from '@/lib/templates/industry-scenarios';
+import { INDUSTRY_LIST } from '@/lib/scenarios/mandatory-scenarios';
 
 interface IndustrySelectProps {
   value: string;
