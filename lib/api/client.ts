@@ -29,10 +29,109 @@ const instance: AxiosInstance = axios.create({
 });
 
 /**
- * Request interceptor: Add JWT token to Authorization header
+ * Decode JWT payload (browser-safe, no signature verification).
+ * Used only to read `exp` for proactive refresh — server always re-verifies.
  */
-instance.interceptors.request.use((config) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+function decodeJwtExp(token: string): number | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+    const json = atob(padded);
+    const claims = JSON.parse(json) as { exp?: number };
+    return typeof claims.exp === "number" ? claims.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+const PROACTIVE_REFRESH_THRESHOLD_SEC = 60;
+
+let isRefreshing = false;
+let refreshQueue: Array<(token: string | null) => void> = [];
+
+function notifyQueue(token: string | null) {
+  const queue = refreshQueue;
+  refreshQueue = [];
+  queue.forEach((cb) => cb(token));
+}
+
+async function performRefresh(): Promise<string | null> {
+  const refreshResponse = await axios.post<ApiResponse<{ token: string }>>(
+    `${process.env.NEXT_PUBLIC_API_URL || "/api/v1"}/auth/refresh`,
+    {},
+    { withCredentials: true }
+  );
+  const newToken = refreshResponse.data.data?.token ?? null;
+  if (newToken && typeof window !== "undefined") {
+    localStorage.setItem("token", newToken);
+  }
+  return newToken;
+}
+
+function handleRefreshFailure() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  if (
+    !window.location.pathname.startsWith("/auth") &&
+    !window.location.pathname.startsWith("/login") &&
+    !window.location.pathname.startsWith("/register")
+  ) {
+    window.location.href = "/login";
+  }
+}
+
+/**
+ * Coalesced refresh: concurrent callers share a single refresh in flight.
+ */
+async function refreshTokenCoalesced(): Promise<string | null> {
+  if (isRefreshing) {
+    return new Promise<string | null>((resolve) => {
+      refreshQueue.push(resolve);
+    });
+  }
+  isRefreshing = true;
+  try {
+    const token = await performRefresh();
+    notifyQueue(token);
+    return token;
+  } catch (err) {
+    notifyQueue(null);
+    throw err;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+/**
+ * Request interceptor:
+ * 1. Proactively refresh if token expires within threshold.
+ * 2. Attach JWT to Authorization header.
+ */
+instance.interceptors.request.use(async (config) => {
+  if (typeof window === "undefined") return config;
+
+  // Never intercept the refresh call itself.
+  const url = config.url ?? "";
+  const isRefreshCall = url.includes("/auth/refresh");
+
+  let token = localStorage.getItem("token");
+
+  if (token && !isRefreshCall) {
+    const exp = decodeJwtExp(token);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const expiresSoon = exp !== null && exp - nowSec < PROACTIVE_REFRESH_THRESHOLD_SEC;
+
+    if (expiresSoon) {
+      try {
+        const refreshed = await refreshTokenCoalesced();
+        if (refreshed) token = refreshed;
+      } catch {
+        // Fall through — request will 401 and reactive path will handle it.
+      }
+    }
+  }
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -42,69 +141,41 @@ instance.interceptors.request.use((config) => {
 });
 
 /**
- * Response interceptor: Handle 401 errors and refresh token
+ * Response interceptor: reactive refresh on 401 (defense in depth).
  */
-let isRefreshing = false;
-let refreshQueue: Array<() => void> = [];
-
-const onRefreshed = () => {
-  refreshQueue.forEach((callback) => callback());
-  refreshQueue = [];
-};
+interface RetriableRequest {
+  _retry?: boolean;
+  headers?: Record<string, unknown> | import("axios").AxiosHeaders;
+  url?: string;
+}
 
 instance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as (typeof error.config & RetriableRequest) | undefined;
+    const status = error.response?.status;
+    const isRefreshCall = (originalRequest?.url ?? "").includes("/auth/refresh");
 
-    if (error.response?.status === 401 && !isRefreshing && originalRequest) {
-      isRefreshing = true;
-
-      try {
-        // Try to refresh token
-        const refreshResponse = await axios.post<ApiResponse<{ token: string }>>(
-          `${process.env.NEXT_PUBLIC_API_URL || "/api/v1"}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-
-        // Extract and store new access token
-        const newToken = refreshResponse.data.data?.token;
-        if (newToken && typeof window !== "undefined") {
-          localStorage.setItem("token", newToken);
-        }
-
-        // Token refresh successful, notify queued requests
-        onRefreshed();
-        isRefreshing = false;
-
-        // Retry original request with new token
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        }
-        return instance(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, clear auth and redirect to login (only if not already on auth page)
-        isRefreshing = false;
-        refreshQueue = [];
-
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
-          // Only redirect if we're not already on an auth page to prevent redirect loops
-          if (
-            !window.location.pathname.startsWith("/auth") &&
-            !window.location.pathname.startsWith("/login") &&
-            !window.location.pathname.startsWith("/register")
-          ) {
-            window.location.href = "/login";
-          }
-        }
-
-        return Promise.reject(refreshError);
-      }
+    if (status !== 401 || !originalRequest || originalRequest._retry || isRefreshCall) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    originalRequest._retry = true;
+
+    try {
+      const newToken = await refreshTokenCoalesced();
+      if (!newToken) {
+        handleRefreshFailure();
+        return Promise.reject(error);
+      }
+      if (originalRequest.headers) {
+        (originalRequest.headers as Record<string, unknown>).Authorization = `Bearer ${newToken}`;
+      }
+      return instance(originalRequest);
+    } catch (refreshError) {
+      handleRefreshFailure();
+      return Promise.reject(refreshError);
+    }
   }
 );
 

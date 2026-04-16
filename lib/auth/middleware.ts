@@ -87,16 +87,17 @@ export function withAuth(
       // Call handler with authenticated request
       return handler(req as AuthenticatedRequest);
     } catch (error) {
-      console.error("Authentication error:", error);
-
       if (error instanceof Error) {
         if (error.message.includes("expired")) {
+          // Expected — client will refresh and retry. Not an error condition.
           return unauthorizedError("Token expired");
         } else if (error.message.includes("Invalid")) {
+          console.warn("Auth: invalid token presented");
           return unauthorizedError("Invalid token");
         }
       }
 
+      console.error("Authentication error:", error);
       return unauthorizedError("Authentication failed");
     }
   };

@@ -64,15 +64,14 @@ export async function scoreConversation(
   const leadInfo = await extractLeadInfo(transcript);
 
   // PART 2: Rules-based scoring (60% - deterministic)
-  const budgetScore = calculateBudgetFit(
-    leadInfo.budget,
-    profile.ownerNorms?.typicalBudgets as any
-  );
+  const ownerNorms = (profile.ownerNorms ?? {}) as {
+    typicalBudgets?: unknown;
+    typicalTimelines?: unknown;
+  };
 
-  const timelineScore = calculateTimelineFit(
-    leadInfo.timeline,
-    profile.ownerNorms?.typicalTimelines as any
-  );
+  const budgetScore = calculateBudgetFit(leadInfo.budget, ownerNorms.typicalBudgets as any);
+
+  const timelineScore = calculateTimelineFit(leadInfo.timeline, ownerNorms.typicalTimelines as any);
 
   // PART 3: AI-powered scoring (40% - intelligence)
   const aiAnalysis = await analyzeEngagementAndAlignment(
@@ -340,7 +339,7 @@ Return JSON only:
   );
 
   try {
-    return JSON.parse(response.content || response);
+    return JSON.parse(response.content);
   } catch (e) {
     console.error('Failed to parse lead info extraction:', e);
     return { budget: null, timeline: null, projectType: null };
@@ -413,7 +412,7 @@ Return JSON:
   );
 
   try {
-    const parsed = JSON.parse(response.content || response);
+    const parsed = JSON.parse(response.content);
     return {
       engagementScore: Math.min(25, Math.max(0, parsed.engagementScore || 0)),
       engagementReasoning: parsed.engagementReasoning || 'Unable to analyze engagement',

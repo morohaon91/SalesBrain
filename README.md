@@ -91,6 +91,7 @@ Password: Demo123!
 │   └── page.tsx           # Home page
 ├── components/            # React components
 ├── lib/                   # Utilities & helpers
+│   ├── api/              # Axios client: Bearer JWT, proactive refresh (exp), coalesced `/auth/refresh`, 401 retry
 │   ├── extraction/       # Profile extraction engine, prompts, Zod schemas
 │   ├── learning/         # Go-live readiness, competencies, gate evaluation
 │   ├── scenarios/        # Personas and mandatory simulation scenarios

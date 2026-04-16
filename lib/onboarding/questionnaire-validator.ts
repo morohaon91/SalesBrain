@@ -1,10 +1,10 @@
 import { QuestionnaireData, QuestionnaireValidation, QuestionnaireValidationError } from '@/lib/types/onboarding';
 import { QuestionnaireDataSchema } from '@/lib/validation/business-profile-schemas';
-import { ZodError, ZodType } from 'zod';
+import { ZodError, ZodTypeAny } from 'zod';
 
 export type ValidateQuestionnaireOptions = {
   /** Defaults to {@link QuestionnaireDataSchema} (English API messages). */
-  schema?: ZodType<QuestionnaireData>;
+  schema?: ZodTypeAny;
   duplicateQuestions?: string;
   addOneQuestion?: string;
 };
