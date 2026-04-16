@@ -1,23 +1,28 @@
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
-import { checkProfileReadiness } from '@/lib/utils/profile-readiness';
+import { canGoLive, getAllBlockingReasons } from '@/lib/learning/go-live-gates';
 
 async function handler(req: AuthenticatedRequest) {
   const { tenantId } = req.auth;
 
   const profile = await prisma.businessProfile.findUnique({ where: { tenantId } });
   if (!profile) {
-    return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Profile not found' } }, { status: 404 });
+    return NextResponse.json(
+      { success: false, error: { code: 'NOT_FOUND', message: 'Profile not found' } },
+      { status: 404 }
+    );
   }
 
-  const readiness = checkProfileReadiness(profile as any);
-  if (!readiness.isReady) {
+  if (!canGoLive(profile)) {
     return NextResponse.json(
       {
         success: false,
-        error: { code: 'NOT_READY', message: `Profile must be at least 70% complete to go live. Currently at ${readiness.completionPercentage}%.` },
-        missingItems: readiness.missingItems,
+        error: {
+          code: 'NOT_READY',
+          message: 'Profile has not passed all Go-Live gates.',
+        },
+        blockingReasons: getAllBlockingReasons(profile),
       },
       { status: 400 }
     );

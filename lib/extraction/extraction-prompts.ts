@@ -29,12 +29,14 @@ Extract:
 - Urgency creation methods
 
 ## LAYER 3: QUALIFICATION LAYER
-Extract:
-- Green flags: What signals interest and fit
-- Yellow flags: What raises concerns
-- Red flags: What indicates bad fit
-- Deal breakers: Absolute disqualifiers with evidence
-- Exit strategy: How owner disengages
+Extract qualification signals from ANY scenario type - not just Wrong Fit or Skeptical Lead. Qualification cues surface in every conversation:
+- Green flags: Signals of interest, fit, or buying intent. Examples: lead shares budget, timeline, decision authority, urgency, specific pain, current frustration with alternatives, asks about next steps, confirms scope matches needs.
+- Yellow flags: Signals that raise concerns. Examples: vague timeline, no budget mentioned, unclear decision process, mild price pushback, scope creep hints.
+- Red flags: Signals of bad fit. Examples: explicit budget mismatch, wrong industry/size, decision-maker absent, tire-kicking, unrealistic expectations.
+- Deal breakers: Absolute disqualifiers demonstrated by owner (with evidence quote).
+- Exit strategy: How owner disengages when fit is poor.
+
+IMPORTANT: If the lead revealed budget, timeline, authority, scope, or pain — that IS qualification signal. Extract it even if the scenario was primarily about something else (e.g., Hot Lead, Price Objection). Do NOT leave qualification empty just because the scenario type was not explicitly a qualification scenario.
 
 ## LAYER 4: OBJECTION LAYER
 For each objection encountered:

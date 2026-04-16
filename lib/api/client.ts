@@ -362,6 +362,11 @@ export const api = {
       const response = await instance.post<ApiResponse<unknown>>('/profile/re-extract');
       return response.data;
     },
+
+    readiness: async () => {
+      const response = await instance.get<unknown>('/profile/readiness');
+      return response.data;
+    },
   },
 
   /**

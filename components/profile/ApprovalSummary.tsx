@@ -2,25 +2,24 @@
 
 import ProfilePreview from './ProfilePreview';
 import ReadinessChecklist from './ReadinessChecklist';
-import ProfileProgress from './ProfileProgress';
-import { ReadinessCheckResult } from '@/lib/utils/profile-readiness';
+import type { ReadinessReport } from '@/lib/learning/readiness-calculator';
 
 interface ApprovalSummaryProps {
   profile: Record<string, any>;
-  readiness: ReadinessCheckResult;
+  report: ReadinessReport;
 }
 
-export default function ApprovalSummary({ profile, readiness }: ApprovalSummaryProps) {
+export default function ApprovalSummary({ profile, report }: ApprovalSummaryProps) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Completion</h2>
-        <ProfileProgress breakdown={readiness.breakdown} showDetails />
-      </div>
-
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Readiness Checklist</h2>
-        <ReadinessChecklist readiness={readiness} />
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Go-Live Gates</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          {report.gates.passed}/{report.gates.total} gates passed ·{' '}
+          {report.competencies.achieved}/{report.competencies.total} competencies achieved ·{' '}
+          {report.scenarios.completed}/{report.scenarios.total} scenarios completed
+        </p>
+        <ReadinessChecklist report={report} />
       </div>
 
       <div>

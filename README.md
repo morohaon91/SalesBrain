@@ -86,12 +86,13 @@ Password: Demo123!
 ```
 .
 ├── app/                    # Next.js App Router
-│   ├── api/               # API routes
+│   ├── api/               # API routes (e.g. `GET /api/v1/profile/readiness`)
 │   ├── layout.tsx         # Root layout
 │   └── page.tsx           # Home page
 ├── components/            # React components
 ├── lib/                   # Utilities & helpers
 │   ├── extraction/       # Profile extraction engine, prompts, Zod schemas
+│   ├── learning/         # Go-live readiness, competencies, gate evaluation
 │   ├── scenarios/        # Personas and mandatory simulation scenarios
 │   ├── prisma.ts         # Prisma client singleton
 │   ├── utils.ts          # Helper functions

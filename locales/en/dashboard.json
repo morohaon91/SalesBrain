@@ -29,6 +29,7 @@
     "approvalLiveTitle": "Your AI is now live!",
     "approvalLiveBody": "Lead conversations are active. Your AI will start qualifying leads immediately.",
     "readinessTitle": "Your profile is ready to go live! ({{pct}}% complete)",
+    "readinessTitleGates": "Your profile has passed all Go-Live gates!",
     "readinessBody": "Review and approve your profile to activate lead conversations.",
     "reviewApprove": "Review & Approve",
     "noConversationsYet": "No conversations yet",

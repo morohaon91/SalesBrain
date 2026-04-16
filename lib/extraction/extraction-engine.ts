@@ -10,6 +10,7 @@ import { createChatCompletion } from '@/lib/ai/client';
 import { getScenarioById } from '@/lib/scenarios/mandatory-scenarios';
 import { EXTRACTION_SYSTEM_PROMPT, buildExtractionPrompt } from './extraction-prompts';
 import { calculateProfileCompletion } from './completion';
+import { updateProfileReadiness } from '@/lib/learning/readiness-calculator';
 import type {
   CommunicationStyle,
   ObjectionHandling,
@@ -80,7 +81,7 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
   const response = await createChatCompletion(
     [{ role: 'user', content: prompt }],
     EXTRACTION_SYSTEM_PROMPT,
-    { temperature: 0.3, maxTokens: 4000 }
+    { temperature: 0.1, maxTokens: 4000 }
   );
 
   const extracted = parseExtractionResponse(response.content);
@@ -106,6 +107,11 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
       data: { completedScenarios: { push: scenario.id } },
     });
   }
+
+  // Recalculate Go-Live readiness & next-recommended scenario
+  await updateProfileReadiness(profile.id).catch((err) => {
+    console.error('[Extraction] Readiness update failed:', err);
+  });
 
   console.log('[Extraction] Complete');
 
@@ -135,7 +141,7 @@ export async function extractRawFromMessages(
   const response = await createChatCompletion(
     [{ role: 'user', content: prompt }],
     EXTRACTION_SYSTEM_PROMPT,
-    { temperature: 0.3, maxTokens: 4000 }
+    { temperature: 0.1, maxTokens: 4000 }
   );
 
   return parseExtractionResponse(response.content);
@@ -581,7 +587,9 @@ function mergeOwnerVoice(
 }
 
 function mergeUnique(arr1: string[] = [], arr2: string[] = []): string[] {
-  return Array.from(new Set([...arr1, ...arr2]));
+  const a = Array.isArray(arr1) ? arr1 : [];
+  const b = Array.isArray(arr2) ? arr2 : [];
+  return Array.from(new Set([...a, ...b]));
 }
 
 function mergeFlags<T extends { flagType: string; signalExamples: string[]; confidence: number }>(

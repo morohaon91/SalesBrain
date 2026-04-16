@@ -89,6 +89,33 @@ export default function ProfilePage() {
 
   const profile = response?.data as ProfileData | undefined;
 
+  // Fetch Go-Live readiness (gate-based, from Artifact 3)
+  const { data: readiness } = useQuery<{
+    canGoLive: boolean;
+    gates: {
+      total: number;
+      passed: number;
+      details: Array<{
+        gateId: string;
+        name: string;
+        status: 'PASSED' | 'BLOCKED';
+        progress: number;
+        blockingReasons: string[];
+      }>;
+    };
+    scenarios: {
+      completed: number;
+      total: number;
+      nextRecommended: { id: string; name: string; reason: string } | null;
+    };
+  }>({
+    queryKey: ['profile-readiness'],
+    queryFn: () => api.profile.readiness() as any,
+    enabled: !!user,
+  });
+
+  const [showGateDetails, setShowGateDetails] = useState(false);
+
   // Populate form state when profile loads
   useEffect(() => {
     if (profile) {
@@ -463,15 +490,14 @@ export default function ProfilePage() {
             )}
 
             {(() => {
-              const pct = profile?.completionPercentage ?? 0;
               const status = profile?.profileApprovalStatus;
               const isLive = status === 'APPROVED' || status === 'LIVE';
-              if (pct >= 70 && !isLive) {
+              if (readiness?.canGoLive && !isLive) {
                 return (
                   <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <Zap className="h-6 w-6 text-blue-600 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="font-semibold text-blue-900">{t('businessProfile.readinessTitle', { pct })}</p>
+                      <p className="font-semibold text-blue-900">{t('businessProfile.readinessTitleGates')}</p>
                       <p className="text-sm text-blue-700 mt-0.5">{t('businessProfile.readinessBody')}</p>
                     </div>
                     <Link href="/profile/approve">
@@ -505,9 +531,7 @@ export default function ProfilePage() {
               <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
                 <div
                   className={`h-full transition-all ${
-                    (profile?.completionPercentage ?? 0) >= 70
-                      ? 'bg-green-500'
-                      : 'bg-primary-600'
+                    readiness?.canGoLive ? 'bg-green-500' : 'bg-primary-600'
                   }`}
                   style={{ width: `${profile?.completionPercentage ?? 0}%` }}
                 />
@@ -523,14 +547,54 @@ export default function ProfilePage() {
                       })
                     : ''}
                 </span>
-                {(profile?.completionPercentage ?? 0) < 70 && (
-                  <span className="text-blue-600 font-medium">
-                    {t('businessProfile.toGoLive', {
-                      pct: 70 - (profile?.completionPercentage ?? 0),
+                {readiness && !readiness.canGoLive && (
+                  <button
+                    type="button"
+                    onClick={() => setShowGateDetails((v) => !v)}
+                    className="text-blue-600 font-medium hover:underline cursor-pointer"
+                  >
+                    {t('businessProfile.gatesPending', {
+                      remaining: readiness.gates.total - readiness.gates.passed,
+                      total: readiness.gates.total,
                     })}
-                  </span>
+                    {' '}
+                    {showGateDetails ? '▲' : '▼'}
+                  </button>
                 )}
               </div>
+
+              {showGateDetails && readiness && (
+                <div className="mt-3 border-t border-gray-200 pt-3 space-y-2">
+                  {readiness.gates.details.map((gate) => (
+                    <div key={gate.gateId} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        {gate.status === 'PASSED' ? (
+                          <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
+                        )}
+                        <span className={gate.status === 'PASSED' ? 'text-gray-900' : 'text-gray-700 font-medium'}>
+                          {gate.name}
+                        </span>
+                        <span className="text-gray-400 ml-auto">{Math.round(gate.progress)}%</span>
+                      </div>
+                      {gate.blockingReasons.length > 0 && (
+                        <ul className="mt-1 ml-6 list-disc list-inside text-gray-500 space-y-0.5">
+                          {gate.blockingReasons.slice(0, 3).map((r, i) => (
+                            <li key={i}>{r}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                  {readiness.scenarios.nextRecommended && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
+                      <span className="font-medium">{t('businessProfile.nextScenarioLabel')}:</span>{' '}
+                      {readiness.scenarios.nextRecommended.name}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Section breakdown */}
               {profile?.completionBreakdown && (
                 <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 border-t border-gray-200 pt-3">
@@ -630,22 +694,24 @@ export default function ProfilePage() {
                           </span>
                         </div>
                       )}
-                      {profile.pricingLogic.flexibleOn?.map(
-                        (item: string, i: number) => (
-                          <div key={`flex-${i}`} className="flex items-start gap-2">
-                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">Flexible on: {item}</span>
-                          </div>
-                        )
-                      )}
-                      {profile.pricingLogic.notFlexibleOn?.map(
-                        (item: string, i: number) => (
-                          <div key={`nf-${i}`} className="flex items-start gap-2">
-                            <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">Not flexible on: {item}</span>
-                          </div>
-                        )
-                      )}
+                      {(Array.isArray(profile.pricingLogic.flexibleOn)
+                        ? profile.pricingLogic.flexibleOn
+                        : []
+                      ).map((item: string, i: number) => (
+                        <div key={`flex-${i}`} className="flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">Flexible on: {item}</span>
+                        </div>
+                      ))}
+                      {(Array.isArray(profile.pricingLogic.notFlexibleOn)
+                        ? profile.pricingLogic.notFlexibleOn
+                        : []
+                      ).map((item: string, i: number) => (
+                        <div key={`nf-${i}`} className="flex items-start gap-2">
+                          <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">Not flexible on: {item}</span>
+                        </div>
+                      ))}
                       {profile.pricingLogic.priceDefenseStrategy && (
                         <div className="pt-2">
                           <span className="text-xs text-gray-600">Price defense:</span>
@@ -657,19 +723,30 @@ export default function ProfilePage() {
                 )}
 
                 {/* Qualification Criteria */}
-                {profile?.qualificationCriteria && (
+                {(() => {
+                  const qc = profile?.qualificationCriteria;
+                  const hasAny =
+                    (qc?.dealBreakers?.length ?? 0) > 0 ||
+                    (qc?.greenFlags?.length ?? 0) > 0 ||
+                    (qc?.redFlags?.length ?? 0) > 0;
+                  return (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">
                       {t('businessProfile.qualificationTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                      {profile.qualificationCriteria.dealBreakers?.length > 0 && (
+                      {!hasAny && (
+                        <p className="text-sm text-gray-500 italic">
+                          {t('businessProfile.qualificationEmpty')}
+                        </p>
+                      )}
+                      {qc?.dealBreakers?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
                             {t('businessProfile.dealBreakers')}
                           </h4>
                           <ul className="space-y-1">
-                            {profile.qualificationCriteria.dealBreakers.map(
+                            {qc.dealBreakers.map(
                               (db: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -681,13 +758,13 @@ export default function ProfilePage() {
                         </div>
                       )}
 
-                      {profile.qualificationCriteria.greenFlags?.length > 0 && (
+                      {qc?.greenFlags?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">
                             {t('businessProfile.greenFlags')}
                           </h4>
                           <ul className="space-y-1">
-                            {profile.qualificationCriteria.greenFlags.map(
+                            {qc.greenFlags.map(
                               (gf: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -699,11 +776,11 @@ export default function ProfilePage() {
                         </div>
                       )}
 
-                      {profile.qualificationCriteria.redFlags?.length > 0 && (
+                      {qc?.redFlags?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">Red Flags</h4>
                           <ul className="space-y-1">
-                            {profile.qualificationCriteria.redFlags.map(
+                            {qc.redFlags.map(
                               (rf: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -716,16 +793,24 @@ export default function ProfilePage() {
                       )}
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Objection Handling */}
-                {profile?.objectionHandling && (
+                {(() => {
+                  const playbooks = profile?.objectionHandling?.playbooks ?? [];
+                  return (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">
                       {t('businessProfile.objectionTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                      {(profile.objectionHandling.playbooks ?? []).map(
+                      {playbooks.length === 0 && (
+                        <p className="text-sm text-gray-500 italic">
+                          {t('businessProfile.objectionEmpty')}
+                        </p>
+                      )}
+                      {playbooks.map(
                         (pb: any, i: number) => (
                           <div key={i} className="border-b last:border-b-0 pb-2 last:pb-0">
                             <span className="text-sm font-medium text-gray-700 capitalize">
@@ -746,20 +831,33 @@ export default function ProfilePage() {
                       )}
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Decision Making Patterns */}
-                {profile?.decisionMakingPatterns && (
+                {(() => {
+                  const dm = profile?.decisionMakingPatterns;
+                  const hasAny =
+                    (dm?.discovery?.firstQuestions?.length ?? 0) > 0 ||
+                    !!dm?.valuePositioning?.primaryValueLens ||
+                    !!dm?.closing?.preferredNextStep ||
+                    !!dm?.pain?.painApproach;
+                  return (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">
                       {t('businessProfile.decisionTitle')}
                     </h3>
                     <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                      {profile.decisionMakingPatterns.discovery?.firstQuestions?.length > 0 && (
+                      {!hasAny && (
+                        <p className="text-sm text-gray-500 italic">
+                          {t('businessProfile.decisionEmpty')}
+                        </p>
+                      )}
+                      {dm?.discovery?.firstQuestions?.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-2">Discovery Questions</h4>
                           <ul className="space-y-1">
-                            {profile.decisionMakingPatterns.discovery.firstQuestions.map(
+                            {dm.discovery.firstQuestions.map(
                               (item: string, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -771,34 +869,35 @@ export default function ProfilePage() {
                         </div>
                       )}
 
-                      {profile.decisionMakingPatterns.valuePositioning?.primaryValueLens && (
+                      {dm?.valuePositioning?.primaryValueLens && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-1">Primary Value Lens</h4>
-                          <p className="text-sm capitalize">{profile.decisionMakingPatterns.valuePositioning.primaryValueLens}</p>
+                          <p className="text-sm capitalize">{dm.valuePositioning.primaryValueLens}</p>
                         </div>
                       )}
 
-                      {profile.decisionMakingPatterns.closing?.preferredNextStep && (
+                      {dm?.closing?.preferredNextStep && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-1">Preferred Close</h4>
                           <p className="text-sm capitalize">
-                            {profile.decisionMakingPatterns.closing.preferredNextStep}
-                            {profile.decisionMakingPatterns.closing.ctaDirectness && (
-                              <span className="text-gray-500"> ({profile.decisionMakingPatterns.closing.ctaDirectness})</span>
+                            {dm.closing.preferredNextStep}
+                            {dm.closing.ctaDirectness && (
+                              <span className="text-gray-500"> ({dm.closing.ctaDirectness})</span>
                             )}
                           </p>
                         </div>
                       )}
 
-                      {profile.decisionMakingPatterns.pain?.painApproach && (
+                      {dm?.pain?.painApproach && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-1">Pain Approach</h4>
-                          <p className="text-sm capitalize">{profile.decisionMakingPatterns.pain.painApproach}</p>
+                          <p className="text-sm capitalize">{dm.pain.painApproach}</p>
                         </div>
                       )}
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-4 border-t border-gray-200">

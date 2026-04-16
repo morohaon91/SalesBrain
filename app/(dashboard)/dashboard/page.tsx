@@ -51,6 +51,12 @@ export default function DashboardPage() {
     enabled: !!user,
   });
 
+  const { data: readiness } = useQuery<{ canGoLive: boolean }>({
+    queryKey: ["profile-readiness"],
+    queryFn: () => authFetch("/api/v1/profile/readiness").then((r) => r.json()),
+    enabled: !!user,
+  });
+
   const { data: conversationsResponse } = useQuery({
     queryKey: ["conversations-recent"],
     queryFn: () => api.conversations.list({ pageSize: 5 }),
@@ -70,10 +76,9 @@ export default function DashboardPage() {
     : "0";
 
   const profile = (profileResponse?.data ?? profileResponse) as any;
-  const completionPct = profile?.completionPercentage ?? 0;
   const isLive =
     profile?.profileApprovalStatus === "APPROVED" || profile?.profileApprovalStatus === "LIVE";
-  const showReadinessBanner = !isLive && completionPct >= 70;
+  const showReadinessBanner = !isLive && !!readiness?.canGoLive;
 
   const recentConversations = (conversationsResponse?.data as RecentConversation[]) ?? [];
 
@@ -99,7 +104,7 @@ export default function DashboardPage() {
           <Zap className="h-6 w-6 text-blue-600 flex-shrink-0" />
           <div className="flex-1">
             <p className="font-semibold text-blue-900">
-              {t("dashboard:messages.readinessTitle", { pct: completionPct })}
+              {t("dashboard:messages.readinessTitleGates")}
             </p>
             <p className="text-sm text-blue-700">{t("dashboard:messages.readinessBody")}</p>
           </div>

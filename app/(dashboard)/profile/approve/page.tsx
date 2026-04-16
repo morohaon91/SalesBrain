@@ -7,14 +7,13 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ApprovalSummary from '@/components/profile/ApprovalSummary';
 import ApprovalConfirmation from '@/components/profile/ApprovalConfirmation';
-import { checkProfileReadiness } from '@/lib/utils/profile-readiness';
-import type { ReadinessCheckResult } from '@/lib/utils/profile-readiness';
+import type { ReadinessReport } from '@/lib/learning/readiness-calculator';
 
 export default function ProfileApprovePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Record<string, any> | null>(null);
-  const [readiness, setReadiness] = useState<ReadinessCheckResult | null>(null);
+  const [report, setReport] = useState<ReadinessReport | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,12 +22,17 @@ export default function ProfileApprovePage() {
 
   const loadProfile = async () => {
     try {
-      const res = await authFetch('/api/v1/profile');
-      if (!res.ok) throw new Error('Failed to load profile');
-      const data = await res.json();
-      const p = data.data ?? data;
-      setProfile(p);
-      setReadiness(checkProfileReadiness(p));
+      const [profileRes, readinessRes] = await Promise.all([
+        authFetch('/api/v1/profile'),
+        authFetch('/api/v1/profile/readiness'),
+      ]);
+      if (!profileRes.ok) throw new Error('Failed to load profile');
+      if (!readinessRes.ok) throw new Error('Failed to load readiness');
+
+      const profileData = await profileRes.json();
+      const readinessData = (await readinessRes.json()) as ReadinessReport;
+      setProfile(profileData.data ?? profileData);
+      setReport(readinessData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
@@ -53,7 +57,7 @@ export default function ProfileApprovePage() {
     );
   }
 
-  if (error || !profile || !readiness) {
+  if (error || !profile || !report) {
     return <div className="text-center text-red-600 py-12">{error ?? 'Could not load profile'}</div>;
   }
 
@@ -70,9 +74,9 @@ export default function ProfileApprovePage() {
         </div>
       </div>
 
-      <ApprovalSummary profile={profile} readiness={readiness} />
+      <ApprovalSummary profile={profile} report={report} />
 
-      <ApprovalConfirmation isReady={readiness.isReady} onApprove={handleApprove} />
+      <ApprovalConfirmation isReady={report.canGoLive} onApprove={handleApprove} />
     </div>
   );
 }

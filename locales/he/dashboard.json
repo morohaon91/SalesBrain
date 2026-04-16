@@ -29,6 +29,7 @@
     "approvalLiveTitle": "ה-AI שלך בשידור חי!",
     "approvalLiveBody": "שיחות לידים פעילות. ה-AI יתחיל להסמיך לידים מיד.",
     "readinessTitle": "הפרופיל מוכן לשידור חי! ({{pct}}% הושלמו)",
+    "readinessTitleGates": "הפרופיל עבר את כל שערי השידור החי!",
     "readinessBody": "עברו על הפרופיל ואשרו כדי להפעיל שיחות לידים.",
     "reviewApprove": "סקירה ואישור",
     "noConversationsYet": "אין עדיין שיחות",
