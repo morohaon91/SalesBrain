@@ -30,6 +30,8 @@ import widgetEn from './locales/en/widget.json';
 import widgetHe from './locales/he/widget.json';
 import adminEn from './locales/en/admin.json';
 import adminHe from './locales/he/admin.json';
+import learningEn from './locales/en/learning.json';
+import learningHe from './locales/he/learning.json';
 
 const resources = {
   en: {
@@ -47,6 +49,7 @@ const resources = {
     onboarding: onboardingEn,
     widget: widgetEn,
     admin: adminEn,
+    learning: learningEn,
   },
   he: {
     common: commonHe,
@@ -63,6 +66,7 @@ const resources = {
     onboarding: onboardingHe,
     widget: widgetHe,
     admin: adminHe,
+    learning: learningHe,
   },
 };
 
@@ -89,6 +93,7 @@ if (!i18n.isInitialized) {
       'onboarding',
       'widget',
       'admin',
+      'learning',
     ],
     interpolation: {
       escapeValue: false,

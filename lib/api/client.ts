@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
+import type { ReadinessReport } from "@/lib/learning/readiness-calculator";
 
 /**
  * API Response type
@@ -328,6 +329,28 @@ export const api = {
    * Simulations endpoints
    */
   simulations: {
+    scenarios: async () => {
+      const response = await instance.get<{
+        success: boolean;
+        scenarios: Array<{
+          id: string;
+          name: string;
+          description: string;
+          difficulty: string;
+          estimatedDuration: number;
+          isMandatory: boolean;
+          isCompleted: boolean;
+          orderIndex: number;
+          scenarioType: string;
+        }>;
+        suggestion: { scenarioId: string; scenarioName: string; reason: string } | null;
+        completedScenarios: string[];
+        industry: string | null;
+        completionStats: { completed: number; total: number; percentage: number };
+      }>('/simulations/scenarios');
+      return response.data;
+    },
+
     start: async (data: { scenarioType: string }) => {
       const response = await instance.post<ApiResponse<unknown>>('/simulations/start', data);
       return response.data;
@@ -435,7 +458,7 @@ export const api = {
     },
 
     readiness: async () => {
-      const response = await instance.get<unknown>('/profile/readiness');
+      const response = await instance.get<ReadinessReport>('/profile/readiness');
       return response.data;
     },
   },

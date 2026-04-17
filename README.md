@@ -89,7 +89,7 @@ Password: Demo123!
 │   ├── api/               # API routes (e.g. `GET /api/v1/profile/readiness`)
 │   ├── layout.tsx         # Root layout
 │   └── page.tsx           # Home page
-├── components/            # React components
+├── components/            # React components (incl. learning readiness widgets/cards)
 ├── lib/                   # Utilities & helpers
 │   ├── api/              # Axios client: Bearer JWT, proactive refresh (exp), coalesced `/auth/refresh`, 401 retry
 │   ├── extraction/       # Profile extraction engine, prompts, Zod schemas

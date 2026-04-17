@@ -1,0 +1,76 @@
+{
+  "header": {
+    "title": "מוכנות אימון ה-AI",
+    "subtitle": "עקבו אחר התקדמות האימון של סוכן ה-AI והמוכנות לעלייה לאוויר"
+  },
+  "overall": {
+    "title": "מוכנות כוללת",
+    "readyDescription": "סוכן ה-AI שלכם מוכן לעלות לאוויר",
+    "trainingDescription": "השלימו את תרחישי האימון שנותרו למטה",
+    "ready": "מוכן לעלייה לאוויר",
+    "inTraining": "באימון",
+    "activate": "הפעל סוכן AI"
+  },
+  "nextStep": {
+    "title": "הצעד הבא המומלץ",
+    "cta": "התחל תרחיש",
+    "allDone": "כל התרחישים הושלמו. בדקו את השערים למטה."
+  },
+  "gates": {
+    "title": "דרישות לעלייה לאוויר",
+    "subtitle": "כל דרישה חייבת לעבור לפני ההפעלה",
+    "passed": "הדרישה התקיימה",
+    "blocked": "מה חסר:"
+  },
+  "competencies": {
+    "title": "התקדמות מיומנויות",
+    "subtitle": "מיומנויות שנלמדו מהסימולציות שלכם",
+    "groupComplete": "הושלם",
+    "status": {
+      "NOT_STARTED": "לא התחיל",
+      "IN_PROGRESS": "בתהליך",
+      "ACHIEVED": "הושג",
+      "MASTERED": "בשליטה מלאה"
+    },
+    "examples_one": "דוגמה אחת",
+    "examples_other": "{{count}} דוגמאות",
+    "required": "חובה",
+    "statusLabel": "סטטוס",
+    "requirements": "דרישות",
+    "minConfidence": "מינימום {{value}}% ביטחון",
+    "currentConfidenceMet": "נוכחי: {{value}}% ✓",
+    "currentConfidenceShort": "נוכחי: {{value}}% (חסרים {{delta}}%)",
+    "whatsNeeded": "מה חסר",
+    "achievedMessage": "המיומנות הושגה — עבודה מצוינת!",
+    "categories": {
+      "identity": "קול וזהות",
+      "strategic": "אסטרטגיית מכירה",
+      "qualification": "סינון לידים",
+      "objection": "טיפול בהתנגדויות",
+      "adaptation": "הסתגלות"
+    }
+  },
+  "scenarios": {
+    "title": "השלמת תרחישים",
+    "subtitle": "{{completed}} מתוך {{total}} תרחישים הושלמו",
+    "start": "התחל תרחיש",
+    "mandatory": "חובה",
+    "optional": "רשות",
+    "completed": "הושלם",
+    "difficulty": {
+      "beginner": "מתחיל",
+      "intermediate": "בינוני",
+      "advanced": "מתקדם"
+    }
+  },
+  "widget": {
+    "title": "אימון AI",
+    "progressLabel": "התקדמות",
+    "nextLabel": "הצעד הבא:",
+    "continue": "המשך אימון"
+  },
+  "loading": "טוען נתוני אימון…",
+  "errors": {
+    "loadFailed": "טעינת נתוני האימון נכשלה. נסו שוב."
+  }
+}

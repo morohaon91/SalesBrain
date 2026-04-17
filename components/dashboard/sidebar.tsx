@@ -12,6 +12,7 @@ import {
   BarChart3,
   Settings,
   User,
+  GraduationCap,
   X,
 } from "lucide-react";
 
@@ -38,6 +39,11 @@ const getNavigation = (t: any) => [
     name: t('navigation.simulations'),
     href: "/simulations",
     icon: BrainCircuit,
+  },
+  {
+    name: t('navigation.learning'),
+    href: "/learning",
+    icon: GraduationCap,
   },
   {
     name: t('navigation.analytics'),

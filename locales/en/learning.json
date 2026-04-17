@@ -1,0 +1,76 @@
+{
+  "header": {
+    "title": "AI Training Readiness",
+    "subtitle": "Track your AI agent's training progress and go-live readiness"
+  },
+  "overall": {
+    "title": "Overall Readiness",
+    "readyDescription": "Your AI agent is ready to go live",
+    "trainingDescription": "Complete the remaining training scenarios below",
+    "ready": "Ready for Go-Live",
+    "inTraining": "In Training",
+    "activate": "Activate AI Agent"
+  },
+  "nextStep": {
+    "title": "Recommended Next Step",
+    "cta": "Start This Scenario",
+    "allDone": "All scenarios completed. Review the gates below."
+  },
+  "gates": {
+    "title": "Go-Live Requirements",
+    "subtitle": "Each requirement must pass before activation",
+    "passed": "Requirement met",
+    "blocked": "What's needed:"
+  },
+  "competencies": {
+    "title": "Competency Progress",
+    "subtitle": "Skills learned from your simulations",
+    "groupComplete": "Complete",
+    "status": {
+      "NOT_STARTED": "Not started",
+      "IN_PROGRESS": "In progress",
+      "ACHIEVED": "Achieved",
+      "MASTERED": "Mastered"
+    },
+    "examples_one": "{{count}} example",
+    "examples_other": "{{count}} examples",
+    "required": "Required",
+    "statusLabel": "Status",
+    "requirements": "Requirements",
+    "minConfidence": "Minimum {{value}}% confidence",
+    "currentConfidenceMet": "Current: {{value}}% ✓",
+    "currentConfidenceShort": "Current: {{value}}% (need {{delta}}% more)",
+    "whatsNeeded": "What's needed",
+    "achievedMessage": "Competency achieved — great work!",
+    "categories": {
+      "identity": "Voice & Identity",
+      "strategic": "Sales Strategy",
+      "qualification": "Lead Qualification",
+      "objection": "Objection Handling",
+      "adaptation": "Adaptation"
+    }
+  },
+  "scenarios": {
+    "title": "Scenario Completion",
+    "subtitle": "{{completed}} of {{total}} scenarios completed",
+    "start": "Start Scenario",
+    "mandatory": "Required",
+    "optional": "Optional",
+    "completed": "Completed",
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    }
+  },
+  "widget": {
+    "title": "AI Training",
+    "progressLabel": "Progress",
+    "nextLabel": "Next step:",
+    "continue": "Continue Training"
+  },
+  "loading": "Loading training data…",
+  "errors": {
+    "loadFailed": "Couldn't load training data. Please try again."
+  }
+}
