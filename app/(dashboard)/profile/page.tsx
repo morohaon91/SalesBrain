@@ -23,6 +23,8 @@ import {
 import Link from 'next/link';
 import { useI18n } from '@/lib/hooks/useI18n';
 import { rtlMirrorIcon } from '@/lib/i18n/rtl-icons';
+import { Label } from '@/components/ui/label';
+import MultiInputField from '@/components/onboarding/MultiInputField';
 
 type TabType = 'extracted-patterns' | 'basic-info';
 
@@ -35,6 +37,10 @@ interface ProfileData {
   targetClientType?: string | null;
   typicalBudgetRange?: string | null;
   commonClientQuestions?: string[];
+  yearsExperience?: number | null;
+  certifications?: string[];
+  serviceArea?: string | null;
+  teamSize?: string | null;
   communicationStyle?: any;
   pricingLogic?: any;
   qualificationCriteria?: any;
@@ -46,7 +52,7 @@ interface ProfileData {
   completionBreakdown?: Record<string, number>;
   simulationCount?: number;
   lastExtractedAt?: string | null;
-  embeddingsCount: number;
+  embeddingsCount?: number;
   widgetApiKey?: string | null;
   leadChatPath?: string | null;
   leadConversationsActive?: boolean;
@@ -75,6 +81,10 @@ export default function ProfilePage() {
   const [targetClientType, setTargetClientType] = useState('');
   const [typicalBudgetRange, setTypicalBudgetRange] = useState('');
   const [commonQuestions, setCommonQuestions] = useState<string[]>([]);
+  const [yearsExperience, setYearsExperience] = useState<number | null>(null);
+  const [certifications, setCertifications] = useState<string[]>([]);
+  const [serviceArea, setServiceArea] = useState('');
+  const [teamSize, setTeamSize] = useState('');
 
   // Fetch profile
   const {
@@ -89,28 +99,9 @@ export default function ProfilePage() {
 
   const profile = response?.data as ProfileData | undefined;
 
-  // Fetch Go-Live readiness (gate-based, from Artifact 3)
-  const { data: readiness } = useQuery<{
-    canGoLive: boolean;
-    gates: {
-      total: number;
-      passed: number;
-      details: Array<{
-        gateId: string;
-        name: string;
-        status: 'PASSED' | 'BLOCKED';
-        progress: number;
-        blockingReasons: string[];
-      }>;
-    };
-    scenarios: {
-      completed: number;
-      total: number;
-      nextRecommended: { id: string; name: string; reason: string } | null;
-    };
-  }>({
-    queryKey: ['profile-readiness'],
-    queryFn: () => api.profile.readiness() as any,
+  const { data: readiness } = useQuery({
+    queryKey: ['activation-status'],
+    queryFn: () => api.profile.activationStatus(),
     enabled: !!user,
   });
 
@@ -124,6 +115,10 @@ export default function ProfilePage() {
       setTargetClientType(profile.targetClientType || '');
       setTypicalBudgetRange(profile.typicalBudgetRange || '');
       setCommonQuestions(profile.commonClientQuestions || []);
+      setYearsExperience(profile.yearsExperience ?? null);
+      setCertifications(profile.certifications || []);
+      setServiceArea(profile.serviceArea || '');
+      setTeamSize(profile.teamSize || '');
     }
   }, [profile]);
 
@@ -189,6 +184,10 @@ export default function ProfilePage() {
         targetClientType,
         typicalBudgetRange,
         commonClientQuestions: commonQuestions.filter(q => q.trim()),
+        yearsExperience,
+        certifications: certifications.filter(c => c.trim()),
+        serviceArea,
+        teamSize,
       });
     } finally {
       setIsSaving(false);
@@ -419,6 +418,76 @@ export default function ProfilePage() {
                   {t('businessProfile.addQuestion')}
                 </Button>
               </div>
+
+              {/* Service Area */}
+              <div>
+                <Label htmlFor="serviceArea" className="text-sm font-medium text-gray-700">
+                  Service Area
+                </Label>
+                <Input
+                  id="serviceArea"
+                  value={serviceArea}
+                  onChange={(e) => setServiceArea(e.target.value)}
+                  placeholder="e.g. Greater New York, Remote — US only"
+                  disabled={isSaving}
+                  className="mt-2"
+                />
+              </div>
+
+              {/* Team Size */}
+              <div>
+                <Label htmlFor="teamSize" className="text-sm font-medium text-gray-700">
+                  Team Size
+                </Label>
+                <Select
+                  value={teamSize}
+                  onChange={(e) => setTeamSize(e.target.value)}
+                  placeholder="Select team size"
+                  options={[
+                    { value: 'Solo', label: 'Solo (just me)' },
+                    { value: '2-5', label: '2–5 people' },
+                    { value: '6-10', label: '6–10 people' },
+                    { value: '10+', label: '10+ people' },
+                  ]}
+                  disabled={isSaving}
+                  className="mt-2"
+                />
+              </div>
+
+              {/* Years of Experience */}
+              <div>
+                <Label htmlFor="yearsExperience" className="text-sm font-medium text-gray-700">
+                  Years of Experience
+                </Label>
+                <Input
+                  id="yearsExperience"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={yearsExperience ?? ''}
+                  onChange={(e) => setYearsExperience(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  placeholder="e.g. 10"
+                  disabled={isSaving}
+                  className="mt-2 w-40"
+                />
+              </div>
+
+              {/* Certifications */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Certifications / Licenses
+                </Label>
+                <p className="text-sm text-gray-500 mt-0.5 mb-2">
+                  Professional certifications relevant to your work
+                </p>
+                <MultiInputField
+                  values={certifications}
+                  onChange={setCertifications}
+                  placeholder="e.g. PMP, AWS Solutions Architect"
+                  maxItems={20}
+                  addButtonText="+ Add Certification"
+                />
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -500,7 +569,7 @@ export default function ProfilePage() {
             {(() => {
               const status = profile?.profileApprovalStatus;
               const isLive = status === 'APPROVED' || status === 'LIVE';
-              if (readiness?.canGoLive && !isLive) {
+              if (readiness?.canRequestGoLive && !isLive) {
                 return (
                   <div className="flex items-center gap-4 p-4 rounded-xl border" style={{ backgroundColor: 'hsl(38 92% 50% / 0.06)', borderColor: 'hsl(38 92% 50% / 0.25)' }}>
                     <Zap className="h-5 w-5 flex-shrink-0" style={{ color: 'hsl(38, 92%, 44%)' }} />
@@ -528,103 +597,123 @@ export default function ProfilePage() {
               return null;
             })()}
 
-            {/* Completion Progress */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-gray-900">{t('businessProfile.completionLabel')}</span>
-                <span className="text-2xl font-bold text-primary-600">
-                  {profile?.completionPercentage ?? 0}%
-                </span>
-              </div>
-              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
-                <div
-                  className={`h-full transition-all ${
-                    readiness?.canGoLive ? 'bg-green-500' : 'bg-primary-600'
-                  }`}
-                  style={{ width: `${profile?.completionPercentage ?? 0}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>
-                  {(profile?.simulationCount ?? 0) === 1
-                    ? t('businessProfile.oneSimDone')
-                    : t('businessProfile.manySimDone', { count: profile?.simulationCount ?? 0 })}
-                  {profile?.lastExtractedAt
-                    ? t('businessProfile.lastExtracted', {
-                        date: new Date(profile.lastExtractedAt).toLocaleDateString(),
-                      })
-                    : ''}
-                </span>
-                {readiness && !readiness.canGoLive && (
+            {/* Go-Live Gates */}
+            {readiness && !readiness.canRequestGoLive && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>
+                    {(profile?.simulationCount ?? 0) === 1
+                      ? t('businessProfile.oneSimDone')
+                      : t('businessProfile.manySimDone', { count: profile?.simulationCount ?? 0 })}
+                    {profile?.lastExtractedAt
+                      ? t('businessProfile.lastExtracted', {
+                          date: new Date(profile.lastExtractedAt).toLocaleDateString(),
+                        })
+                      : ''}
+                  </span>
                   <button
                     type="button"
                     onClick={() => setShowGateDetails((v) => !v)}
                     className="text-blue-600 font-medium hover:underline cursor-pointer"
                   >
                     {t('businessProfile.gatesPending', {
-                      remaining: readiness.gates.total - readiness.gates.passed,
-                      total: readiness.gates.total,
+                      remaining: readiness.gates.filter((g) => g.status === 'BLOCKED').length,
+                      total: readiness.gates.length,
                     })}
                     {' '}
                     {showGateDetails ? '▲' : '▼'}
                   </button>
+                </div>
+
+                {showGateDetails && (
+                  <div className="mt-3 border-t border-gray-200 pt-3 space-y-2">
+                    {readiness.gates.map((gate) => (
+                      <div key={gate.gateId} className="text-xs">
+                        <div className="flex items-center gap-2">
+                          {gate.status === 'PASSED' ? (
+                            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
+                          )}
+                          <span className={gate.status === 'PASSED' ? 'text-gray-900' : 'text-gray-700 font-medium'}>
+                            {gate.name}
+                          </span>
+                          <span className="text-gray-400 ml-auto">{Math.round(gate.progress)}%</span>
+                        </div>
+                        {gate.blockingReasons.length > 0 && (
+                          <ul className="mt-1 ml-6 list-disc list-inside text-gray-500 space-y-0.5">
+                            {gate.blockingReasons.slice(0, 3).map((r, i) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                    {readiness.nextScenario && (
+                      <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
+                        <span className="font-medium">{t('businessProfile.nextScenarioLabel')}:</span>{' '}
+                        {readiness.nextScenario.name}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
+            )}
 
-              {showGateDetails && readiness && (
-                <div className="mt-3 border-t border-gray-200 pt-3 space-y-2">
-                  {readiness.gates.details.map((gate) => (
-                    <div key={gate.gateId} className="text-xs">
-                      <div className="flex items-center gap-2">
-                        {gate.status === 'PASSED' ? (
-                          <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
-                        )}
-                        <span className={gate.status === 'PASSED' ? 'text-gray-900' : 'text-gray-700 font-medium'}>
-                          {gate.name}
-                        </span>
-                        <span className="text-gray-400 ml-auto">{Math.round(gate.progress)}%</span>
-                      </div>
-                      {gate.blockingReasons.length > 0 && (
-                        <ul className="mt-1 ml-6 list-disc list-inside text-gray-500 space-y-0.5">
-                          {gate.blockingReasons.slice(0, 3).map((r, i) => (
-                            <li key={i}>{r}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
-                  {readiness.scenarios.nextRecommended && (
-                    <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
-                      <span className="font-medium">{t('businessProfile.nextScenarioLabel')}:</span>{' '}
-                      {readiness.scenarios.nextRecommended.name}
-                    </div>
-                  )}
+            {/* Extracted Data Coverage */}
+            {(() => {
+              const bd = profile?.completionBreakdown as any;
+              if (!bd) return null;
+              const sections: Array<{ label: string; pts: number; max: number; needsSim?: boolean }> = [
+                { label: 'Questionnaire', pts: bd.questionnaire ?? 0, max: 10 },
+                { label: 'Communication Style', pts: bd.communicationStyle ?? 0, max: 20, needsSim: true },
+                { label: 'Objection Handling', pts: bd.objectionHandling ?? 0, max: 20, needsSim: true },
+                { label: 'Decision Making', pts: bd.decisionMaking ?? 0, max: 20, needsSim: true },
+                { label: 'Qualification Criteria', pts: bd.qualificationCriteria ?? 0, max: 15, needsSim: true },
+                { label: 'Pricing Logic', pts: bd.pricingLogic ?? 0, max: 15, needsSim: true },
+              ];
+              return (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-0.5">Extracted Data Coverage</h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    How much detail has been captured from your simulations.{' '}
+                    <span className="italic">This does not affect your go-live readiness score.</span>
+                  </p>
+                  <div className="space-y-3">
+                    {sections.map(({ label, pts, max, needsSim }) => {
+                      const pct = Math.round((pts / max) * 100);
+                      const full = pts === max;
+                      return (
+                        <div key={label}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-gray-700">{label}</span>
+                            <div className="flex items-center gap-2">
+                              {full && <CheckCircle className="h-3.5 w-3.5 text-green-500" />}
+                              <span className={`text-xs font-mono ${full ? 'text-green-600' : pts === 0 ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {pts}/{max}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${full ? 'bg-green-500' : pts > 0 ? 'bg-amber-400' : 'bg-gray-200'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          {pts === 0 && needsSim && (
+                            <p className="text-xs text-gray-400 mt-0.5">Complete more simulations to populate this section.</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-4">
+                    {profile?.simulationCount ?? 0} simulation{(profile?.simulationCount ?? 0) !== 1 ? 's' : ''} completed
+                    {profile?.lastExtractedAt ? ` · Last extracted ${new Date(profile.lastExtractedAt).toLocaleDateString()}` : ''}
+                  </p>
                 </div>
-              )}
-              {/* Section breakdown */}
-              {profile?.completionBreakdown && (
-                <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 border-t border-gray-200 pt-3">
-                  {[
-                    [t('businessProfile.breakdownQuestionnaire'), profile.completionBreakdown.questionnaire, 20],
-                    [t('businessProfile.breakdownCommunication'), profile.completionBreakdown.communicationStyle, 15],
-                    [t('businessProfile.breakdownPricing'), profile.completionBreakdown.pricingLogic, 15],
-                    [t('businessProfile.breakdownQualification'), profile.completionBreakdown.qualificationCriteria, 15],
-                    [t('businessProfile.breakdownObjections'), profile.completionBreakdown.objectionHandling, 15],
-                    [t('businessProfile.breakdownDecision'), profile.completionBreakdown.decisionMaking, 10],
-                    [t('businessProfile.breakdownFacts'), profile.completionBreakdown.businessFacts, 10],
-                  ].map(([label, pts, max]) => (
-                    <div key={label as string} className="flex justify-between">
-                      <span>{label as string}</span>
-                      <span className={(pts as number) === 0 ? 'text-red-400' : 'text-green-600 font-medium'}>
-                        {pts as number}/{max as number}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              );
+            })()}
 
             {/* Patterns or Empty State */}
             {(profile?.completionPercentage || 0) > 20 ? (

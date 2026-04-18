@@ -14,8 +14,8 @@ Extract:
 - Tone (friendly/direct/formal/warm/assertive/consultative)
 - Energy level (low/medium/high)
 - Sentence structure: short/mixed/long
-- Humor usage and examples
-- Empathy signals and examples
+- Humor usage: humorExamples as string[] — direct quotes where owner used humor ([] if none)
+- Empathy signals: empathyExamples as string[] — direct quotes where owner showed empathy ([] if none)
 - Common phrases (things they say repeatedly)
 - Punctuation style
 - Verbosity pattern
@@ -28,6 +28,35 @@ Extract:
 - Closing pattern: When, how direct, what next step
 - Urgency creation methods
 
+Return under decisionMakingPatterns with this EXACT shape (all fields required, use null/[] for missing):
+{
+  "discovery": {
+    "firstQuestions": ["string — exact questions asked early in discovery, as bare strings"],
+    "moveToValueTrigger": "string | null — what triggered shift from discovery to value pitch",
+    "discoveryOrder": [],
+    "prioritizedInfo": []
+  },
+  "valuePositioning": {
+    "primaryValueLens": "string | null — e.g. outcome, trust, speed, process",
+    "secondaryValueLens": [],
+    "proofSignalsUsed": ["specific proof points owner mentioned"]
+  },
+  "closing": {
+    "asksForNextStep": true,
+    "preferredNextStep": "string | null — e.g. book a call, send proposal, in-person meeting",
+    "ctaTiming": "string | null",
+    "ctaDirectness": "string | null",
+    "createsUrgency": false,
+    "urgencyMethod": "string | null"
+  },
+  "pain": {
+    "deepensPain": false,
+    "painApproach": "string | null",
+    "painDepthLevel": "string | null",
+    "normalizesProblem": false
+  }
+}
+
 ## LAYER 3: QUALIFICATION LAYER
 Extract qualification signals from ANY scenario type - not just Wrong Fit or Skeptical Lead. Qualification cues surface in every conversation:
 - Green flags: Signals of interest, fit, or buying intent. Examples: lead shares budget, timeline, decision authority, urgency, specific pain, current frustration with alternatives, asks about next steps, confirms scope matches needs.
@@ -39,11 +68,23 @@ Extract qualification signals from ANY scenario type - not just Wrong Fit or Ske
 IMPORTANT: If the lead revealed budget, timeline, authority, scope, or pain — that IS qualification signal. Extract it even if the scenario was primarily about something else (e.g., Hot Lead, Price Objection). Do NOT leave qualification empty just because the scenario type was not explicitly a qualification scenario.
 
 ## LAYER 4: OBJECTION LAYER
-For each objection encountered:
-- How owner responded
-- Reframing technique used
-- Whether owner walked away or persisted
-- Confidence level in handling
+For each objection encountered, return under objectionHandling with this EXACT shape:
+{
+  "playbooks": [
+    {
+      "objectionType": "price | trust | time | competitor | complexity | risk",
+      "signalExamples": ["exact quotes showing the objection from lead"],
+      "responseStrategy": "summary of how owner responded",
+      "reframingMethod": "string | null",
+      "responseExamples": ["exact quotes from owner's response"],
+      "escalationLogic": "string | null",
+      "exitLogic": "string | null",
+      "confidenceScore": 0
+    }
+  ],
+  "overallConfidence": 0
+}
+Return playbooks: [] if no objections were encountered in this conversation.
 
 ## LAYER 5: ADAPTATION LAYER
 Extract:

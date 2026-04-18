@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ScenarioSelection, { ScenarioSuggestionPayload } from '@/components/simulation/ScenarioSelection';
 import { ScenarioCardData } from '@/components/simulation/ScenarioCard';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function NewSimulationPage() {
   const router = useRouter();
@@ -65,6 +66,8 @@ export default function NewSimulationPage() {
     );
   }
 
+
+
   return (
     <div className="max-w-6xl mx-auto p-8">
       <div className="mb-8">
@@ -94,6 +97,11 @@ export default function NewSimulationPage() {
             No scenarios available for your industry. Please complete your business profile first.
           </p>
         </div>
+      ) : completedScenarios.length === 0 ? (
+        <FirstTimeView
+          firstScenario={scenarios.find((s) => s.id === 'hot_lead_universal') ?? scenarios[0]}
+          onStart={handleStartSimulation}
+        />
       ) : (
         <ScenarioSelection
           scenarios={scenarios}
@@ -102,6 +110,62 @@ export default function NewSimulationPage() {
           onSelect={handleStartSimulation}
         />
       )}
+    </div>
+  );
+}
+
+function FirstTimeView({
+  firstScenario,
+  onStart,
+}: {
+  firstScenario: ScenarioCardData | undefined;
+  onStart: (id: string) => void;
+}) {
+  if (!firstScenario) return null;
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white border border-gray-200 rounded-xl p-8 space-y-6">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Start your first training session</h2>
+          <p className="text-gray-600 mt-1">
+            This takes about {firstScenario.estimatedDuration} minutes. Your AI learns from how you
+            respond to a real prospect scenario.
+          </p>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                  Beginner
+                </span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                  Required
+                </span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">{firstScenario.name}</h3>
+              <p className="text-sm text-gray-600 mt-1">{firstScenario.description}</p>
+            </div>
+            <div className="flex items-center gap-1 text-sm text-gray-500 flex-shrink-0">
+              <Clock className="h-4 w-4" />
+              <span>~{firstScenario.estimatedDuration} min</span>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => onStart(firstScenario.id)}
+            className="w-full text-base py-5"
+            style={{ backgroundColor: 'hsl(38, 92%, 50%)', color: 'white' }}
+          >
+            Start Your First Simulation →
+          </Button>
+        </div>
+
+        <p className="text-sm text-gray-500 text-center">
+          You'll unlock all 8 training scenarios after your first session.
+        </p>
+      </div>
     </div>
   );
 }

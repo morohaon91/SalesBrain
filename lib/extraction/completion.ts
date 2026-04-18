@@ -1,14 +1,15 @@
 /**
- * Depth-Based Profile Completion Calculator — new-schema edition.
+ * Depth-Based Profile Completion Calculator
  *
  * Weights:
- * - Questionnaire:          20%
- * - Communication Style:    15%
- * - Pricing Logic:          15%
- * - Qualification Criteria: 15%
- * - Objection Handling:     15%
- * - Decision Making:        10%
- * - Business Facts:         10%
+ * - Communication Style:    20pts
+ * - Objection Handling:     20pts
+ * - Decision Making:        20pts
+ * - Qualification Criteria: 15pts
+ * - Pricing Logic:          15pts
+ * - Questionnaire:          10pts  (includes former Business Facts)
+ * ─────────────────────────────────
+ * Total:                   100pts
  */
 
 export interface CompletionBreakdown {
@@ -18,99 +19,80 @@ export interface CompletionBreakdown {
   qualificationCriteria: number;
   objectionHandling: number;
   decisionMaking: number;
-  businessFacts: number;
   total: number;
 }
 
-function hasMinItems(arr: unknown, min: number): boolean {
-  return Array.isArray(arr) && arr.filter(Boolean).length >= min;
-}
-
-function hasValue(val: unknown): boolean {
-  if (val === null || val === undefined) return false;
-  if (typeof val === 'string') return val.trim().length > 0;
-  if (typeof val === 'number') return val > 0;
-  if (Array.isArray(val)) return val.length > 0;
-  return true;
-}
-
 export function calculateProfileCompletion(profile: Record<string, any>): CompletionBreakdown {
-  // ── Questionnaire (20%) ──────────────────────────────────────────────────
-  let questionnaire = 0;
-  if (hasValue(profile.industry)) questionnaire += 4;
-  if (hasValue(profile.serviceDescription)) questionnaire += 4;
-  if (hasValue(profile.targetClientType)) questionnaire += 3;
-  if (hasValue(profile.typicalBudgetRange)) questionnaire += 3;
-  if (hasMinItems(profile.commonClientQuestions, 1)) questionnaire += 3;
-  if (hasValue(profile.serviceArea)) questionnaire += 2;
-  if (hasValue(profile.teamSize)) questionnaire += 1;
-  questionnaire = Math.min(questionnaire, 20);
-
-  // ── Communication Style (15%) ────────────────────────────────────────────
   const cs = profile.communicationStyle;
   let communicationStyle = 0;
   if (cs) {
-    if (hasValue(cs.tone)) communicationStyle += 3;
-    if (hasMinItems(cs.commonPhrases, 3)) communicationStyle += 4;
-    if ((cs.evidenceCount ?? 0) >= 3) communicationStyle += 4;
-    if (hasMinItems(cs.humorExamples, 1) || hasMinItems(cs.empathyExamples, 1)) communicationStyle += 4;
+    if (cs.tone) communicationStyle += 4;
+    if ((cs.commonPhrases?.length || 0) >= 3) communicationStyle += 4;
+    if ((cs.commonPhrases?.length || 0) >= 8) communicationStyle += 2;
+    if (cs.energyLevel) communicationStyle += 2;
+    if ((cs.humorExamples?.length || 0) >= 1 || (cs.empathyExamples?.length || 0) >= 1) communicationStyle += 4;
+    if ((cs.evidenceCount || 0) >= 1) communicationStyle += 2;
+    if ((cs.evidenceCount || 0) >= 3) communicationStyle += 2;
   }
-  communicationStyle = Math.min(communicationStyle, 15);
+  communicationStyle = Math.min(communicationStyle, 20);
 
-  // ── Pricing Logic (15%) ──────────────────────────────────────────────────
-  const pl = profile.pricingLogic;
-  let pricingLogic = 0;
-  if (pl) {
-    if (hasValue(pl.minimumBudget) || hasValue(pl.preferredBudgetRange)) pricingLogic += 5;
-    if (hasValue(pl.priceDefenseStrategy)) pricingLogic += 5;
-    if (hasMinItems(pl.flexibleOn, 1) || hasMinItems(pl.notFlexibleOn, 1)) pricingLogic += 5;
-  }
-  pricingLogic = Math.min(pricingLogic, 15);
-
-  // ── Qualification Criteria (15%) ─────────────────────────────────────────
-  const qc = profile.qualificationCriteria;
-  let qualificationCriteria = 0;
-  if (qc) {
-    if (hasMinItems(qc.greenFlags, 2)) qualificationCriteria += 5;
-    if (hasMinItems(qc.redFlags, 1)) qualificationCriteria += 5;
-    if (hasMinItems(qc.dealBreakers, 1)) qualificationCriteria += 5;
-  }
-  qualificationCriteria = Math.min(qualificationCriteria, 15);
-
-  // ── Objection Handling (15%) ─────────────────────────────────────────────
   const oh = profile.objectionHandling;
-  let objectionHandling = 0;
-  if (oh) {
-    const playbookCount = Array.isArray(oh.playbooks) ? oh.playbooks.length : 0;
-    objectionHandling += Math.min(15, playbookCount * 5);
+  const playbookCount = oh?.playbooks?.length || 0;
+  let objectionHandling = Math.min(20, playbookCount * 5);
+  if (oh?.playbooks?.some((p: any) => p.objectionType === 'price' && p.confidenceScore >= 60)) {
+    objectionHandling = Math.min(20, objectionHandling + 2);
   }
-  objectionHandling = Math.min(objectionHandling, 15);
 
-  // ── Decision Making (10%) ────────────────────────────────────────────────
   const dm = profile.decisionMakingPatterns;
   let decisionMaking = 0;
   if (dm) {
-    if (hasMinItems(dm.discovery?.firstQuestions, 3)) decisionMaking += 3;
-    if (hasValue(dm.valuePositioning?.primaryValueLens)) decisionMaking += 3;
-    if (hasValue(dm.closing?.preferredNextStep)) decisionMaking += 4;
+    const vp = typeof dm.valuePositioning === 'string'
+      ? { primaryValueLens: dm.valuePositioning, proofSignalsUsed: [] }
+      : (dm.valuePositioning ?? {});
+    if ((dm.discovery?.firstQuestions?.length || 0) >= 1) decisionMaking += 4;
+    if ((dm.discovery?.firstQuestions?.length || 0) >= 3) decisionMaking += 2;
+    if (dm.discovery?.moveToValueTrigger) decisionMaking += 3;
+    if (vp.primaryValueLens) decisionMaking += 4;
+    if ((vp.proofSignalsUsed?.length || 0) >= 1) decisionMaking += 3;
+    if (dm.closing?.preferredNextStep) decisionMaking += 4;
   }
-  decisionMaking = Math.min(decisionMaking, 10);
+  decisionMaking = Math.min(decisionMaking, 20);
 
-  // ── Business Facts (10%) ─────────────────────────────────────────────────
-  let businessFacts = 0;
-  if (hasValue(profile.yearsExperience)) businessFacts += 3;
-  if (hasMinItems(profile.serviceOfferings, 1)) businessFacts += 4;
-  if (hasMinItems(profile.certifications, 1)) businessFacts += 3;
-  businessFacts = Math.min(businessFacts, 10);
+  const qc = profile.qualificationCriteria;
+  let qualificationCriteria = 0;
+  if (qc) {
+    if ((qc.greenFlags?.length || 0) >= 2) qualificationCriteria += 5;
+    const hasNegative = (qc.redFlags?.length || 0) >= 1 || (qc.dealBreakers?.length || 0) >= 1;
+    if (hasNegative) qualificationCriteria += 5;
+    if ((qc.dealBreakers?.length || 0) >= 1) qualificationCriteria += 5;
+    if (!hasNegative) qualificationCriteria = Math.min(qualificationCriteria, 8);
+  }
+  qualificationCriteria = Math.min(qualificationCriteria, 15);
 
-  const total =
-    questionnaire +
-    communicationStyle +
-    pricingLogic +
-    qualificationCriteria +
-    objectionHandling +
-    decisionMaking +
-    businessFacts;
+  const pl = profile.pricingLogic;
+  let pricingLogic = 0;
+  if (pl) {
+    if (pl.minimumBudget || pl.preferredBudgetRange) pricingLogic += 6;
+    if (pl.priceDefenseStrategy) pricingLogic += 6;
+    if ((pl.flexibleOn?.length || 0) >= 1 || (pl.notFlexibleOn?.length || 0) >= 1) pricingLogic += 3;
+  }
+  pricingLogic = Math.min(pricingLogic, 15);
+
+  let questionnaire = 0;
+  if (profile.industry) questionnaire += 2;
+  if ((profile.serviceDescription?.length || 0) > 20) questionnaire += 2;
+  if (profile.targetClientType) questionnaire += 1;
+  if (profile.typicalBudgetRange) questionnaire += 1;
+  if ((profile.commonClientQuestions?.length || 0) >= 1) questionnaire += 1;
+  if (profile.serviceArea) questionnaire += 1;
+  if (profile.yearsInBusiness || profile.yearsExperience) questionnaire += 1;
+  if ((profile.certifications?.length || 0) >= 1) questionnaire += 1;
+  questionnaire = Math.min(questionnaire, 10);
+
+  const total = Math.min(
+    communicationStyle + objectionHandling + decisionMaking + qualificationCriteria + pricingLogic + questionnaire,
+    100
+  );
 
   return {
     questionnaire,
@@ -119,7 +101,6 @@ export function calculateProfileCompletion(profile: Record<string, any>): Comple
     qualificationCriteria,
     objectionHandling,
     decisionMaking,
-    businessFacts,
-    total: Math.min(total, 100),
+    total,
   };
 }

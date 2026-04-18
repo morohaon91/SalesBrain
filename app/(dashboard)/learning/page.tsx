@@ -18,7 +18,7 @@ import {
   Clock,
 } from "lucide-react";
 
-import { api } from "@/lib/api/client";
+import { api, type ActivationStatusResponse } from "@/lib/api/client";
 import { useI18n } from "@/lib/hooks/useI18n";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { rtlMirrorIcon } from "@/lib/i18n/rtl-icons";
@@ -59,9 +59,9 @@ export default function LearningDashboardPage() {
   const { user } = useAuth();
   const { t, isHebrew } = useI18n(["learning", "common"]);
 
-  const readinessQuery = useQuery({
-    queryKey: ["profile-readiness"],
-    queryFn: () => api.profile.readiness(),
+  const activationQuery = useQuery({
+    queryKey: ["activation-status"],
+    queryFn: () => api.profile.activationStatus(),
     enabled: !!user,
   });
 
@@ -71,14 +71,14 @@ export default function LearningDashboardPage() {
     enabled: !!user,
   });
 
-  const readiness = readinessQuery.data;
+  const activation: ActivationStatusResponse | undefined = activationQuery.data;
   const scenariosData = scenariosQuery.data;
 
-  const isLoading = readinessQuery.isLoading || scenariosQuery.isLoading;
-  const isError = readinessQuery.isError || scenariosQuery.isError;
+  const isLoading = activationQuery.isLoading || scenariosQuery.isLoading;
+  const isError = activationQuery.isError || scenariosQuery.isError;
 
-  const canGoLive = readiness?.canGoLive ?? false;
-  const overall = readiness?.overallReadiness ?? 0;
+  const canGoLive = activation?.canRequestGoLive ?? false;
+  const overall = activation?.activationScore ?? 0;
 
   const tone: "emerald" | "amber" | "sky" = canGoLive
     ? "emerald"
@@ -88,9 +88,9 @@ export default function LearningDashboardPage() {
 
   // Group competencies by category, preserving canonical order.
   const competencyGroups = useMemo(() => {
-    if (!readiness) return [];
+    if (!activation) return [];
     const byId = new Map<string, CompetencyStatus>();
-    readiness.competencies.details.forEach((c) => byId.set(c.competencyId, c));
+    activation.competencies.forEach((c) => byId.set(c.competencyId, c));
 
     return CATEGORY_ORDER.map((category) => {
       const requirements = COMPETENCIES.filter((c) => c.category === category);
@@ -104,7 +104,7 @@ export default function LearningDashboardPage() {
         );
       return { category, items };
     }).filter((g) => g.items.length > 0);
-  }, [readiness]);
+  }, [activation]);
 
   const competencyLabels = useMemo(
     () => ({
@@ -142,7 +142,7 @@ export default function LearningDashboardPage() {
     );
   }
 
-  if (isError || !readiness) {
+  if (isError || !activation) {
     return (
       <div className="rounded-xl border border-danger-200 bg-danger-50 p-6 text-sm text-danger-700">
         {t("learning:errors.loadFailed")}
@@ -150,7 +150,7 @@ export default function LearningDashboardPage() {
     );
   }
 
-  const nextScenario = readiness.scenarios.nextRecommended;
+  const nextScenario = activation.nextScenario;
 
   return (
     <div className="space-y-8">
@@ -211,17 +211,17 @@ export default function LearningDashboardPage() {
               <div className="flex items-center gap-4 text-xs text-gray-500">
                 <span>
                   <span className="font-semibold text-gray-700">
-                    {readiness.gates.passed}
+                    {activation.gates.filter((g) => g.status === "PASSED").length}
                   </span>
-                  <span className="text-gray-400">/{readiness.gates.total}</span>{" "}
+                  <span className="text-gray-400">/{activation.gates.length}</span>{" "}
                   {t("learning:gates.title").toLowerCase()}
                 </span>
                 <span className="h-3 w-px bg-gray-200" />
                 <span>
                   <span className="font-semibold text-gray-700">
-                    {readiness.scenarios.completed}
+                    {activation.breakdown.scenarios.completed}
                   </span>
-                  <span className="text-gray-400">/{readiness.scenarios.total}</span>{" "}
+                  <span className="text-gray-400">/{activation.breakdown.scenarios.total}</span>{" "}
                   {t("learning:scenarios.title").toLowerCase()}
                 </span>
               </div>
@@ -259,7 +259,7 @@ export default function LearningDashboardPage() {
                   {nextScenario.name}
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  {nextScenario.reason}
+                  {nextScenario.purpose}
                 </p>
               </div>
             </div>
@@ -286,7 +286,7 @@ export default function LearningDashboardPage() {
           <p className="text-sm text-gray-500">{t("learning:gates.subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {readiness.gates.details.map((gate) => (
+          {activation.gates.map((gate) => (
             <GateCard
               key={gate.gateId}
               gate={gate}

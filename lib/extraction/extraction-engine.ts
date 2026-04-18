@@ -24,6 +24,7 @@ import type {
   YellowFlag,
   RedFlag,
   DealBreaker,
+  ValuePositioning,
 } from './schemas';
 
 interface ExistingProfileSnapshot {
@@ -396,6 +397,10 @@ function mergeQualificationCriteria(
   const e = extracted ?? {};
 
   if (!existing) {
+    const allFlags = [...(e.greenFlags ?? []), ...(e.redFlags ?? [])];
+    const overallConfidence = allFlags.length > 0
+      ? Math.round(allFlags.reduce((sum, f) => sum + (f.confidence || 0), 0) / allFlags.length)
+      : 0;
     return {
       greenFlags: e.greenFlags ?? [],
       yellowFlags: e.yellowFlags ?? [],
@@ -408,15 +413,23 @@ function mergeQualificationCriteria(
         offersAlternatives: false,
         alternativeExamples: [],
       },
-      overallConfidence: e.overallConfidence ?? 0,
+      overallConfidence,
       lastUpdated: now,
     };
   }
 
+  const mergedGreenFlags = mergeFlags<GreenFlag>(existing.greenFlags, e.greenFlags ?? []);
+  const mergedYellowFlags = mergeFlags<YellowFlag>(existing.yellowFlags, e.yellowFlags ?? []);
+  const mergedRedFlags = mergeFlags<RedFlag>(existing.redFlags, e.redFlags ?? []);
+  const allFlags = [...mergedGreenFlags, ...mergedRedFlags];
+  const overallConfidence = allFlags.length > 0
+    ? Math.round(allFlags.reduce((sum, f) => sum + (f.confidence || 0), 0) / allFlags.length)
+    : 0;
+
   return {
-    greenFlags: mergeFlags<GreenFlag>(existing.greenFlags, e.greenFlags ?? []),
-    yellowFlags: mergeFlags<YellowFlag>(existing.yellowFlags, e.yellowFlags ?? []),
-    redFlags: mergeFlags<RedFlag>(existing.redFlags, e.redFlags ?? []),
+    greenFlags: mergedGreenFlags,
+    yellowFlags: mergedYellowFlags,
+    redFlags: mergedRedFlags,
     dealBreakers: mergeDealBreakers(existing.dealBreakers, e.dealBreakers ?? []),
     walkAwayStrategy: {
       exitLanguage: mergeUnique(
@@ -432,7 +445,7 @@ function mergeQualificationCriteria(
         e.walkAwayStrategy?.alternativeExamples ?? []
       ),
     },
-    overallConfidence: Math.min(100, existing.overallConfidence + 5),
+    overallConfidence,
     lastUpdated: now,
   };
 }
@@ -445,77 +458,76 @@ function mergeDecisionMaking(
   const e = extracted ?? {};
 
   if (!existing) {
+    const discovery = e.discovery ?? { firstQuestions: [], discoveryOrder: [], prioritizedInfo: [], moveToValueTrigger: null };
+    const vp = e.valuePositioning ?? { primaryValueLens: null, secondaryValueLens: [], proofSignalsUsed: [] };
+    const closing = e.closing ?? { asksForNextStep: false, ctaTiming: null, ctaDirectness: null, preferredNextStep: null, createsUrgency: false, urgencyMethod: null };
+    const filledFields = [
+      (discovery.firstQuestions?.length ?? 0) >= 3,
+      !!discovery.moveToValueTrigger,
+      !!vp.primaryValueLens,
+      (vp.proofSignalsUsed?.length ?? 0) >= 1,
+      !!closing.asksForNextStep,
+      !!closing.preferredNextStep,
+    ].filter(Boolean).length;
+    const overallConfidence = Math.round((filledFields / 6) * 100);
     return {
-      discovery: e.discovery ?? {
-        firstQuestions: [],
-        discoveryOrder: [],
-        prioritizedInfo: [],
-        moveToValueTrigger: null,
-      },
-      pain: e.pain ?? {
-        deepensPain: false,
-        painDepthLevel: null,
-        normalizesProblem: false,
-        painApproach: null,
-      },
-      valuePositioning: e.valuePositioning ?? {
-        primaryValueLens: null,
-        secondaryValueLens: [],
-        proofSignalsUsed: [],
-      },
-      closing: e.closing ?? {
-        asksForNextStep: false,
-        ctaTiming: null,
-        ctaDirectness: null,
-        preferredNextStep: null,
-        createsUrgency: false,
-        urgencyMethod: null,
-      },
-      overallConfidence: e.overallConfidence ?? 0,
+      discovery,
+      pain: e.pain ?? { deepensPain: false, painDepthLevel: null, normalizesProblem: false, painApproach: null },
+      valuePositioning: vp,
+      closing,
+      overallConfidence,
       lastUpdated: now,
     };
   }
 
+  const mergedDiscovery = {
+    firstQuestions: mergeUnique(
+      existing.discovery?.firstQuestions ?? [],
+      e.discovery?.firstQuestions ?? []
+    ).slice(0, 15),
+    discoveryOrder: e.discovery?.discoveryOrder ?? existing.discovery?.discoveryOrder ?? [],
+    prioritizedInfo: mergeUnique(existing.discovery?.prioritizedInfo ?? [], e.discovery?.prioritizedInfo ?? []),
+    moveToValueTrigger: e.discovery?.moveToValueTrigger ?? existing.discovery?.moveToValueTrigger ?? null,
+  };
+  const rawExistingVP = existing.valuePositioning as any;
+  const existingVP = typeof rawExistingVP === 'string'
+    ? { primaryValueLens: rawExistingVP as ValuePositioning['primaryValueLens'], secondaryValueLens: [] as string[], proofSignalsUsed: [] as string[] }
+    : (existing.valuePositioning ?? { primaryValueLens: null as ValuePositioning['primaryValueLens'], secondaryValueLens: [] as string[], proofSignalsUsed: [] as string[] });
+  const mergedValuePositioning = {
+    primaryValueLens: e.valuePositioning?.primaryValueLens ?? existingVP.primaryValueLens,
+    secondaryValueLens: mergeUnique(existingVP.secondaryValueLens ?? [], e.valuePositioning?.secondaryValueLens ?? []),
+    proofSignalsUsed: mergeUnique(existingVP.proofSignalsUsed ?? [], e.valuePositioning?.proofSignalsUsed ?? []),
+  };
+  const mergedClosing = {
+    asksForNextStep: e.closing?.asksForNextStep ?? existing.closing?.asksForNextStep ?? false,
+    ctaTiming: e.closing?.ctaTiming ?? existing.closing?.ctaTiming ?? null,
+    ctaDirectness: e.closing?.ctaDirectness ?? existing.closing?.ctaDirectness ?? null,
+    preferredNextStep: e.closing?.preferredNextStep ?? existing.closing?.preferredNextStep ?? null,
+    createsUrgency: e.closing?.createsUrgency ?? existing.closing?.createsUrgency ?? false,
+    urgencyMethod: e.closing?.urgencyMethod ?? existing.closing?.urgencyMethod ?? null,
+  };
+
+  const filledFields = [
+    (mergedDiscovery.firstQuestions?.length ?? 0) >= 3,
+    !!mergedDiscovery.moveToValueTrigger,
+    !!mergedValuePositioning.primaryValueLens,
+    (mergedValuePositioning.proofSignalsUsed?.length ?? 0) >= 1,
+    !!mergedClosing.asksForNextStep,
+    !!mergedClosing.preferredNextStep,
+  ].filter(Boolean).length;
+  const overallConfidence = Math.round((filledFields / 6) * 100);
+
   return {
-    discovery: {
-      firstQuestions: mergeUnique(
-        existing.discovery.firstQuestions,
-        e.discovery?.firstQuestions ?? []
-      ).slice(0, 10),
-      discoveryOrder: e.discovery?.discoveryOrder ?? existing.discovery.discoveryOrder,
-      prioritizedInfo: mergeUnique(
-        existing.discovery.prioritizedInfo,
-        e.discovery?.prioritizedInfo ?? []
-      ),
-      moveToValueTrigger: e.discovery?.moveToValueTrigger ?? existing.discovery.moveToValueTrigger,
-    },
+    discovery: mergedDiscovery,
     pain: {
       deepensPain: e.pain?.deepensPain ?? existing.pain.deepensPain,
       painDepthLevel: e.pain?.painDepthLevel ?? existing.pain.painDepthLevel,
       normalizesProblem: e.pain?.normalizesProblem ?? existing.pain.normalizesProblem,
       painApproach: e.pain?.painApproach ?? existing.pain.painApproach,
     },
-    valuePositioning: {
-      primaryValueLens:
-        e.valuePositioning?.primaryValueLens ?? existing.valuePositioning.primaryValueLens,
-      secondaryValueLens: mergeUnique(
-        existing.valuePositioning.secondaryValueLens,
-        e.valuePositioning?.secondaryValueLens ?? []
-      ),
-      proofSignalsUsed: mergeUnique(
-        existing.valuePositioning.proofSignalsUsed,
-        e.valuePositioning?.proofSignalsUsed ?? []
-      ),
-    },
-    closing: {
-      asksForNextStep: e.closing?.asksForNextStep ?? existing.closing.asksForNextStep,
-      ctaTiming: e.closing?.ctaTiming ?? existing.closing.ctaTiming,
-      ctaDirectness: e.closing?.ctaDirectness ?? existing.closing.ctaDirectness,
-      preferredNextStep: e.closing?.preferredNextStep ?? existing.closing.preferredNextStep,
-      createsUrgency: e.closing?.createsUrgency ?? existing.closing.createsUrgency,
-      urgencyMethod: e.closing?.urgencyMethod ?? existing.closing.urgencyMethod,
-    },
-    overallConfidence: Math.min(100, existing.overallConfidence + 5),
+    valuePositioning: mergedValuePositioning,
+    closing: mergedClosing,
+    overallConfidence,
     lastUpdated: now,
   };
 }

@@ -1,12 +1,13 @@
 import { QuestionnaireData } from '@/lib/types/onboarding';
 import { prisma } from '@/lib/prisma';
 import type { BusinessProfile } from '@prisma/client';
+import { calculateProfileCompletion } from '@/lib/extraction/completion';
 
 export async function initializeProfile(
   tenantId: string,
   data: QuestionnaireData
 ): Promise<BusinessProfile> {
-  const completion = calculateInitialCompletion(data);
+  const completion = calculateProfileCompletion(data as any).total;
 
   const profile = await prisma.businessProfile.create({
     data: {
@@ -32,10 +33,3 @@ export async function initializeProfile(
   return profile;
 }
 
-export function calculateInitialCompletion(data: QuestionnaireData): number {
-  let base = 20;
-  if (data.yearsExperience && data.yearsExperience > 0) base += 2;
-  if (data.certifications && data.certifications.length > 0) base += 2;
-  if (data.commonClientQuestions && data.commonClientQuestions.length >= 3) base += 1;
-  return Math.min(base, 25);
-}

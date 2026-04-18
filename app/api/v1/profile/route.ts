@@ -202,6 +202,10 @@ const updateProfileSchema = z.object({
   targetClientType: z.string().optional(),
   typicalBudgetRange: z.string().optional(),
   commonClientQuestions: z.array(z.string()).optional(),
+  yearsExperience: z.number().nullable().optional(),
+  certifications: z.array(z.string()).optional(),
+  serviceArea: z.string().optional(),
+  teamSize: z.string().optional(),
 });
 
 type UpdateProfileRequest = z.infer<typeof updateProfileSchema>;
@@ -256,6 +260,10 @@ export const PATCH = withAuth(
         ...(data.targetClientType !== undefined && { targetClientType: data.targetClientType }),
         ...(data.typicalBudgetRange !== undefined && { typicalBudgetRange: data.typicalBudgetRange }),
         ...(data.commonClientQuestions !== undefined && { commonClientQuestions: data.commonClientQuestions }),
+        ...(data.yearsExperience !== undefined && { yearsExperience: data.yearsExperience }),
+        ...(data.certifications !== undefined && { certifications: data.certifications }),
+        ...(data.serviceArea !== undefined && { serviceArea: data.serviceArea }),
+        ...(data.teamSize !== undefined && { teamSize: data.teamSize }),
       };
 
       const profile = await prisma.businessProfile.upsert({

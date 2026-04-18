@@ -1,23 +1,26 @@
 'use client';
 
 import { Check, X, AlertCircle } from 'lucide-react';
-import type { ReadinessReport } from '@/lib/learning/readiness-calculator';
+import type { ActivationStatusResponse } from '@/lib/api/client';
 
 interface ReadinessChecklistProps {
-  report: ReadinessReport;
+  report: ActivationStatusResponse;
 }
 
 export default function ReadinessChecklist({ report }: ReadinessChecklistProps) {
-  const { canGoLive, gates, blockingReasons } = report;
+  const { canRequestGoLive, gates } = report;
+  const gatesPassed = gates.filter((g) => g.status === 'PASSED').length;
+  const gatesBlocked = gates.length - gatesPassed;
+  const blockingReasons = gates.flatMap((g) => g.blockingReasons);
 
   return (
     <div className="space-y-3">
-      {!canGoLive && (
+      {!canRequestGoLive && (
         <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-amber-800 space-y-1">
             <p className="font-medium">
-              {gates.total - gates.passed} gate{gates.total - gates.passed === 1 ? '' : 's'} remaining before Go Live.
+              {gatesBlocked} gate{gatesBlocked === 1 ? '' : 's'} remaining before Go Live.
             </p>
             {blockingReasons.length > 0 && (
               <ul className="list-disc list-inside text-xs opacity-90">
@@ -30,7 +33,7 @@ export default function ReadinessChecklist({ report }: ReadinessChecklistProps) 
         </div>
       )}
 
-      {gates.details.map((gate) => {
+      {gates.map((gate) => {
         const passed = gate.status === 'PASSED';
         return (
           <div key={gate.gateId} className="flex items-center gap-3">

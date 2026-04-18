@@ -64,20 +64,23 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           style={{ borderBottom: "1px solid hsl(222, 30%, 14%)" }}
         >
           <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onClose}>
-            {/* Geometric mark: stacked amber squares */}
-            <div className="relative w-7 h-7 flex-shrink-0">
-              <div
-                className="absolute inset-0 rounded-sm"
-                style={{ backgroundColor: "hsl(38, 92%, 50%)", opacity: 0.25 }}
-              />
-              <div
-                className="absolute inset-[3px] rounded-sm rotate-45"
-                style={{ backgroundColor: "hsl(38, 92%, 50%)" }}
-              />
-            </div>
+            {/* Concierge bell mark */}
+            <svg
+              width="20"
+              height="26"
+              viewBox="0 0 20 26"
+              fill="hsl(38, 92%, 50%)"
+              aria-hidden="true"
+              className="flex-shrink-0"
+            >
+              <circle cx="10" cy="1.75" r="1.75" />
+              <path d="M10 3.5 C13 3.5 17 7 17 14 H3 C3 7 7 3.5 10 3.5Z" />
+              <rect x="2.5" y="14" width="15" height="2.5" rx="1.25" />
+              <circle cx="10" cy="19" r="1.75" />
+            </svg>
             <span
-              className="text-base font-semibold tracking-wide"
-              style={{ color: "hsl(0, 0%, 100%)", letterSpacing: "0.04em" }}
+              className="text-base font-semibold"
+              style={{ color: "hsl(0, 0%, 100%)", letterSpacing: "0.06em" }}
             >
               Concierge
             </span>

@@ -1,5 +1,26 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
-import type { ReadinessReport } from "@/lib/learning/readiness-calculator";
+import type { CompetencyStatus } from "@/lib/learning/competencies";
+
+export interface ActivationStatusResponse {
+  activationScore: number;
+  canRequestGoLive: boolean;
+  breakdown: {
+    scenarios: { earned: number; max: number; completed: number; total: number };
+    competencies: { earned: number; max: number; achieved: number; total: number };
+    profile: { earned: number; max: number };
+  };
+  blockingStep: 'profile' | 'simulations' | 'competencies' | 'ready';
+  nextAction: string;
+  nextScenario: { id: string; name: string; purpose: string } | null;
+  gates: Array<{
+    gateId: string;
+    name: string;
+    status: 'PASSED' | 'BLOCKED';
+    progress: number;
+    blockingReasons: string[];
+  }>;
+  competencies: CompetencyStatus[];
+}
 
 /**
  * API Response type
@@ -457,8 +478,8 @@ export const api = {
       return response.data;
     },
 
-    readiness: async () => {
-      const response = await instance.get<ReadinessReport>('/profile/readiness');
+    activationStatus: async (): Promise<ActivationStatusResponse> => {
+      const response = await instance.get<ActivationStatusResponse>('/profiles/activation-status');
       return response.data;
     },
   },

@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { useI18n } from "@/lib/hooks/useI18n";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { api } from "@/lib/api/client";
+import { api, type ActivationStatusResponse } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { StatsCard } from "@/components/shared/stats-card";
 import {
@@ -23,7 +23,6 @@ import {
   Activity,
 } from "lucide-react";
 import Link from "next/link";
-import { authFetch } from "@/lib/api/auth-fetch";
 import { rtlMirrorIcon } from "@/lib/i18n/rtl-icons";
 
 interface RecentConversation {
@@ -37,31 +36,47 @@ interface RecentConversation {
   summary: string;
 }
 
+const BLOCKING_STEP_HREF: Record<string, string> = {
+  profile: '/profile',
+  simulations: '/simulations',
+  competencies: '/learning',
+  ready: '/profile',
+};
+
 function SetupProgressBar({
-  profile,
-  simulations,
+  activation,
   onDismiss,
 }: {
-  profile: Record<string, unknown> | null;
-  simulations: unknown[];
+  activation: ActivationStatusResponse;
   onDismiss: () => void;
 }) {
-  const hasSimulations = simulations.length > 0;
-  const hasProfile = !!(profile?.businessName || profile?.serviceDescription);
-  const isLive =
-    profile?.profileApprovalStatus === "APPROVED" ||
-    profile?.profileApprovalStatus === "LIVE";
+  const { activationScore, canRequestGoLive, breakdown, blockingStep, nextAction } = activation;
+
+  const profileDone = breakdown.profile.earned >= 8;
+  const trainDone = breakdown.scenarios.completed >= 8 && breakdown.competencies.achieved >= 9;
+  const liveDone = canRequestGoLive;
 
   const steps = [
-    { label: "Fill your profile", done: hasProfile, href: "/profile/edit" },
-    { label: "Run a simulation", done: hasSimulations, href: "/simulations/new" },
-    { label: "Approve & go live", done: isLive, href: "/profile/approve" },
+    {
+      label: profileDone ? "Profile built" : "Build your profile",
+      sublabel: profileDone ? null : `${breakdown.profile.earned}/15 pts`,
+      done: profileDone,
+    },
+    {
+      label: trainDone ? "AI trained" : "Train your AI",
+      sublabel: trainDone
+        ? null
+        : `${breakdown.scenarios.completed}/8 scenarios · ${breakdown.competencies.achieved}/9 skills`,
+      done: trainDone,
+    },
+    {
+      label: liveDone ? "Ready to activate" : "Approve & go live",
+      sublabel: liveDone ? null : "Unlocks at 90%",
+      done: liveDone,
+    },
   ];
 
-  const completedCount = steps.filter((s) => s.done).length;
-  const pct = Math.round((completedCount / steps.length) * 100);
-
-  if (pct === 100) return null;
+  if (canRequestGoLive) return null;
 
   return (
     <div
@@ -82,45 +97,50 @@ function SetupProgressBar({
       <div className="flex items-center gap-3 mb-3">
         <Zap className="w-4 h-4" style={{ color: "hsl(38, 92%, 50%)" }} />
         <p className="text-sm font-semibold" style={{ color: "hsl(var(--foreground))" }}>
-          Get your AI concierge live — {pct}% complete
+          Activate your AI — {activationScore}% complete
         </p>
       </div>
 
-      {/* Progress bar */}
       <div
         className="h-1.5 rounded-full overflow-hidden mb-4"
         style={{ backgroundColor: "hsl(var(--border))" }}
       >
         <div
           className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, backgroundColor: "hsl(38, 92%, 50%)" }}
+          style={{ width: `${activationScore}%`, backgroundColor: "hsl(38, 92%, 50%)" }}
         />
       </div>
 
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-5 mb-4">
         {steps.map((step) => (
-          <Link
-            key={step.label}
-            href={step.done ? "#" : step.href}
-            className={`flex items-center gap-2 text-sm transition-opacity ${step.done ? "opacity-50 pointer-events-none" : "hover:opacity-80"}`}
-          >
+          <div key={step.label} className="flex items-start gap-2 text-sm">
             {step.done ? (
-              <CheckCircle
-                className="w-4 h-4 flex-shrink-0"
-                style={{ color: "hsl(142, 76%, 36%)" }}
-              />
+              <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "hsl(142, 76%, 36%)" }} />
             ) : (
-              <Circle
-                className="w-4 h-4 flex-shrink-0"
-                style={{ color: "hsl(38, 92%, 50%)" }}
-              />
+              <Circle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "hsl(38, 92%, 50%)" }} />
             )}
-            <span style={{ color: step.done ? "hsl(var(--muted-foreground))" : "hsl(var(--foreground))" }}>
-              {step.label}
-            </span>
-          </Link>
+            <div>
+              <span className="block" style={{ color: step.done ? "hsl(var(--muted-foreground))" : "hsl(var(--foreground))" }}>
+                {step.label}
+              </span>
+              {step.sublabel && !step.done && (
+                <span className="block text-xs mt-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
+                  {step.sublabel}
+                </span>
+              )}
+            </div>
+          </div>
         ))}
       </div>
+
+      <Link href={BLOCKING_STEP_HREF[blockingStep] ?? '/profile'}>
+        <button
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90"
+          style={{ backgroundColor: "hsl(38, 92%, 50%)", color: "hsl(0,0%,100%)" }}
+        >
+          {nextAction} →
+        </button>
+      </Link>
     </div>
   );
 }
@@ -168,15 +188,9 @@ export default function DashboardPage() {
     enabled: !!user,
   });
 
-  const { data: profileResponse } = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => authFetch("/api/v1/profile").then((r) => r.json()),
-    enabled: !!user,
-  });
-
-  const { data: simulationsResponse } = useQuery({
-    queryKey: ["simulations-count"],
-    queryFn: () => api.simulations.list({}),
+  const { data: activationResponse } = useQuery({
+    queryKey: ["activation-status"],
+    queryFn: () => api.profile.activationStatus(),
     enabled: !!user,
   });
 
@@ -200,12 +214,9 @@ export default function DashboardPage() {
     ? (analyticsData.conversionRate * 100).toFixed(1)
     : "0";
 
-  const profile = (profileResponse?.data ?? profileResponse) as Record<string, unknown> | null;
-  const isLive =
-    profile?.profileApprovalStatus === "APPROVED" ||
-    profile?.profileApprovalStatus === "LIVE";
+  const activation = activationResponse ?? null;
+  const isLive = activation?.canRequestGoLive ?? false;
   const recentConversations = (conversationsResponse?.data as RecentConversation[]) ?? [];
-  const simulations = (simulationsResponse?.data as unknown[]) ?? [];
 
   const hour = new Date().getHours();
   const greetingKey =
@@ -236,10 +247,9 @@ export default function DashboardPage() {
       )}
 
       {/* ── Setup progress (dismissable) ── */}
-      {!isLive && !setupDismissed && (
+      {!isLive && !setupDismissed && activation && (
         <SetupProgressBar
-          profile={profile}
-          simulations={simulations}
+          activation={activation}
           onDismiss={() => setSetupDismissed(true)}
         />
       )}

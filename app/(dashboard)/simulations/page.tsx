@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useI18n } from '@/lib/hooks/useI18n';
-import { api } from '@/lib/api/client';
+import { api, type ActivationStatusResponse } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import {
   BrainCircuit,
@@ -82,10 +82,10 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function TrainingProgress({ completed, total }: { completed: number; total: number }) {
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const required = 3;
-  const progressToRequired = Math.min(completed, required);
+function TrainingProgress({ activation }: { activation: ActivationStatusResponse | null }) {
+  const totalSlots = 8;
+  const completed = activation?.breakdown.scenarios.completed ?? 0;
+  const barPct = Math.round((Math.min(completed, totalSlots) / totalSlots) * 100);
 
   return (
     <div
@@ -101,18 +101,11 @@ function TrainingProgress({ completed, total }: { completed: number; total: numb
             AI Training Progress
           </p>
           <p className="text-xs mt-0.5" style={{ color: 'hsl(215, 15%, 52%)' }}>
-            {completed} of {required} required simulations completed
+            {completed} of {totalSlots} required scenarios completed
           </p>
-        </div>
-        <div className="text-end">
-          <p className="text-2xl font-bold tabular-nums" style={{ color: 'hsl(38, 92%, 60%)' }}>
-            {pct}%
-          </p>
-          <p className="text-xs" style={{ color: 'hsl(215, 15%, 52%)' }}>trained</p>
         </div>
       </div>
 
-      {/* Progress bar */}
       <div
         className="h-1.5 rounded-full overflow-hidden mb-3"
         style={{ backgroundColor: 'hsl(222, 30%, 16%)' }}
@@ -120,19 +113,16 @@ function TrainingProgress({ completed, total }: { completed: number; total: numb
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{
-            width: `${(progressToRequired / required) * 100}%`,
+            width: `${barPct}%`,
             backgroundColor: 'hsl(38, 92%, 50%)',
           }}
         />
       </div>
 
-      {/* Step indicators */}
-      <div className="flex gap-2">
-        {Array.from({ length: required }, (_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-1"
-          >
+      {/* 8 scenario slot indicators */}
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: totalSlots }, (_, i) => (
+          <div key={i} className="flex items-center gap-1">
             {i < completed ? (
               <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'hsl(38, 92%, 55%)' }} />
             ) : (
@@ -163,6 +153,12 @@ export default function SimulationsPage() {
       api.simulations.list({
         status: filterStatus !== 'ALL' ? filterStatus : undefined,
       }),
+    enabled: !!user,
+  });
+
+  const { data: activation } = useQuery({
+    queryKey: ['activation-status'],
+    queryFn: () => api.profile.activationStatus(),
     enabled: !!user,
   });
 
@@ -223,7 +219,7 @@ export default function SimulationsPage() {
       )}
 
       {/* ── Training progress ── */}
-      <TrainingProgress completed={completedCount} total={simulations.length} />
+      <TrainingProgress activation={activation ?? null} />
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

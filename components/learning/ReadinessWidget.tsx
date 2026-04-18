@@ -22,22 +22,22 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
   const { user } = useAuth();
   const { t, isHebrew } = useI18n(["learning", "common"]);
 
-  const { data: readiness } = useQuery({
-    queryKey: ["profile-readiness"],
-    queryFn: () => api.profile.readiness(),
+  const { data: activation } = useQuery({
+    queryKey: ["activation-status"],
+    queryFn: () => api.profile.activationStatus(),
     enabled: !!user,
   });
 
-  if (!readiness) return null;
+  if (!activation) return null;
 
-  const { canGoLive, overallReadiness, scenarios } = readiness;
-  const next = scenarios.nextRecommended;
+  const { canRequestGoLive, activationScore, breakdown, nextScenario } = activation;
+  const next = nextScenario;
 
   return (
     <div
       className={cn(
         "rounded-xl border bg-white p-5 shadow-sm",
-        canGoLive ? "border-success-200" : "border-gray-200",
+        canRequestGoLive ? "border-success-200" : "border-gray-200",
         className,
       )}
     >
@@ -46,7 +46,7 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
           <div
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-lg",
-              canGoLive
+              canRequestGoLive
                 ? "bg-success-100 text-success-600"
                 : "bg-primary-50 text-primary-600",
             )}
@@ -58,7 +58,7 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
           </h3>
         </div>
 
-        {canGoLive ? (
+        {canRequestGoLive ? (
           <Badge variant="success" className="gap-1 text-[10px]">
             <CheckCircle2 className="h-3 w-3" />
             <span>{t("learning:overall.ready")}</span>
@@ -67,7 +67,7 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
           <Badge variant="secondary" className="gap-1 text-[10px]">
             <Clock className="h-3 w-3" />
             <span>
-              {scenarios.completed}/{scenarios.total}
+              {breakdown.scenarios.completed}/{breakdown.scenarios.total}
             </span>
           </Badge>
         )}
@@ -77,19 +77,19 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
         <div className="mb-1.5 flex items-center justify-between text-xs">
           <span className="text-gray-500">{t("learning:widget.progressLabel")}</span>
           <span className="font-semibold text-gray-900 tabular-nums">
-            {overallReadiness}%
+            {activationScore}%
           </span>
         </div>
         <Progress
-          value={overallReadiness}
+          value={activationScore}
           className={cn(
             "h-2",
-            canGoLive ? "[&>div]:bg-success-500" : "[&>div]:bg-primary-500",
+            canRequestGoLive ? "[&>div]:bg-success-500" : "[&>div]:bg-primary-500",
           )}
         />
       </div>
 
-      {!canGoLive && next ? (
+      {!canRequestGoLive && next ? (
         <div className="mt-4 border-t border-gray-100 pt-3">
           <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
             {t("learning:widget.nextLabel")}
@@ -107,7 +107,7 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
         </div>
       ) : null}
 
-      {canGoLive ? (
+      {canRequestGoLive ? (
         <Link href="/profile/approve" className="mt-4 block">
           <Button size="sm" className="w-full bg-success-600 text-white hover:bg-success-700">
             {t("learning:overall.activate")}

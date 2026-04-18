@@ -7,13 +7,13 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ApprovalSummary from '@/components/profile/ApprovalSummary';
 import ApprovalConfirmation from '@/components/profile/ApprovalConfirmation';
-import type { ReadinessReport } from '@/lib/learning/readiness-calculator';
+import type { ActivationStatusResponse } from '@/lib/api/client';
 
 export default function ProfileApprovePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Record<string, any> | null>(null);
-  const [report, setReport] = useState<ReadinessReport | null>(null);
+  const [report, setReport] = useState<ActivationStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,17 +22,17 @@ export default function ProfileApprovePage() {
 
   const loadProfile = async () => {
     try {
-      const [profileRes, readinessRes] = await Promise.all([
+      const [profileRes, activationRes] = await Promise.all([
         authFetch('/api/v1/profile'),
-        authFetch('/api/v1/profile/readiness'),
+        authFetch('/api/v1/profiles/activation-status'),
       ]);
       if (!profileRes.ok) throw new Error('Failed to load profile');
-      if (!readinessRes.ok) throw new Error('Failed to load readiness');
+      if (!activationRes.ok) throw new Error('Failed to load activation status');
 
       const profileData = await profileRes.json();
-      const readinessData = (await readinessRes.json()) as ReadinessReport;
+      const activationData = (await activationRes.json()) as ActivationStatusResponse;
       setProfile(profileData.data ?? profileData);
-      setReport(readinessData);
+      setReport(activationData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
@@ -76,7 +76,7 @@ export default function ProfileApprovePage() {
 
       <ApprovalSummary profile={profile} report={report} />
 
-      <ApprovalConfirmation isReady={report.canGoLive} onApprove={handleApprove} />
+      <ApprovalConfirmation isReady={report.canRequestGoLive} onApprove={handleApprove} />
     </div>
   );
 }

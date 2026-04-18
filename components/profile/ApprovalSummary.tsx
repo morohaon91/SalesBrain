@@ -2,22 +2,23 @@
 
 import ProfilePreview from './ProfilePreview';
 import ReadinessChecklist from './ReadinessChecklist';
-import type { ReadinessReport } from '@/lib/learning/readiness-calculator';
+import type { ActivationStatusResponse } from '@/lib/api/client';
 
 interface ApprovalSummaryProps {
   profile: Record<string, any>;
-  report: ReadinessReport;
+  report: ActivationStatusResponse;
 }
 
 export default function ApprovalSummary({ profile, report }: ApprovalSummaryProps) {
+  const gatesPassed = report.gates.filter((g) => g.status === 'PASSED').length;
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Go-Live Gates</h2>
         <p className="text-sm text-gray-600 mb-4">
-          {report.gates.passed}/{report.gates.total} gates passed ·{' '}
-          {report.competencies.achieved}/{report.competencies.total} competencies achieved ·{' '}
-          {report.scenarios.completed}/{report.scenarios.total} scenarios completed
+          {gatesPassed}/{report.gates.length} gates passed ·{' '}
+          {report.breakdown.competencies.achieved}/{report.breakdown.competencies.total} competencies achieved ·{' '}
+          {report.breakdown.scenarios.completed}/{report.breakdown.scenarios.total} scenarios completed
         </p>
         <ReadinessChecklist report={report} />
       </div>
