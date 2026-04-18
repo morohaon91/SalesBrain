@@ -1,5 +1,5 @@
 {
-  "appName": "SalesBrain",
+  "appName": "Concierge",
   "appDescription": "AI-powered lead qualification for freelancers and agencies",
   "navigation": {
     "dashboard": "Dashboard",
@@ -76,7 +76,7 @@
     "tryAgain": "Try again"
   },
   "home": {
-    "title": "SalesBrain",
+    "title": "Concierge",
     "tagline": "AI-powered lead qualification platform",
     "launch": "Getting ready to launch..."
   },

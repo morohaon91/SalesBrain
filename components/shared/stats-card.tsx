@@ -2,26 +2,39 @@ import { LucideIcon } from "lucide-react";
 
 export interface StatsCardProps {
   label: string;
-  value: string | number;
+  value: string | number | React.ReactNode;
   icon: LucideIcon;
   iconVariant?: "primary" | "success" | "warning" | "danger" | "accent";
   trend?: {
     value: string;
     positive?: boolean;
+    period?: string;
   };
 }
 
-const iconColorMap = {
-  primary: "bg-primary-50 text-primary-600",
-  success: "bg-success-50 text-success-600",
-  warning: "bg-warning-50 text-warning-600",
-  danger: "bg-danger-50 text-danger-600",
-  accent: "bg-accent-50 text-accent-600",
+const iconStyles: Record<string, { bg: string; color: string }> = {
+  primary: {
+    bg: "hsl(38 92% 50% / 0.1)",
+    color: "hsl(38, 92%, 42%)",
+  },
+  success: {
+    bg: "hsl(142 76% 36% / 0.1)",
+    color: "hsl(142, 76%, 30%)",
+  },
+  warning: {
+    bg: "hsl(21 90% 48% / 0.1)",
+    color: "hsl(21, 90%, 42%)",
+  },
+  danger: {
+    bg: "hsl(350 89% 50% / 0.1)",
+    color: "hsl(350, 89%, 44%)",
+  },
+  accent: {
+    bg: "hsl(174 100% 29% / 0.1)",
+    color: "hsl(174, 100%, 26%)",
+  },
 };
 
-/**
- * StatsCard - Reusable stats metric card with icon, value, and optional trend
- */
 export function StatsCard({
   label,
   value,
@@ -29,30 +42,51 @@ export function StatsCard({
   iconVariant = "primary",
   trend,
 }: StatsCardProps) {
-  const iconColorClass = iconColorMap[iconVariant];
+  const style = iconStyles[iconVariant];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
+    <div
+      className="bg-white rounded-xl border p-5 transition-colors duration-150 card-hover"
+      style={{ borderColor: "hsl(var(--border))" }}
+    >
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600">{label}</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <div className="flex-1 min-w-0">
+          <p
+            className="text-xs font-medium uppercase tracking-wider truncate"
+            style={{ color: "hsl(var(--muted-foreground))" }}
+          >
+            {label}
+          </p>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <p
+              className="text-3xl font-bold tabular-nums"
+              style={{ color: "hsl(var(--foreground))" }}
+            >
+              {value}
+            </p>
             {trend && (
               <span
-                className={`text-xs font-semibold ${
-                  trend.positive ? "text-success-600" : "text-danger-600"
-                }`}
+                className="text-xs font-semibold"
+                style={{
+                  color: trend.positive ? "hsl(142, 76%, 32%)" : "hsl(350, 89%, 48%)",
+                }}
               >
                 {trend.positive ? "↑" : "↓"} {trend.value}
               </span>
             )}
           </div>
+          {trend?.period && (
+            <p className="text-xs mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+              vs. {trend.period}
+            </p>
+          )}
         </div>
 
-        {/* Icon */}
-        <div className={`rounded-lg p-2.5 ${iconColorClass}`}>
-          <Icon className="w-5 h-5" />
+        <div
+          className="rounded-lg p-2.5 flex-shrink-0 ms-3"
+          style={{ backgroundColor: style.bg }}
+        >
+          <Icon className="w-5 h-5" style={{ color: style.color }} />
         </div>
       </div>
     </div>

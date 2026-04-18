@@ -15,28 +15,136 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  CheckCircle2,
+  PlayCircle,
+  Circle,
 } from 'lucide-react';
 import Link from 'next/link';
 
-function ScenarioBadge({ type, label }: { type: string; label: string }) {
+interface Simulation {
+  id: string;
+  scenarioType: string;
+  status: string;
+  messageCount: number;
+  duration: number;
+  qualityScore: number | null;
+  completedAt: string | null;
+  createdAt: string;
+}
+
+const difficultyMap: Record<string, { label: string; bg: string; color: string }> = {
+  PRICE_SENSITIVE: {
+    label: 'Price Sensitive',
+    bg: 'hsl(38 92% 50% / 0.1)',
+    color: 'hsl(38, 92%, 38%)',
+  },
+  TIME_CONSTRAINED: {
+    label: 'Time Constrained',
+    bg: 'hsl(174 100% 29% / 0.1)',
+    color: 'hsl(174, 100%, 26%)',
+  },
+  BUDGET_FOCUSED: {
+    label: 'Budget Focused',
+    bg: 'hsl(142 76% 36% / 0.1)',
+    color: 'hsl(142, 76%, 30%)',
+  },
+};
+
+function ScenarioBadge({ type }: { type: string }) {
+  const style = difficultyMap[type] ?? { label: type, bg: 'hsl(215 20% 65% / 0.1)', color: 'hsl(215, 20%, 42%)' };
   return (
-    <span className="px-2 py-1 bg-accent-100 text-accent-800 rounded-full text-xs font-medium">
-      {label}
+    <span
+      className="px-2.5 py-0.5 rounded-full text-xs font-medium"
+      style={{ backgroundColor: style.bg, color: style.color }}
+    >
+      {style.label}
     </span>
   );
 }
 
-function StatusBadge({ status, label }: { status: 'COMPLETED' | 'IN_PROGRESS'; label: string }) {
-  return (
+function StatusBadge({ status }: { status: string }) {
+  return status === 'COMPLETED' ? (
     <span
-      className={`px-2 py-1 rounded-full text-xs font-medium ${
-        status === 'COMPLETED'
-          ? 'bg-success-100 text-success-800'
-          : 'bg-primary-100 text-primary-800'
-      }`}
+      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+      style={{ backgroundColor: 'hsl(142 76% 36% / 0.08)', color: 'hsl(142, 76%, 30%)' }}
     >
-      {label}
+      <CheckCircle2 className="w-3 h-3" />
+      Completed
     </span>
+  ) : (
+    <span
+      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+      style={{ backgroundColor: 'hsl(38 92% 50% / 0.08)', color: 'hsl(38, 92%, 38%)' }}
+    >
+      <PlayCircle className="w-3 h-3" />
+      In Progress
+    </span>
+  );
+}
+
+function TrainingProgress({ completed, total }: { completed: number; total: number }) {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const required = 3;
+  const progressToRequired = Math.min(completed, required);
+
+  return (
+    <div
+      className="rounded-xl border p-5"
+      style={{
+        backgroundColor: 'hsl(222, 47%, 7%)',
+        borderColor: 'hsl(222, 30%, 14%)',
+      }}
+    >
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'hsl(0, 0%, 92%)' }}>
+            AI Training Progress
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'hsl(215, 15%, 52%)' }}>
+            {completed} of {required} required simulations completed
+          </p>
+        </div>
+        <div className="text-end">
+          <p className="text-2xl font-bold tabular-nums" style={{ color: 'hsl(38, 92%, 60%)' }}>
+            {pct}%
+          </p>
+          <p className="text-xs" style={{ color: 'hsl(215, 15%, 52%)' }}>trained</p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div
+        className="h-1.5 rounded-full overflow-hidden mb-3"
+        style={{ backgroundColor: 'hsl(222, 30%, 16%)' }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${(progressToRequired / required) * 100}%`,
+            backgroundColor: 'hsl(38, 92%, 50%)',
+          }}
+        />
+      </div>
+
+      {/* Step indicators */}
+      <div className="flex gap-2">
+        {Array.from({ length: required }, (_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-1"
+          >
+            {i < completed ? (
+              <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'hsl(38, 92%, 55%)' }} />
+            ) : (
+              <Circle className="w-3.5 h-3.5" style={{ color: 'hsl(215, 15%, 38%)' }} />
+            )}
+            <span className="text-xs" style={{ color: 'hsl(215, 15%, 45%)' }}>
+              Sim {i + 1}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -58,14 +166,12 @@ export default function SimulationsPage() {
     enabled: !!user,
   });
 
-  const simulations = (response?.data as any[]) || [];
-
-  const filteredSimulations = simulations.filter((sim) => {
-    return filterStatus === 'ALL' || sim.status === filterStatus;
-  });
+  const simulations = (response?.data as Simulation[]) || [];
+  const filteredSimulations = simulations.filter(
+    (sim) => filterStatus === 'ALL' || sim.status === filterStatus
+  );
 
   const completedCount = simulations.filter((s) => s.status === 'COMPLETED').length;
-  const totalMessages = simulations.reduce((acc, s) => acc + s.messageCount, 0);
   const avgQuality =
     simulations.filter((s) => s.qualityScore).length > 0
       ? Math.round(
@@ -76,92 +182,138 @@ export default function SimulationsPage() {
         )
       : 0;
 
-  const scenarioLabel = (type: string) =>
-    t(`simulations:scenarioTypes.${type}`, { defaultValue: type });
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* ── Header ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('simulations:title')}</h1>
-          <p className="text-gray-600 text-sm sm:text-base mt-1">{t('simulations:subtitle')}</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'hsl(var(--foreground))' }}>
+            {t('simulations:title')}
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
+            {t('simulations:subtitle')}
+          </p>
         </div>
         <Link href="/simulations/new">
-          <Button className="bg-primary-600 hover:bg-primary-700 text-white whitespace-nowrap">
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">{t('simulations:actions.new')}</span>
-            <span className="sm:hidden">{t('simulations:actions.newShort')}</span>
+          <Button
+            size="sm"
+            className="font-medium whitespace-nowrap"
+            style={{ backgroundColor: 'hsl(38, 92%, 50%)', color: 'hsl(0,0%,100%)' }}
+          >
+            <Plus className="w-4 h-4 me-1.5" />
+            {t('simulations:actions.new')}
           </Button>
         </Link>
       </div>
 
+      {/* ── Error ── */}
       {error && (
-        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-danger-900">{t('simulations:list.failedLoad')}</p>
-            <p className="text-sm text-danger-700 mt-1">
-              {error instanceof Error ? error.message : t('simulations:list.tryAgain')}
-            </p>
-          </div>
+        <div
+          className="rounded-xl border p-4 flex gap-3"
+          style={{
+            backgroundColor: 'hsl(350 89% 50% / 0.05)',
+            borderColor: 'hsl(350 89% 50% / 0.2)',
+          }}
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'hsl(350, 89%, 44%)' }} />
+          <p className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>
+            {t('simulations:list.failedLoad')}
+          </p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('simulations:stats.total')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 mt-2">{simulations.length}</p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('simulations:stats.completed')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-success-600 mt-2">{completedCount}</p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('simulations:stats.messages')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-primary-600 mt-2">{totalMessages}</p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('simulations:stats.avgQuality')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-accent-600 mt-2">{avgQuality}%</p>
-          )}
+      {/* ── Training progress ── */}
+      <TrainingProgress completed={completedCount} total={simulations.length} />
+
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: t('simulations:stats.total'), value: simulations.length, color: 'hsl(var(--foreground))' },
+          { label: t('simulations:stats.completed'), value: completedCount, color: 'hsl(142, 76%, 32%)' },
+          { label: t('simulations:stats.messages'), value: simulations.reduce((acc, s) => acc + s.messageCount, 0), color: 'hsl(38, 92%, 44%)' },
+          { label: t('simulations:stats.avgQuality'), value: avgQuality ? `${avgQuality}%` : '—', color: 'hsl(174, 100%, 29%)' },
+        ].map(({ label, value, color }) => (
+          <div
+            key={label}
+            className="bg-white rounded-xl border p-4 card-hover"
+            style={{ borderColor: 'hsl(var(--border))' }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
+              {label}
+            </p>
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin mt-2" style={{ color: 'hsl(var(--border))' }} />
+            ) : (
+              <p className="text-2xl font-bold mt-2 tabular-nums" style={{ color }}>
+                {value}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Filter ── */}
+      <div
+        className="bg-white rounded-xl border p-3"
+        style={{ borderColor: 'hsl(var(--border))' }}
+      >
+        <div className="flex gap-1">
+          {['ALL', 'COMPLETED', 'IN_PROGRESS'].map((status) => {
+            const labels: Record<string, string> = {
+              ALL: t('simulations:filters.all'),
+              COMPLETED: t('simulations:filters.completed'),
+              IN_PROGRESS: t('simulations:filters.inProgress'),
+            };
+            const isActive = filterStatus === status;
+            return (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: 'hsl(38 92% 50% / 0.1)',
+                        color: 'hsl(38, 92%, 38%)',
+                      }
+                    : {
+                        color: 'hsl(var(--muted-foreground))',
+                      }
+                }
+              >
+                {labels[status]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="ALL">{t('simulations:filters.all')}</option>
-          <option value="COMPLETED">{t('simulations:filters.completed')}</option>
-          <option value="IN_PROGRESS">{t('simulations:filters.inProgress')}</option>
-        </select>
-      </div>
-
+      {/* ── Simulation cards ── */}
       <div className="space-y-3">
-        {filteredSimulations.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-            <BrainCircuit className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">{t('simulations:list.noneFound')}</p>
-            <p className="text-sm text-gray-400 mt-1">{t('simulations:list.trainHint')}</p>
-            <Link href="/simulations/new" className="mt-4 inline-block">
-              <Button className="bg-primary-600 hover:bg-primary-700 text-white">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'hsl(var(--muted-foreground))' }} />
+          </div>
+        ) : filteredSimulations.length === 0 ? (
+          <div
+            className="bg-white rounded-xl border py-16 text-center"
+            style={{ borderColor: 'hsl(var(--border))' }}
+          >
+            <BrainCircuit
+              className="w-10 h-10 mx-auto mb-3"
+              style={{ color: 'hsl(var(--border))' }}
+            />
+            <p className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+              {t('simulations:list.noneFound')}
+            </p>
+            <p className="text-sm mt-1 mb-5" style={{ color: 'hsl(var(--muted-foreground))' }}>
+              {t('simulations:list.trainHint')}
+            </p>
+            <Link href="/simulations/new">
+              <Button
+                size="sm"
+                style={{ backgroundColor: 'hsl(38, 92%, 50%)', color: 'hsl(0,0%,100%)' }}
+              >
                 {t('simulations:actions.start')}
               </Button>
             </Link>
@@ -169,64 +321,64 @@ export default function SimulationsPage() {
         ) : (
           filteredSimulations.map((sim) => (
             <Link key={sim.id} href={`/simulations/${sim.id}`}>
-              <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-3 gap-2">
-                      <div className="flex items-center gap-2">
-                        <ScenarioBadge type={sim.scenarioType} label={scenarioLabel(sim.scenarioType)} />
-                        <StatusBadge
-                          status={sim.status as 'COMPLETED' | 'IN_PROGRESS'}
-                          label={t(`simulations:simStatus.${sim.status}`)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs sm:text-sm flex-wrap">
-                      <span className="flex items-center gap-2 text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        {Math.round(sim.duration / 60)} {t('common:units.min')}
-                      </span>
-                      <span className="flex items-center gap-2 text-gray-600">
-                        <MessageSquare className="w-4 h-4" />
-                        {sim.messageCount} {t('common:units.msgs')}
-                      </span>
-                      {sim.qualityScore !== null && (
-                        <span className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-success-600" />
-                          <span className="font-semibold text-success-600">{sim.qualityScore}%</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-xs text-gray-500 mt-2">
-                      {sim.completedAt
-                        ? t('simulations:listMeta.completedOn', {
-                            date: new Date(sim.completedAt).toLocaleDateString(),
-                          })
-                        : t('simulations:listMeta.inProgress')}
-                    </p>
-                  </div>
-
-                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+              <div
+                className="bg-white rounded-xl border p-4 transition-colors card-hover flex items-center gap-4"
+                style={{ borderColor: 'hsl(var(--border))' }}
+              >
+                {/* Status icon */}
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    backgroundColor:
+                      sim.status === 'COMPLETED'
+                        ? 'hsl(142 76% 36% / 0.08)'
+                        : 'hsl(38 92% 50% / 0.08)',
+                  }}
+                >
+                  {sim.status === 'COMPLETED' ? (
+                    <CheckCircle2 className="w-5 h-5" style={{ color: 'hsl(142, 76%, 34%)' }} />
+                  ) : (
+                    <PlayCircle className="w-5 h-5" style={{ color: 'hsl(38, 92%, 44%)' }} />
+                  )}
                 </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <ScenarioBadge type={sim.scenarioType} />
+                    <StatusBadge status={sim.status} />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {Math.round(sim.duration / 60)} {t('common:units.min')}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {sim.messageCount} {t('common:units.msgs')}
+                    </span>
+                    {sim.qualityScore !== null && (
+                      <span className="flex items-center gap-1 font-semibold" style={{ color: 'hsl(142, 76%, 34%)' }}>
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        {sim.qualityScore}% quality
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs mt-1.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                    {sim.completedAt
+                      ? t('simulations:listMeta.completedOn', {
+                          date: new Date(sim.completedAt).toLocaleDateString(),
+                        })
+                      : t('simulations:listMeta.inProgress')}
+                  </p>
+                </div>
+
+                <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
               </div>
             </Link>
           ))
         )}
       </div>
-
-      {simulations.length === 0 && (
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 mt-8">
-          <h3 className="font-semibold text-primary-900 mb-2">{t('simulations:howTo.title')}</h3>
-          <ol className="space-y-2 text-sm text-primary-800 list-decimal list-inside">
-            <li>{t('simulations:howTo.step1')}</li>
-            <li>{t('simulations:howTo.step2')}</li>
-            <li>{t('simulations:howTo.step3')}</li>
-            <li>{t('simulations:howTo.step4')}</li>
-          </ol>
-        </div>
-      )}
     </div>
   );
 }

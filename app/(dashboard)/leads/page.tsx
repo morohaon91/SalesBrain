@@ -35,35 +35,50 @@ interface Lead {
   ownerNotes?: string;
 }
 
-function StatusBadge({ status, label }: { status: 'NEW' | 'CONTACTED' | 'QUALIFIED'; label: string }) {
-  const styles = {
-    NEW: 'bg-primary-100 text-primary-800',
-    CONTACTED: 'bg-warning-100 text-warning-800',
-    QUALIFIED: 'bg-success-100 text-success-800',
-  };
+function ScoreBar({ score }: { score: number }) {
+  const isHot = score >= 70;
+  const isWarm = score >= 45;
+  const barColor = isHot
+    ? 'hsl(21, 90%, 48%)'
+    : isWarm
+    ? 'hsl(38, 92%, 50%)'
+    : 'hsl(215, 20%, 65%)';
+  const textColor = isHot
+    ? 'hsl(21, 90%, 38%)'
+    : isWarm
+    ? 'hsl(38, 92%, 38%)'
+    : 'hsl(215, 20%, 42%)';
+  const label = isHot ? 'Hot' : isWarm ? 'Warm' : 'Cold';
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>{label}</span>
+    <div className="flex items-center gap-2.5">
+      <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'hsl(var(--border))' }}>
+        <div className="h-full rounded-full" style={{ width: `${score}%`, backgroundColor: barColor }} />
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-sm font-bold tabular-nums" style={{ color: textColor }}>{score}</span>
+        <span
+          className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+          style={{ backgroundColor: barColor + '1a', color: textColor }}
+        >
+          {label}
+        </span>
+      </div>
+    </div>
   );
 }
 
-function ScoreIndicator({ score }: { score: number }) {
-  let color = 'text-danger-600';
-  if (score >= 70) color = 'text-success-600';
-  else if (score >= 50) color = 'text-warning-600';
-
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    NEW: { bg: 'hsl(38 92% 50% / 0.1)', color: 'hsl(38, 92%, 38%)', label: 'New' },
+    CONTACTED: { bg: 'hsl(21 90% 48% / 0.1)', color: 'hsl(21, 90%, 38%)', label: 'Contacted' },
+    QUALIFIED: { bg: 'hsl(142 76% 36% / 0.1)', color: 'hsl(142, 76%, 30%)', label: 'Qualified' },
+  };
+  const s = map[status] ?? map.NEW;
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full ${
-            score >= 70 ? 'bg-success-500' : score >= 50 ? 'bg-warning-500' : 'bg-danger-500'
-          }`}
-          style={{ width: `${score}%` }}
-        />
-      </div>
-      <span className={`text-sm font-bold ${color}`}>{score}</span>
-    </div>
+    <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: s.bg, color: s.color }}>
+      {s.label}
+    </span>
   );
 }
 
@@ -74,16 +89,9 @@ export default function LeadsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<string>('score');
 
-  const {
-    data: response,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data: response, isLoading, error } = useQuery({
     queryKey: ['leads', filterStatus],
-    queryFn: () =>
-      api.leads.list({
-        status: filterStatus !== 'ALL' ? filterStatus : undefined,
-      }),
+    queryFn: () => api.leads.list({ status: filterStatus !== 'ALL' ? filterStatus : undefined }),
     enabled: !!user,
   });
 
@@ -94,220 +102,179 @@ export default function LeadsPage() {
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (lead.company?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-
-    const matchesStatus = filterStatus === 'ALL' || lead.status === filterStatus;
-
-    return matchesSearch && matchesStatus;
+    return matchesSearch && (filterStatus === 'ALL' || lead.status === filterStatus);
   });
 
-  if (sortBy === 'score') {
-    filteredLeads.sort((a, b) => b.qualificationScore - a.qualificationScore);
-  } else if (sortBy === 'date') {
-    filteredLeads.sort(
-      (a, b) =>
-        new Date(b.firstContactAt || 0).getTime() - new Date(a.firstContactAt || 0).getTime()
-    );
-  } else if (sortBy === 'name') {
-    filteredLeads.sort((a, b) => a.name.localeCompare(b.name));
-  }
+  if (sortBy === 'score') filteredLeads.sort((a, b) => b.qualificationScore - a.qualificationScore);
+  else if (sortBy === 'date') filteredLeads.sort((a, b) => new Date(b.firstContactAt || 0).getTime() - new Date(a.firstContactAt || 0).getTime());
+  else if (sortBy === 'name') filteredLeads.sort((a, b) => a.name.localeCompare(b.name));
 
-  const convLabel = (n: number) =>
-    `${n} ${n !== 1 ? t('common:units.conversations') : t('common:units.conversation')}`;
+  const avgScore = leads.length > 0
+    ? Math.round(leads.reduce((acc, l) => acc + l.qualificationScore, 0) / leads.length)
+    : 0;
 
   return (
     <div className="space-y-6">
+      {/* ── Header ── */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('leads:title')}</h1>
-        <p className="text-gray-600 text-sm sm:text-base mt-1">{t('leads:subtitle')}</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'hsl(var(--foreground))' }}>
+          {t('leads:title')}
+        </h1>
+        <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          {t('leads:subtitle')}
+        </p>
       </div>
 
       {error && (
-        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-danger-900">{t('leads:list.failedLoad')}</p>
-            <p className="text-sm text-danger-700 mt-1">
-              {error instanceof Error ? error.message : t('leads:list.tryAgain')}
-            </p>
-          </div>
+        <div className="rounded-xl border p-4 flex gap-3" style={{ backgroundColor: 'hsl(350 89% 50% / 0.05)', borderColor: 'hsl(350 89% 50% / 0.2)' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'hsl(350, 89%, 44%)' }} />
+          <p className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>{t('leads:list.failedLoad')}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('leads:stats.total')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 mt-2">{leads.length}</p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('leads:stats.new')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-primary-600 mt-2">
-              {leads.filter((l) => l.status === 'NEW').length}
-            </p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('leads:stats.contacted')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-warning-600 mt-2">
-              {leads.filter((l) => l.status === 'CONTACTED').length}
-            </p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('leads:stats.avgScore')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-success-600 mt-2">
-              {leads.length > 0
-                ? Math.round(
-                    leads.reduce((acc, l) => acc + l.qualificationScore, 0) / leads.length
-                  )
-                : 0}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
-        <div className="flex gap-3 sm:gap-4 flex-col md:flex-row">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder={t('leads:list.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: t('leads:stats.total'), value: leads.length, color: 'hsl(var(--foreground))' },
+          { label: t('leads:stats.new'), value: leads.filter((l) => l.status === 'NEW').length, color: 'hsl(38, 92%, 44%)' },
+          { label: t('leads:stats.contacted'), value: leads.filter((l) => l.status === 'CONTACTED').length, color: 'hsl(21, 90%, 44%)' },
+          { label: t('leads:stats.avgScore'), value: avgScore || '—', color: 'hsl(142, 76%, 32%)' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="bg-white rounded-xl border p-4 card-hover" style={{ borderColor: 'hsl(var(--border))' }}>
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{label}</p>
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin mt-2" style={{ color: 'hsl(var(--border))' }} />
+            ) : (
+              <p className="text-2xl font-bold mt-2 tabular-nums" style={{ color }}>{value}</p>
+            )}
           </div>
-
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="ALL">{t('common:filters.allStatus')}</option>
-            <option value="NEW">{t('leads:leadStatus.NEW')}</option>
-            <option value="CONTACTED">{t('leads:leadStatus.CONTACTED')}</option>
-            <option value="QUALIFIED">{t('leads:leadStatus.QUALIFIED')}</option>
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="score">{t('leads:sort.score')}</option>
-            <option value="date">{t('leads:sort.date')}</option>
-            <option value="name">{t('leads:sort.name')}</option>
-          </select>
-        </div>
+        ))}
       </div>
 
-      <div className="space-y-3">
+      {/* ── Filters ── */}
+      <div className="bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-3" style={{ borderColor: 'hsl(var(--border))' }}>
+        <div className="relative flex-1">
+          <Search className="absolute inset-y-0 start-3 my-auto w-4 h-4 pointer-events-none" style={{ color: 'hsl(var(--muted-foreground))' }} />
+          <input
+            type="text"
+            placeholder={t('leads:list.searchPlaceholder')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full ps-9 pe-4 py-2.5 border rounded-lg text-sm focus:outline-none"
+            style={{ borderColor: 'hsl(var(--border))', backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}
+          />
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="w-full md:w-40 px-4 py-2.5 border rounded-lg text-sm focus:outline-none"
+          style={{ borderColor: 'hsl(var(--border))', backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}
+        >
+          <option value="ALL">{t('common:filters.allStatus')}</option>
+          <option value="NEW">{t('leads:leadStatus.NEW')}</option>
+          <option value="CONTACTED">{t('leads:leadStatus.CONTACTED')}</option>
+          <option value="QUALIFIED">{t('leads:leadStatus.QUALIFIED')}</option>
+        </select>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="w-full md:w-36 px-4 py-2.5 border rounded-lg text-sm focus:outline-none"
+          style={{ borderColor: 'hsl(var(--border))', backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}
+        >
+          <option value="score">{t('leads:sort.score')}</option>
+          <option value="date">{t('leads:sort.date')}</option>
+          <option value="name">{t('leads:sort.name')}</option>
+        </select>
+      </div>
+
+      {/* ── Table ── */}
+      <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: 'hsl(var(--border))' }}>
+        {/* Header */}
+        <div
+          className="hidden md:grid grid-cols-12 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider"
+          style={{ backgroundColor: 'hsl(var(--muted))', borderBottom: '1px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
+        >
+          <div className="col-span-4">Lead</div>
+          <div className="col-span-2">Company</div>
+          <div className="col-span-2">Score</div>
+          <div className="col-span-2">Status</div>
+          <div className="col-span-2">Activity</div>
+        </div>
+
         {filteredLeads.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-            <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">{t('leads:list.noneFound')}</p>
-            <p className="text-sm text-gray-400 mt-1">
-              {searchTerm || filterStatus !== 'ALL'
-                ? t('leads:list.adjustFilters')
-                : t('leads:list.startConversations')}
+          <div className="py-16 text-center">
+            <Users className="w-10 h-10 mx-auto mb-3" style={{ color: 'hsl(var(--border))' }} />
+            <p className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>{t('leads:list.noneFound')}</p>
+            <p className="text-sm mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
+              {searchTerm || filterStatus !== 'ALL' ? t('leads:list.adjustFilters') : t('leads:list.startConversations')}
             </p>
           </div>
         ) : (
-          filteredLeads.map((lead) => (
-            <Link key={lead.id} href={`/leads/${lead.id}`}>
-              <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-gray-900">{lead.name}</h3>
-                      <StatusBadge
-                        status={lead.status as 'NEW' | 'CONTACTED' | 'QUALIFIED'}
-                        label={t(`leads:leadStatus.${lead.status}`)}
-                      />
+          <div className="divide-y" style={{ borderColor: 'hsl(var(--border))' }}>
+            {filteredLeads.map((lead) => (
+              <Link key={lead.id} href={`/leads/${lead.id}`}>
+                <div
+                  className="grid grid-cols-1 md:grid-cols-12 px-5 py-4 gap-2 md:gap-0 md:items-center transition-colors"
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'hsl(var(--muted))'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {/* Lead */}
+                  <div className="col-span-4 flex items-center gap-3 min-w-0">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                      style={{ backgroundColor: 'hsl(38 92% 50% / 0.1)', color: 'hsl(38, 92%, 42%)' }}
+                    >
+                      {lead.name.charAt(0).toUpperCase()}
                     </div>
-
-                    <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
-                      <span className="flex items-center gap-1">
-                        <Building2 className="w-3 h-3" />
-                        {lead.company}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {lead.email}
-                      </span>
-                      {lead.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          {lead.phone}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
-                      <span className="font-medium">{lead.budget}</span>
-                      <span className="font-medium">{lead.timeline}</span>
-                    </div>
-
-                    {lead.ownerNotes && (
-                      <div className="bg-primary-50 border border-primary-200 rounded px-2 py-1 text-xs text-primary-900 mb-2">
-                        {lead.ownerNotes}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {convLabel(lead.conversationsCount)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {lead.firstContactAt && new Date(lead.firstContactAt).toLocaleDateString()}
-                      </span>
-                      {!lead.ownerViewed && (
-                        <span className="px-2 py-0.5 bg-warning-100 text-warning-800 rounded-full font-medium">
-                          {t('leads:badges.needsReview')}
-                        </span>
-                      )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'hsl(var(--foreground))' }}>
+                        {lead.name}
+                        {!lead.ownerViewed && (
+                          <span className="inline-block w-2 h-2 rounded-full ms-2 align-middle" style={{ backgroundColor: 'hsl(38, 92%, 50%)' }} />
+                        )}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: 'hsl(var(--muted-foreground))' }}>{lead.email}</p>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-3">
-                    <ScoreIndicator score={lead.qualificationScore} />
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  {/* Company */}
+                  <div className="col-span-2 hidden md:block">
+                    <p className="text-sm truncate" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                      {lead.company || '—'}
+                    </p>
+                  </div>
+
+                  {/* Score */}
+                  <div className="col-span-2">
+                    <ScoreBar score={lead.qualificationScore} />
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-span-2">
+                    <StatusPill status={lead.status} />
+                  </div>
+
+                  {/* Activity */}
+                  <div className="col-span-2 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                        {lead.conversationsCount} conv.
+                      </p>
+                      {lead.firstContactAt && (
+                        <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                          {new Date(lead.firstContactAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <ChevronRight className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))
+              </Link>
+            ))}
+          </div>
         )}
       </div>
-
-      {filteredLeads.length > 0 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" disabled>
-            {t('common:pagination.previous')}
-          </Button>
-          <span className="text-sm text-gray-600">
-            {t('common:pagination.pageOf', { current: 1, total: 1 })}
-          </span>
-          <Button variant="outline" disabled>
-            {t('common:pagination.next')}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

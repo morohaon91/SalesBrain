@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { useI18n } from '@/lib/hooks/useI18n';
 import { rtlMirrorIcon } from '@/lib/i18n/rtl-icons';
 
-type TabType = 'basic-info' | 'extracted-patterns';
+type TabType = 'extracted-patterns' | 'basic-info';
 
 interface ProfileData {
   id: string;
@@ -59,7 +59,7 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
 
   // UI State
-  const [activeTab, setActiveTab] = useState<TabType>('basic-info');
+  const [activeTab, setActiveTab] = useState<TabType>('extracted-patterns');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [alertMessage, setAlertMessage] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
@@ -228,15 +228,27 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold" style={{ color: 'hsl(var(--foreground))' }}>
             {t('businessProfile.title')}
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base mt-1">
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
             {t('businessProfile.subtitle')}
           </p>
         </div>
 
-        <div className="flex gap-2 flex-wrap flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {/* AI Active indicator */}
+          {(() => {
+            const s = profile?.profileApprovalStatus;
+            const isLive = s === 'APPROVED' || s === 'LIVE';
+            return isLive ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: 'hsl(142 76% 36% / 0.1)', color: 'hsl(142, 76%, 30%)' }}>
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'hsl(142, 76%, 40%)' }} />
+                AI is live
+              </div>
+            ) : null;
+          })()}
           <Button variant="outline" className="flex items-center gap-2 text-sm whitespace-nowrap">
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">{t('businessProfile.export')}</span>
@@ -277,28 +289,24 @@ export default function ProfilePage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <div className="flex gap-8">
-          <button
-            onClick={() => setActiveTab('basic-info')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'basic-info'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {t('businessProfile.tabBasic')}
-          </button>
-          <button
-            onClick={() => setActiveTab('extracted-patterns')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'extracted-patterns'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {t('businessProfile.tabExtracted')}
-          </button>
+      <div style={{ borderBottom: '1px solid hsl(var(--border))' }}>
+        <div className="flex gap-0">
+          {([
+            { id: 'extracted-patterns' as TabType, label: t('businessProfile.tabExtracted') },
+            { id: 'basic-info' as TabType, label: t('businessProfile.tabBasic') },
+          ]).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors"
+              style={activeTab === tab.id
+                ? { color: 'hsl(38, 92%, 44%)', borderColor: 'hsl(38, 92%, 50%)' }
+                : { color: 'hsl(var(--muted-foreground))', borderColor: 'transparent' }
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -494,8 +502,8 @@ export default function ProfilePage() {
               const isLive = status === 'APPROVED' || status === 'LIVE';
               if (readiness?.canGoLive && !isLive) {
                 return (
-                  <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <Zap className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <div className="flex items-center gap-4 p-4 rounded-xl border" style={{ backgroundColor: 'hsl(38 92% 50% / 0.06)', borderColor: 'hsl(38 92% 50% / 0.25)' }}>
+                    <Zap className="h-5 w-5 flex-shrink-0" style={{ color: 'hsl(38, 92%, 44%)' }} />
                     <div className="flex-1">
                       <p className="font-semibold text-blue-900">{t('businessProfile.readinessTitleGates')}</p>
                       <p className="text-sm text-blue-700 mt-0.5">{t('businessProfile.readinessBody')}</p>

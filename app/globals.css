@@ -5,34 +5,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design System CSS Variables */
+/* ─── Design System Tokens ─────────────────────────────────────── */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  /* Surface */
+  --background: 36 33% 97%;         /* warm off-white */
+  --foreground: 20 14% 10%;         /* warm near-black */
+
+  /* Brand — warm amber */
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary surface */
+  --secondary: 36 20% 93%;
+  --secondary-foreground: 20 14% 20%;
+
+  /* Muted */
+  --muted: 36 15% 92%;
+  --muted-foreground: 20 8% 46%;
+
+  /* Accent — teal (secondary accent) */
+  --accent: 174 100% 29%;
+  --accent-foreground: 0 0% 100%;
+
+  /* Semantic */
+  --destructive: 350 89% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Borders & inputs */
+  --border: 36 18% 88%;
+  --input: 36 18% 88%;
+  --ring: 38 92% 50%;
+
+  /* Radius scale */
   --radius: 0.5rem;
+  --radius-sm: 0.375rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Sidebar */
+  --sidebar-bg: 222 47% 7%;         /* slate-950 */
+  --sidebar-border: 222 30% 14%;    /* slate-800 */
+  --sidebar-text: 215 20% 65%;      /* slate-400 */
+  --sidebar-text-active: 0 0% 100%; /* white */
+  --sidebar-accent: 38 92% 50%;     /* amber — active border */
+
+  /* Score system */
+  --score-cold: 215 20% 65%;
+  --score-warm: 38 92% 50%;
+  --score-hot: 14 89% 52%;
 }
 
-/* Typography System */
+/* ─── Typography system ─────────────────────────────────────────── */
 @layer components {
   .text-display {
     @apply text-4xl font-bold tracking-tight;
+    line-height: 1.15;
   }
 
   .text-heading-1 {
-    @apply text-3xl font-semibold;
+    @apply text-3xl font-semibold tracking-tight;
+    line-height: 1.25;
   }
 
   .text-heading-2 {
@@ -44,18 +76,39 @@
   }
 
   .text-body {
-    @apply text-base;
+    @apply text-base leading-relaxed;
   }
 
   .text-small {
-    @apply text-sm;
+    @apply text-sm leading-snug;
   }
 
   .text-tiny {
     @apply text-xs;
   }
+
+  /* ─── Card hover: border shift, no shadow ─── */
+  .card-hover {
+    @apply transition-colors duration-150;
+    border-color: hsl(var(--border));
+  }
+  .card-hover:hover {
+    border-color: hsl(var(--primary) / 0.4);
+  }
+
+  /* ─── Score badge system ─── */
+  .score-cold {
+    @apply bg-slate-100 text-slate-600 border border-slate-200;
+  }
+  .score-warm {
+    @apply bg-primary-50 text-primary-700 border border-primary-200;
+  }
+  .score-hot {
+    @apply bg-warning-50 text-warning-700 border border-warning-200;
+  }
 }
 
+/* ─── Base reset ─────────────────────────────────────────────────── */
 * {
   margin: 0;
   padding: 0;
@@ -68,25 +121,60 @@ html {
 
 body {
   font-family: 'DM Sans', sans-serif;
-  background-color: #f9fafb;
-  color: #111827;
+  font-size: 15px;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar styling */
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: hsl(var(--muted));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* ─── Concierge Wordmark (sidebar) ──────────────────────────────── */
+.concierge-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.concierge-mark-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.concierge-mark-icon::before,
+.concierge-mark-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: hsl(var(--primary));
+}
+
+.concierge-mark-icon::before {
+  transform: rotate(0deg);
+  opacity: 0.9;
+}
+
+.concierge-mark-icon::after {
+  transform: rotate(45deg) scale(0.65);
+  opacity: 1;
 }

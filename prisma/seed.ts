@@ -28,7 +28,7 @@ async function main() {
           industry: "Business Consulting",
           website: "https://democonsulting.example.com",
           description:
-            "A demo consulting firm for testing the SalesBrain platform",
+            "A demo consulting firm for testing the Concierge platform",
           subscriptionTier: "TRIAL",
           subscriptionStatus: "ACTIVE",
           trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),

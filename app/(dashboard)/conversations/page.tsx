@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/button';
 import {
   Search,
   MessageSquare,
-  ChevronRight,
-  Zap,
-  Clock,
   CheckCircle2,
   AlertCircle,
   Loader2,
   RefreshCw,
+  ChevronRight,
+  Clock,
+  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,53 +32,58 @@ interface Conversation {
   summary: string;
 }
 
-function StatusBadge({
-  status,
-  label,
-}: {
-  status: 'ACTIVE' | 'ENDED' | 'ABANDONED';
-  label: string;
-}) {
-  const styles = {
-    ACTIVE: 'bg-success-100 text-success-800',
-    ENDED: 'bg-primary-100 text-primary-800',
-    ABANDONED: 'bg-gray-100 text-gray-800',
-  };
+function ScorePill({ score, qualification }: { score: number; qualification: string }) {
+  const isHot = score >= 75;
+  const isWarm = score >= 45;
+
+  const style = isHot
+    ? { bg: 'hsl(21 90% 48% / 0.1)', color: 'hsl(21, 90%, 38%)', border: 'hsl(21 90% 48% / 0.25)' }
+    : isWarm
+    ? { bg: 'hsl(38 92% 50% / 0.1)', color: 'hsl(38, 92%, 38%)', border: 'hsl(38 92% 50% / 0.25)' }
+    : { bg: 'hsl(215 20% 65% / 0.1)', color: 'hsl(215, 20%, 42%)', border: 'hsl(215 20% 65% / 0.2)' };
+
+  const label = isHot ? 'Hot' : isWarm ? 'Warm' : 'Cold';
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>{label}</span>
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border"
+      style={{ backgroundColor: style.bg, color: style.color, borderColor: style.border }}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full"
+        style={{ backgroundColor: style.color }}
+      />
+      {score > 0 ? `${score} · ${label}` : label}
+    </span>
   );
 }
 
-function QualificationBadge({
-  status,
-  label,
-}: {
-  status: 'QUALIFIED' | 'UNQUALIFIED' | 'MAYBE' | 'UNKNOWN';
-  label: string;
-}) {
-  const styles = {
-    QUALIFIED: 'bg-success-100 text-success-800 border-success-300',
-    UNQUALIFIED: 'bg-danger-100 text-danger-800 border-danger-300',
-    MAYBE: 'bg-warning-100 text-warning-800 border-warning-300',
-    UNKNOWN: 'bg-gray-100 text-gray-800 border-gray-300',
+function QualBadge({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    QUALIFIED: { bg: 'hsl(142 76% 36% / 0.08)', color: 'hsl(142, 76%, 30%)', label: 'Qualified' },
+    UNQUALIFIED: { bg: 'hsl(350 89% 50% / 0.08)', color: 'hsl(350, 89%, 40%)', label: 'Unqualified' },
+    MAYBE: { bg: 'hsl(38 92% 50% / 0.08)', color: 'hsl(38, 92%, 38%)', label: 'Maybe' },
+    UNKNOWN: { bg: 'hsl(215 20% 65% / 0.08)', color: 'hsl(215, 20%, 42%)', label: 'Unknown' },
   };
-
-  const icons = {
-    QUALIFIED: <CheckCircle2 className="w-4 h-4" />,
-    UNQUALIFIED: <AlertCircle className="w-4 h-4" />,
-    MAYBE: <Zap className="w-4 h-4" />,
-    UNKNOWN: <MessageSquare className="w-4 h-4" />,
-  };
-
+  const s = map[status] ?? map.UNKNOWN;
   return (
-    <div
-      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${styles[status]}`}
+    <span
+      className="px-2 py-0.5 rounded-full text-xs font-medium"
+      style={{ backgroundColor: s.bg, color: s.color }}
     >
-      {icons[status]}
-      {label}
-    </div>
+      {s.label}
+    </span>
   );
+}
+
+function RelativeTime({ date }: { date: string }) {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 60) return <span>{mins}m</span>;
+  if (hours < 24) return <span>{hours}h</span>;
+  return <span>{days}d</span>;
 }
 
 export default function ConversationsPage() {
@@ -119,17 +124,13 @@ export default function ConversationsPage() {
   });
 
   const conversations = (response?.data as Conversation[]) || [];
-
   const filteredConversations = conversations.filter((conv) => {
     const matchesSearch =
       conv.leadName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       conv.leadEmail.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchesStatus = filterStatus === 'ALL' || conv.status === filterStatus;
-
     const matchesQualification =
       filterQualification === 'ALL' || conv.qualificationStatus === filterQualification;
-
     return matchesSearch && matchesStatus && matchesQualification;
   });
 
@@ -147,162 +148,213 @@ export default function ConversationsPage() {
 
   return (
     <div className="space-y-6">
+      {/* ── Header ── */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('conversations:title')}</h1>
-        <p className="text-gray-600 text-sm sm:text-base mt-1">{t('conversations:subtitle')}</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'hsl(var(--foreground))' }}>
+          {t('conversations:title')}
+        </h1>
+        <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          {t('conversations:subtitle')}
+        </p>
       </div>
 
+      {/* ── Error ── */}
       {error && (
-        <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+        <div
+          className="rounded-xl border p-4 flex gap-3"
+          style={{
+            backgroundColor: 'hsl(350 89% 50% / 0.05)',
+            borderColor: 'hsl(350 89% 50% / 0.2)',
+          }}
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'hsl(350, 89%, 44%)' }} />
           <div>
-            <p className="font-medium text-danger-900">{t('conversations:list.failedLoad')}</p>
-            <p className="text-sm text-danger-700 mt-1">
+            <p className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+              {t('conversations:list.failedLoad')}
+            </p>
+            <p className="text-sm mt-0.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {error instanceof Error ? error.message : t('conversations:list.tryAgain')}
             </p>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('conversations:stats.total')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 mt-2">{totalConversations}</p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('conversations:stats.active')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-success-600 mt-2">{activeConversations}</p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('conversations:stats.qualified')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-primary-600 mt-2">{qualifiedConversations}</p>
-          )}
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600">{t('conversations:stats.avgScore')}</p>
-          {isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-accent-600 mt-2">{avgScore}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
-        <div className="flex gap-3 sm:gap-4 flex-col md:flex-row">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder={t('conversations:list.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: t('conversations:stats.total'), value: totalConversations, color: 'hsl(var(--foreground))' },
+          { label: t('conversations:stats.active'), value: activeConversations, color: 'hsl(142, 76%, 32%)' },
+          { label: t('conversations:stats.qualified'), value: qualifiedConversations, color: 'hsl(38, 92%, 44%)' },
+          { label: t('conversations:stats.avgScore'), value: avgScore || '—', color: 'hsl(174, 100%, 29%)' },
+        ].map(({ label, value, color }) => (
+          <div
+            key={label}
+            className="bg-white rounded-xl border p-4 card-hover"
+            style={{ borderColor: 'hsl(var(--border))' }}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
+              {label}
+            </p>
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin mt-2" style={{ color: 'hsl(var(--border))' }} />
+            ) : (
+              <p className="text-2xl font-bold mt-2 tabular-nums" style={{ color }}>
+                {value}
+              </p>
+            )}
           </div>
-
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="ALL">{t('common:filters.allStatus')}</option>
-            <option value="ACTIVE">{t('conversations:conversationStatus.ACTIVE')}</option>
-            <option value="ENDED">{t('conversations:conversationStatus.ENDED')}</option>
-            <option value="ABANDONED">{t('conversations:conversationStatus.ABANDONED')}</option>
-          </select>
-
-          <select
-            value={filterQualification}
-            onChange={(e) => setFilterQualification(e.target.value)}
-            className="w-full md:w-auto px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="ALL">{t('common:filters.allQualifications')}</option>
-            <option value="QUALIFIED">{t('conversations:qualification.QUALIFIED')}</option>
-            <option value="MAYBE">{t('conversations:qualification.MAYBE')}</option>
-            <option value="UNQUALIFIED">{t('conversations:qualification.UNQUALIFIED')}</option>
-          </select>
-        </div>
+        ))}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      {/* ── Filters ── */}
+      <div
+        className="bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-3"
+        style={{ borderColor: 'hsl(var(--border))' }}
+      >
+        <div className="relative flex-1">
+          <Search
+            className="absolute inset-y-0 start-3 my-auto w-4 h-4 pointer-events-none"
+            style={{ color: 'hsl(var(--muted-foreground))' }}
+          />
+          <input
+            type="text"
+            placeholder={t('conversations:list.searchPlaceholder')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full ps-9 pe-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-colors"
+            style={{
+              borderColor: 'hsl(var(--border))',
+              backgroundColor: 'hsl(var(--background))',
+              color: 'hsl(var(--foreground))',
+            }}
+          />
+        </div>
+
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="w-full md:w-44 px-4 py-2.5 border rounded-lg text-sm focus:outline-none"
+          style={{
+            borderColor: 'hsl(var(--border))',
+            backgroundColor: 'hsl(var(--background))',
+            color: 'hsl(var(--foreground))',
+          }}
+        >
+          <option value="ALL">{t('common:filters.allStatus')}</option>
+          <option value="ACTIVE">{t('conversations:conversationStatus.ACTIVE')}</option>
+          <option value="ENDED">{t('conversations:conversationStatus.ENDED')}</option>
+          <option value="ABANDONED">{t('conversations:conversationStatus.ABANDONED')}</option>
+        </select>
+
+        <select
+          value={filterQualification}
+          onChange={(e) => setFilterQualification(e.target.value)}
+          className="w-full md:w-44 px-4 py-2.5 border rounded-lg text-sm focus:outline-none"
+          style={{
+            borderColor: 'hsl(var(--border))',
+            backgroundColor: 'hsl(var(--background))',
+            color: 'hsl(var(--foreground))',
+          }}
+        >
+          <option value="ALL">{t('common:filters.allQualifications')}</option>
+          <option value="QUALIFIED">{t('conversations:qualification.QUALIFIED')}</option>
+          <option value="MAYBE">{t('conversations:qualification.MAYBE')}</option>
+          <option value="UNQUALIFIED">{t('conversations:qualification.UNQUALIFIED')}</option>
+        </select>
+      </div>
+
+      {/* ── List ── */}
+      <div
+        className="bg-white rounded-xl border overflow-hidden"
+        style={{ borderColor: 'hsl(var(--border))' }}
+      >
         {filteredConversations.length === 0 ? (
-          <div className="p-12 text-center">
-            <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">{t('conversations:list.noneFound')}</p>
-            <p className="text-sm text-gray-400 mt-1">
+          <div className="py-16 text-center">
+            <MessageSquare
+              className="w-10 h-10 mx-auto mb-3"
+              style={{ color: 'hsl(var(--border))' }}
+            />
+            <p className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+              {t('conversations:list.noneFound')}
+            </p>
+            <p className="text-sm mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {searchTerm || filterStatus !== 'ALL' || filterQualification !== 'ALL'
                 ? t('conversations:list.adjustFilters')
                 : t('conversations:list.startSimulation')}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredConversations.map((conv) => (
-              <Link key={conv.id} href={`/conversations/${conv.id}`}>
-                <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-semibold text-gray-900">{conv.leadName}</h3>
-                        <div className="flex gap-2">
-                          <StatusBadge
-                            status={conv.status as 'ACTIVE' | 'ENDED' | 'ABANDONED'}
-                            label={t(`conversations:conversationStatus.${conv.status}` as const)}
-                          />
-                          <QualificationBadge
-                            status={
-                              conv.qualificationStatus as
-                                | 'QUALIFIED'
-                                | 'UNQUALIFIED'
-                                | 'MAYBE'
-                                | 'UNKNOWN'
-                            }
-                            label={t(
-                              `conversations:qualification.${conv.qualificationStatus}` as const
-                            )}
-                          />
-                        </div>
+          <div>
+            {/* Table header */}
+            <div
+              className="grid grid-cols-12 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider hidden md:grid"
+              style={{
+                backgroundColor: 'hsl(var(--muted))',
+                color: 'hsl(var(--muted-foreground))',
+                borderBottom: '1px solid hsl(var(--border))',
+              }}
+            >
+              <div className="col-span-4">Lead</div>
+              <div className="col-span-3">Summary</div>
+              <div className="col-span-2">Score</div>
+              <div className="col-span-2">Status</div>
+              <div className="col-span-1 text-end">Time</div>
+            </div>
+
+            <div className="divide-y" style={{ borderColor: 'hsl(var(--border))' }}>
+              {filteredConversations.map((conv) => (
+                <Link key={conv.id} href={`/conversations/${conv.id}`}>
+                  <div
+                    className="grid grid-cols-1 md:grid-cols-12 px-4 py-3.5 gap-2 md:gap-0 md:items-center transition-colors"
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = 'hsl(var(--muted))';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = '';
+                    }}
+                  >
+                    {/* Lead name + email */}
+                    <div className="col-span-4 flex items-center gap-3 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                        style={{
+                          backgroundColor: 'hsl(38 92% 50% / 0.1)',
+                          color: 'hsl(38, 92%, 42%)',
+                        }}
+                      >
+                        {conv.leadName.charAt(0).toUpperCase()}
                       </div>
-
-                      <p className="text-xs text-gray-500 truncate">{conv.leadEmail}</p>
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">{conv.summary}</p>
-
-                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="w-3 h-3" />
-                          {conv.messageCount} {t('common:units.messages')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {Math.round(conv.duration / 60)} {t('common:units.min')}
-                        </span>
-                        <span>{new Date(conv.createdAt).toLocaleDateString()}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate" style={{ color: 'hsl(var(--foreground))' }}>
+                          {conv.leadName}
+                        </p>
+                        <p className="text-xs truncate" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                          {conv.leadEmail}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-2">
+                    {/* Summary */}
+                    <div className="col-span-3 min-w-0 hidden md:block">
+                      <p className="text-xs line-clamp-2 pe-4" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                        {conv.summary || '—'}
+                      </p>
+                    </div>
+
+                    {/* Score */}
+                    <div className="col-span-2">
                       {conv.leadScore > 0 ? (
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-gray-900">{conv.leadScore}</p>
-                          <p className="text-xs text-gray-500">{t('common:units.score')}</p>
-                        </div>
+                        <ScorePill score={conv.leadScore} qualification={conv.qualificationStatus} />
                       ) : (
                         <button
                           onClick={(e) => handleReanalyze(e, conv.id)}
                           disabled={reanalyzingId === conv.id}
-                          className="flex items-center gap-1 px-2 py-1 text-xs text-primary-600 border border-primary-200 rounded-md hover:bg-primary-50 disabled:opacity-50"
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg border transition-colors disabled:opacity-50"
+                          style={{
+                            borderColor: 'hsl(38 92% 50% / 0.3)',
+                            color: 'hsl(38, 92%, 44%)',
+                          }}
                         >
                           {reanalyzingId === conv.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -312,29 +364,27 @@ export default function ConversationsPage() {
                           {t('conversations:actions.analyze')}
                         </button>
                       )}
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    </div>
+
+                    {/* Status badges */}
+                    <div className="col-span-2 flex flex-wrap gap-1.5">
+                      <QualBadge status={conv.qualificationStatus} />
+                    </div>
+
+                    {/* Time + chevron */}
+                    <div className="col-span-1 flex items-center justify-end gap-2">
+                      <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                        <RelativeTime date={conv.createdAt} />
+                      </span>
+                      <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </div>
-
-      {filteredConversations.length > 0 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" disabled>
-            {t('common:pagination.previous')}
-          </Button>
-          <span className="text-sm text-gray-600">
-            {t('common:pagination.pageOf', { current: 1, total: 1 })}
-          </span>
-          <Button variant="outline" disabled>
-            {t('common:pagination.next')}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

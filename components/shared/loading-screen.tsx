@@ -1,23 +1,43 @@
 'use client';
 
-import { Loader2 } from "lucide-react";
 import { useI18n } from "@/lib/hooks/useI18n";
 
-/**
- * Full-screen loading indicator
- */
 export function LoadingScreen() {
   const { t } = useI18n("common");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: "hsl(var(--background))" }}
+    >
       <div className="text-center space-y-4">
-        <div className="flex justify-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+        {/* Wordmark */}
+        <div className="flex justify-center items-center gap-2.5 mb-6">
+          <div className="relative w-8 h-8 flex-shrink-0">
+            <div
+              className="absolute inset-0 rounded-sm"
+              style={{ backgroundColor: "hsl(38, 92%, 50%)", opacity: 0.2 }}
+            />
+            <div
+              className="absolute inset-[3px] rounded-sm rotate-45 animate-pulse"
+              style={{ backgroundColor: "hsl(38, 92%, 50%)" }}
+            />
+          </div>
+          <span
+            className="text-lg font-semibold tracking-widest"
+            style={{ color: "hsl(var(--foreground))", letterSpacing: "0.08em" }}
+          >
+            CONCIERGE
+          </span>
         </div>
+
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">{t("loadingScreen.title")}</h2>
-          <p className="text-gray-600 text-sm mt-1">{t("loadingScreen.subtitle")}</p>
+          <p
+            className="text-sm"
+            style={{ color: "hsl(var(--muted-foreground))" }}
+          >
+            {t("loadingScreen.subtitle")}
+          </p>
         </div>
       </div>
     </div>

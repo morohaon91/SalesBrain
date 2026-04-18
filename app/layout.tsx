@@ -5,8 +5,8 @@ import { Providers } from "@/components/providers";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 
 export const metadata: Metadata = {
-  title: "SalesBrain - Lead Qualification AI",
-  description: "AI-powered lead qualification for freelancers and agencies",
+  title: "Concierge — Your AI Sales Rep, Always On",
+  description: "AI-powered lead warm-up. Your concierge is always on.",
 };
 
 export default function RootLayout({

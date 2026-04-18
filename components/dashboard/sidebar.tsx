@@ -14,52 +14,18 @@ import {
   User,
   GraduationCap,
   X,
+  Zap,
 } from "lucide-react";
 
-/**
- * Navigation items for sidebar
- */
-const getNavigation = (t: any) => [
-  {
-    name: t('navigation.dashboard'),
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: t('navigation.conversations'),
-    href: "/conversations",
-    icon: MessageSquare,
-  },
-  {
-    name: t('navigation.leads'),
-    href: "/leads",
-    icon: Users,
-  },
-  {
-    name: t('navigation.simulations'),
-    href: "/simulations",
-    icon: BrainCircuit,
-  },
-  {
-    name: t('navigation.learning'),
-    href: "/learning",
-    icon: GraduationCap,
-  },
-  {
-    name: t('navigation.analytics'),
-    href: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    name: t('navigation.profile'),
-    href: "/profile",
-    icon: User,
-  },
-  {
-    name: t('navigation.settings'),
-    href: "/settings",
-    icon: Settings,
-  },
+const getNavigation = (t: (k: string) => string) => [
+  { name: t("navigation.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+  { name: t("navigation.conversations"), href: "/conversations", icon: MessageSquare },
+  { name: t("navigation.leads"), href: "/leads", icon: Users },
+  { name: t("navigation.simulations"), href: "/simulations", icon: BrainCircuit },
+  { name: t("navigation.learning"), href: "/learning", icon: GraduationCap },
+  { name: t("navigation.analytics"), href: "/analytics", icon: BarChart3 },
+  { name: t("navigation.profile"), href: "/profile", icon: User },
+  { name: t("navigation.settings"), href: "/settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -67,57 +33,71 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-/**
- * Sidebar component with dark slate design
- * Responsive: collapses on mobile with slide-in animation
- */
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { t } = useI18n('common');
+  const { t } = useI18n("common");
   const navigation = getNavigation(t);
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
-          "w-64 bg-slate-900 flex flex-col overflow-hidden h-screen",
-          "fixed inset-y-0 left-0 z-50 transform transition-transform duration-300",
+          "w-64 flex flex-col overflow-hidden h-screen",
+          "fixed inset-y-0 inset-inline-start-0 z-50 transform transition-transform duration-300",
           "lg:static lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
+        style={{ backgroundColor: "hsl(222, 47%, 7%)" }}
       >
-        {/* Logo Section */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
-              <BrainCircuit className="w-5 h-5 text-white" />
+        {/* ── Wordmark ── */}
+        <div
+          className="px-5 py-5 flex items-center justify-between"
+          style={{ borderBottom: "1px solid hsl(222, 30%, 14%)" }}
+        >
+          <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onClose}>
+            {/* Geometric mark: stacked amber squares */}
+            <div className="relative w-7 h-7 flex-shrink-0">
+              <div
+                className="absolute inset-0 rounded-sm"
+                style={{ backgroundColor: "hsl(38, 92%, 50%)", opacity: 0.25 }}
+              />
+              <div
+                className="absolute inset-[3px] rounded-sm rotate-45"
+                style={{ backgroundColor: "hsl(38, 92%, 50%)" }}
+              />
             </div>
-            <h1 className="text-lg font-bold text-white">SalesBrain</h1>
-          </div>
-          {/* Mobile Close Button */}
+            <span
+              className="text-base font-semibold tracking-wide"
+              style={{ color: "hsl(0, 0%, 100%)", letterSpacing: "0.04em" }}
+            >
+              Concierge
+            </span>
+          </Link>
+
           <button
             onClick={onClose}
-            className="lg:hidden p-1 hover:bg-slate-800 rounded transition-colors"
-            aria-label={t('sidebar.closeMenu')}
+            className="lg:hidden p-1.5 rounded-md transition-colors"
+            style={{ color: "hsl(215, 20%, 60%)" }}
+            aria-label={t("sidebar.closeMenu")}
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+        {/* ── Navigation ── */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
           {navigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
 
             return (
@@ -126,29 +106,76 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 href={item.href}
                 onClick={() => onClose?.()}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200",
-                  isActive
-                    ? "bg-slate-800 text-white border-l-2 border-primary-400"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
+                  "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150",
+                  "relative"
                 )}
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: "hsl(222, 30%, 16%)",
+                        color: "hsl(0, 0%, 100%)",
+                        borderInlineStart: "2px solid hsl(38, 92%, 50%)",
+                        paddingInlineStart: "calc(0.75rem - 2px)",
+                      }
+                    : {
+                        color: "hsl(215, 20%, 58%)",
+                        borderInlineStart: "2px solid transparent",
+                        paddingInlineStart: "calc(0.75rem - 2px)",
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor =
+                      "hsl(222, 30%, 12%)";
+                    (e.currentTarget as HTMLElement).style.color = "hsl(0, 0%, 90%)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                    (e.currentTarget as HTMLElement).style.color = "hsl(215, 20%, 58%)";
+                  }
+                }}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className="w-4 h-4 flex-shrink-0" />
                 <span>{item.name}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer Section */}
-        <div className="p-4 border-t border-slate-800 space-y-3">
-          <div className="px-3 py-2.5 bg-slate-800 rounded-lg">
-            <p className="text-xs font-semibold text-slate-200">{t('sidebar.trialPlan')}</p>
-            <p className="text-xs text-slate-400 mt-1">14 {t('sidebar.daysRemaining')}</p>
+        {/* ── Footer ── */}
+        <div
+          className="p-4 space-y-3"
+          style={{ borderTop: "1px solid hsl(222, 30%, 14%)" }}
+        >
+          {/* Plan badge */}
+          <div
+            className="px-3 py-2.5 rounded-lg"
+            style={{ backgroundColor: "hsl(222, 30%, 12%)" }}
+          >
+            <div className="flex items-center gap-2 mb-0.5">
+              <Zap className="w-3 h-3" style={{ color: "hsl(38, 92%, 60%)" }} />
+              <p className="text-xs font-semibold" style={{ color: "hsl(0, 0%, 90%)" }}>
+                {t("sidebar.trialPlan")}
+              </p>
+            </div>
+            <p className="text-xs" style={{ color: "hsl(215, 20%, 50%)" }}>
+              14 {t("sidebar.daysRemaining")}
+            </p>
           </div>
 
-          <button className="w-full px-4 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
-            {t('buttons.upgrade')}
-          </button>
+          <Link href="/settings/subscription" className="block">
+            <button
+              className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg transition-opacity hover:opacity-90 active:opacity-80"
+              style={{
+                backgroundColor: "hsl(38, 92%, 50%)",
+                color: "hsl(0, 0%, 100%)",
+              }}
+            >
+              {t("buttons.upgrade")}
+            </button>
+          </Link>
         </div>
       </aside>
     </>

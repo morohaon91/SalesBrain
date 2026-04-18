@@ -1,5 +1,5 @@
 {
-  "appName": "SalesBrain",
+  "appName": "Concierge",
   "appDescription": "הסמכה של לידים מאוד על ידי AI לעצמאים וסוכנויות",
   "navigation": {
     "dashboard": "לוח בקרה",
@@ -76,7 +76,7 @@
     "tryAgain": "נסה שוב"
   },
   "home": {
-    "title": "SalesBrain",
+    "title": "Concierge",
     "tagline": "פלטפורמת הסמכת לידים מבוססת AI",
     "launch": "מתכוננים להשקה..."
   },

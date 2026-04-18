@@ -50,10 +50,10 @@
     "getWidgetCode": "קבל קוד וידג'ט"
   },
   "howItWorks": {
-    "title": "איך SalesBrain עובד",
+    "title": "איך Concierge עובד",
     "subtitle": "השלימו כל שלב כדי להפעיל את נציג המכירות AI.",
     "step1Title": "הריצו סימולציות",
-    "step1Body": "שוחחו עם לקוח AI כדי ש-SalesBrain ילמד איך אתם מוכרים.",
+    "step1Body": "שוחחו עם לקוח AI כדי ש-Concierge ילמד איך אתם מוכרים.",
     "step2Title": "אשרו את פרופיל ה-AI",
     "step2Body": "עברו על מה שה-AI למד ועברו לשידור חי.",
     "step3Title": "הוסיפו וידג'ט לאתר",
