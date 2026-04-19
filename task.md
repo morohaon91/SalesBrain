@@ -1,239 +1,74 @@
-# Business Types & Simulation Templates Audit
-
-You are a technical architect auditing the SalesBrain codebase to understand how business types and simulations are structured.
-
-**Your task**: Map all supported business types and their associated simulation templates.
-
----
-
-## What You Need to Find
-
-### Part 1: Business Types
-
-Find where business types are defined in the codebase.
-
-**Look for**:
-- Enum or constant list of business types
-- Database table storing business types
-- Where business type is selected during onboarding
-- What information is stored per business type
-
-**Questions to answer**:
-1. What business types are supported? (List all)
-2. Where is this list defined? (File + line numbers)
-3. How does a user select their business type?
-4. What data is stored for each business type?
-
-**Expected findings**:
-```
-Business Types Found:
-- Contractors
-- IT Services
-- Software Development
-- Financial Services
-- [others...]
-
-Location: prisma/schema.prisma (enum or table)
-Selection: app/(onboarding)/business-type/page.tsx (or similar)
-```
-
----
-
-### Part 2: Simulation Templates
-
-For EACH business type, find its simulation templates.
-
-**Look for**:
-- Simulation scenario definitions
-- Where scenarios are retrieved based on business type
-- Template content (what questions/situations are asked)
-- How many simulations per business type
-
-**Questions to answer for each business type**:
-1. How many simulation templates exist for this type?
-2. What are the scenarios/situations presented?
-3. What is the owner expected to respond to?
-4. Where are templates stored? (Database, files, hardcoded?)
-
-**Expected findings**:
-```
-Business Type: Contractors
-├─ Simulation 1: Roofing contractor gets inquiry about pricing
-├─ Simulation 2: Timeline negotiation with client
-├─ Simulation 3: Scope creep conversation
-├─ Simulation 4: Budget discussion
-└─ Simulation 5: Handling objection about experience
-
-Location: [file path]
-Storage: [database/hardcoded/files]
-```
-
----
-
-## Execution Steps
-
-### Step 1: Find Business Type Definitions
-
-Search the codebase for:
-- `enum.*BusinessType` or `BusinessType = {`
-- Prisma schema with business type field
-- Onboarding questionnaire that asks about business type
-
-**Report**:
-- List all supported business types
-- Show where defined
-- Show code snippet
-
----
-
-### Step 2: Find Business Type-to-Simulation Mapping
-
-Search for:
-- How simulations are retrieved for a selected business type
-- Function like `getSimulationsForBusinessType()`
-- Database queries filtering by business type
-- Configuration mapping business types to templates
-
-**Report**:
-- How is the mapping done? (Database, hardcoded, config file?)
-- Show the code that retrieves simulations
-
----
-
-### Step 3: Map Each Business Type to Simulations
-
-For each business type found:
-
-1. List the business type name
-2. List number of simulation templates
-3. List each simulation template name/scenario
-4. Show where templates are defined
-5. Show example content (what owner responds to)
-
-**Format your output**:
-
-```
-# Business Type: [Name]
-
-## Simulation Templates
-- **Simulation 1**: [Scenario name]
-  - Content: [What owner responds to]
-  - Location: [File path]
-  
-- **Simulation 2**: [Scenario name]
-  - Content: [What owner responds to]
-  - Location: [File path]
-
-[Continue for all simulations for this type]
-```
-
----
-
-### Step 4: Create Complete Mapping Document
-
-Create a comprehensive mapping showing:
-
-```
-┌─ Business Types Supported
-│
-├─ Contractors
-│  ├─ Simulation 1: [name]
-│  ├─ Simulation 2: [name]
-│  └─ Simulation 3: [name]
-│
-├─ IT Services
-│  ├─ Simulation 1: [name]
-│  ├─ Simulation 2: [name]
-│  └─ Simulation 3: [name]
-│
-├─ Software Development
-│  ├─ Simulation 1: [name]
-│  ├─ Simulation 2: [name]
-│  └─ Simulation 3: [name]
-│
-└─ [Other types...]
-```
-
----
-
-## Output Format
-
-Create a document called `BUSINESS_TYPES_AND_SIMULATIONS_MAPPING.md` with:
-
-### Section 1: Business Types Summary
-- List all supported types
-- Count total types
-- Where defined in codebase
-
-### Section 2: Simulation Templates Summary
-- Total number of templates across all types
-- Average templates per type
-- Template storage location
-
-### Section 3: Detailed Mapping
-For each business type:
-
-**[Business Type Name]**
-- Location: [where defined]
-- Selection interface: [where user selects this]
-- Number of simulations: [X]
-
-**Simulations**:
-1. [Scenario name]
-   - What owner responds to: [description]
-   - File location: [path]
-   - Content preview: [first 2-3 lines of scenario]
-
-2. [Scenario name]
-   - What owner responds to: [description]
-   - File location: [path]
-   - Content preview: [first 2-3 lines]
-
-[Continue for all simulations]
-
----
-
-### Section 4: Code Locations Reference
-
-**File 1**: [File path]
-- Purpose: [What's here]
-- Key functions: [List functions]
-- Snippet: [Code snippet]
-
-**File 2**: [File path]
-- Purpose: [What's here]
-- Key functions: [List functions]
-- Snippet: [Code snippet]
-
-[Continue for all relevant files]
-
----
-
-### Section 5: Gaps & Issues
-
-**If any of these are missing, report it**:
-- [ ] Some business types missing simulation templates
-- [ ] Simulations hardcoded (should be configurable)
-- [ ] Business type selection not wired to simulations
-- [ ] Template content unclear or generic
-- [ ] Missing support for a baseline business type
-
----
-
-## Success Criteria
-
-This audit is complete when you can answer:
-
-1. ✅ What are ALL business types supported?
-2. ✅ For each type, how many simulations exist?
-3. ✅ For each simulation, what is the owner expected to respond to?
-4. ✅ Where in codebase is each piece defined?
-5. ✅ How does the system map business type → simulations?
-
----
-
-## Go Ahead
-
-Audit the codebase. Find all business types and their simulation templates. Create the mapping document.
-
-You have everything you need. No more instructions.
+## Context
+
+This system extracts behavioral patterns from simulation conversations and stores them 
+in BusinessProfile JSON fields. These patterns are later used to power the AI agent 
+that talks to real leads on behalf of the business owner. Accuracy is critical — 
+a wrong pattern means the AI misrepresents the owner in a live sales conversation.
+
+## The Problem
+
+Right now, patterns can reach maximum confidence after a single simulation. A competency 
+like "Discovery Mastery" can show 100% after 1 conversation. This is not trustworthy 
+enough to represent someone in real sales conversations.
+
+The system should treat patterns like a professional would treat any behavioral assessment 
+— one data point is a hint, not a conclusion. The same behavior seen consistently across 
+different contexts and scenario types is what makes it reliable.
+
+## What We Want
+
+Implement a multi-simulation confidence system with these properties:
+
+1. **Evidence accumulation** — confidence in a pattern should grow with repetition. 
+   Seeing the same behavior once is a signal. Seeing it across 3 different simulations 
+   is a fact.
+
+2. **Cross-scenario validation** — the most critical competencies (objection handling, 
+   closing strategy, deal breakers) should only reach high confidence when demonstrated 
+   across different scenario types, not just repeated in the same type. A price objection 
+   handled well in the PRICE_OBJECTION scenario AND again in a HOT_LEAD scenario is 
+   more trustworthy than the same scenario run twice.
+
+3. **Tiered confidence ceilings per simulation count** — no competency should be able 
+   to max out from a single simulation. The ceiling should rise as evidence accumulates 
+   across simulations. The exact tiers and thresholds should match the actual data 
+   structure and what realistically gets extracted per scenario type.
+
+4. **Natural pacing** — a user doing all 8 mandatory scenarios in order should reach 
+   go-live readiness (~90% activation score) around simulation 6-7, not simulation 1-2. 
+   The last 2-3 simulations should feel meaningful, not redundant.
+
+5. **Accuracy over speed** — this is not a gamification system. The goal is that when 
+   the AI goes live, every pattern it uses has been genuinely validated. We prefer a 
+   system that takes longer to reach 90% but is trustworthy over one that inflates 
+   quickly.
+
+## Your Task
+
+1. Audit the current confidence and evidence tracking across:
+   - `lib/extraction/extraction-engine.ts` (merge functions)
+   - `lib/learning/competencies.ts` (competency validators)
+   - `lib/extraction/completion.ts` (completion formula)
+   - The actual DB data for existing profiles
+
+2. Design and implement a multi-simulation confidence system that solves the problem 
+   above. You have full freedom to improve or replace the approach — you know the 
+   actual code and data structures better than anyone. The solution should be:
+   - Based on what data the extraction engine actually produces per scenario type
+   - Realistic about what can be extracted from 1 vs 3 vs 8 simulations
+   - Consistent across both the Activation Score competencies and the Extracted 
+     Data Coverage formula
+   - Clean — no hacks, no magic numbers without explanation
+
+3. Update the competency validators in `lib/learning/competencies.ts` so that 
+   "Achieved" and "Mastered" statuses require cross-simulation evidence, not just 
+   single-simulation confidence scores.
+
+4. Update the completion formula in `lib/extraction/completion.ts` so section scores 
+   have evidence-based ceilings that rise with simulation count.
+
+5. Delete any dead code or stale logic that this change makes obsolete.
+
+Do not over-engineer. If the right solution is simple, implement the simple solution. 
+Document your design decisions in comments so the reasoning is clear to anyone 
+reading the code later.

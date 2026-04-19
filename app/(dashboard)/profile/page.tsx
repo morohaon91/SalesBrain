@@ -847,7 +847,7 @@ export default function ProfilePage() {
                               (db: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-sm">{db.rule ?? db}</span>
+                                  <span className="text-sm">{typeof db === 'string' ? db : db?.rule ?? ''}</span>
                                 </li>
                               )
                             )}
@@ -865,7 +865,7 @@ export default function ProfilePage() {
                               (gf: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-sm">{gf.description ?? gf.flagType ?? gf}</span>
+                                  <span className="text-sm">{typeof gf === 'string' ? gf : gf?.description ?? gf?.flagType ?? ''}</span>
                                 </li>
                               )
                             )}
@@ -881,7 +881,7 @@ export default function ProfilePage() {
                               (rf: any, i: number) => (
                                 <li key={i} className="flex items-start gap-2">
                                   <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-sm">{rf.description ?? rf.flagType ?? rf}</span>
+                                  <span className="text-sm">{typeof rf === 'string' ? rf : rf?.description ?? rf?.flagType ?? ''}</span>
                                 </li>
                               )
                             )}

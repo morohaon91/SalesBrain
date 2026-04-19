@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { QuestionnaireData } from '@/lib/types/onboarding';
-import { validateQuestionnaireData } from '@/lib/onboarding/questionnaire-validator';
-import { createQuestionnaireDataSchema } from '@/lib/validation/business-profile-schemas';
-import IndustrySelect from './IndustrySelect';
+import { useCallback, useMemo, useState } from 'react';
+import { QuestionnaireFormPayload } from '@/lib/types/onboarding';
+import { validateQuestionnairePayload } from '@/lib/onboarding/questionnaire-validator';
+import { createQuestionnairePayloadSchema } from '@/lib/validation/business-profile-schemas';
+import { getQuestionnairePlaceholderSlug } from '@/lib/onboarding/questionnaire-placeholder-slug';
 import MultiInputField from './MultiInputField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,22 +13,44 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { useI18n } from '@/lib/hooks/useI18n';
 
+type PlaceholderField =
+  | 'serviceDescription'
+  | 'targetClient'
+  | 'budget'
+  | 'commonQuestions'
+  | 'certifications'
+  | 'serviceArea';
+
 interface QuestionnaireFormProps {
-  onSubmit: (data: QuestionnaireData) => void;
+  /** From tenant (registration); drives example copy under `placeholders.<slug>.*`. */
+  tenantIndustry: string | null;
+  onSubmit: (data: QuestionnaireFormPayload) => void;
   isSubmitting: boolean;
 }
 
-export default function QuestionnaireForm({ onSubmit, isSubmitting }: QuestionnaireFormProps) {
+export default function QuestionnaireForm({
+  tenantIndustry,
+  onSubmit,
+  isSubmitting,
+}: QuestionnaireFormProps) {
   const { t } = useI18n('onboarding');
-  const [formData, setFormData] = useState<Partial<QuestionnaireData>>({
+  const placeholderSlug = useMemo(
+    () => getQuestionnairePlaceholderSlug(tenantIndustry),
+    [tenantIndustry]
+  );
+  const ph = useCallback(
+    (field: PlaceholderField) => t(`placeholders.${placeholderSlug}.${field}`),
+    [t, placeholderSlug]
+  );
+  const [formData, setFormData] = useState<Partial<QuestionnaireFormPayload>>({
     commonClientQuestions: [],
     certifications: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const schema = useMemo(() => createQuestionnaireDataSchema(t), [t]);
+  const schema = useMemo(() => createQuestionnairePayloadSchema(t), [t]);
 
-  const handleChange = (field: keyof QuestionnaireData, value: unknown) => {
+  const handleChange = (field: keyof QuestionnaireFormPayload, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
@@ -41,20 +63,20 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validation = validateQuestionnaireData(formData as QuestionnaireData, {
+    const validation = validateQuestionnairePayload(formData, {
       schema,
       duplicateQuestions: t('validation.duplicateQuestions'),
       addOneQuestion: t('validation.addOneQuestion'),
     });
-    if (!validation.isValid) {
+    if (!validation.isValid || !validation.parsed) {
       const errorMap: Record<string, string> = {};
       validation.errors.forEach((err) => {
-        errorMap[err.field] = err.message;
+        errorMap[err.field as string] = err.message;
       });
       setErrors(errorMap);
       return;
     }
-    onSubmit(formData as QuestionnaireData);
+    onSubmit(validation.parsed);
   };
 
   const teamOptions = [
@@ -69,17 +91,9 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-gray-900">{t('form.sectionBasic')}</h2>
 
-        <div>
-          <Label>
-            {t('form.industryLabel')} <span className="text-red-500">*</span>
-          </Label>
-          <p className="text-sm text-gray-500 mb-2">{t('form.industryHint')}</p>
-          <IndustrySelect
-            value={formData.industry || ''}
-            onChange={(v) => handleChange('industry', v)}
-            error={errors.industry}
-          />
-        </div>
+        <p className="text-sm rounded-lg border border-gray-200 bg-gray-50/90 text-gray-600 px-4 py-3">
+          {t('form.industryFromAccount')}
+        </p>
 
         <div>
           <Label htmlFor="serviceDescription">
@@ -88,7 +102,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
           <p className="text-sm text-gray-500 mb-2">{t('form.serviceDescriptionHint')}</p>
           <Textarea
             id="serviceDescription"
-            placeholder={t('form.serviceDescriptionPlaceholder')}
+            placeholder={ph('serviceDescription')}
             value={formData.serviceDescription || ''}
             onChange={(e) => handleChange('serviceDescription', e.target.value)}
             rows={4}
@@ -106,7 +120,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
           <p className="text-sm text-gray-500 mb-2">{t('form.targetClientHint')}</p>
           <Input
             id="targetClientType"
-            placeholder={t('form.targetClientPlaceholder')}
+            placeholder={ph('targetClient')}
             value={formData.targetClientType || ''}
             onChange={(e) => handleChange('targetClientType', e.target.value)}
             className={errors.targetClientType ? 'border-red-500' : ''}
@@ -123,7 +137,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
           <p className="text-sm text-gray-500 mb-2">{t('form.budgetHint')}</p>
           <Input
             id="typicalBudgetRange"
-            placeholder={t('form.budgetPlaceholder')}
+            placeholder={ph('budget')}
             value={formData.typicalBudgetRange || ''}
             onChange={(e) => handleChange('typicalBudgetRange', e.target.value)}
             className={errors.typicalBudgetRange ? 'border-red-500' : ''}
@@ -141,7 +155,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
           <MultiInputField
             values={formData.commonClientQuestions || []}
             onChange={(v) => handleChange('commonClientQuestions', v)}
-            placeholder={t('form.commonQuestionsPlaceholder')}
+            placeholder={ph('commonQuestions')}
             maxItems={10}
             minItems={1}
             addButtonText={t('form.addQuestion')}
@@ -167,7 +181,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
             type="number"
             min="0"
             max="100"
-            placeholder="15"
+            placeholder={t('form.yearsExperiencePlaceholder')}
             value={formData.yearsExperience ?? ''}
             onChange={(e) =>
               handleChange('yearsExperience', e.target.value ? parseInt(e.target.value, 10) : null)
@@ -185,7 +199,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
           <MultiInputField
             values={formData.certifications || []}
             onChange={(v) => handleChange('certifications', v)}
-            placeholder={t('form.certificationsPlaceholder')}
+            placeholder={ph('certifications')}
             maxItems={20}
             addButtonText={t('form.addCertification')}
           />
@@ -200,7 +214,7 @@ export default function QuestionnaireForm({ onSubmit, isSubmitting }: Questionna
           </Label>
           <Input
             id="serviceArea"
-            placeholder={t('form.serviceAreaPlaceholder')}
+            placeholder={ph('serviceArea')}
             value={formData.serviceArea || ''}
             onChange={(e) => handleChange('serviceArea', e.target.value)}
             className={errors.serviceArea ? 'border-red-500' : ''}

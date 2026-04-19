@@ -11,6 +11,7 @@ import { getScenarioById } from '@/lib/scenarios/mandatory-scenarios';
 import { EXTRACTION_SYSTEM_PROMPT, buildExtractionPrompt } from './extraction-prompts';
 import { calculateProfileCompletion } from './completion';
 import { updateProfileReadiness } from '@/lib/learning/readiness-calculator';
+import { clampConfidence, crossScenarioCeiling } from '@/lib/learning/evidence-ceiling';
 import type {
   CommunicationStyle,
   ObjectionHandling,
@@ -99,6 +100,7 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
     data: {
       extractedPatterns: extracted as any,
       validatedAt: new Date(),
+      ownerApprovalStatus: 'EXTRACTED',
     },
   });
 
@@ -200,48 +202,42 @@ export async function mergeExtractionWithProfile(
 ): Promise<void> {
   const now = new Date().toISOString();
 
-  const communicationStyle = mergeCommunicationStyle(
-    existing.communicationStyle,
-    extracted.communicationStyle,
-    now
-  );
-  const objectionHandling = mergeObjectionHandling(
-    existing.objectionHandling,
-    extracted.objectionHandling,
-    scenarioId,
-    now
-  );
-  const qualificationCriteria = mergeQualificationCriteria(
-    existing.qualificationCriteria,
-    extracted.qualificationCriteria,
-    now
-  );
-  const decisionMakingPatterns = mergeDecisionMaking(
-    existing.decisionMakingPatterns,
-    extracted.decisionMakingPatterns,
-    now
-  );
-  const pricingLogic = mergePricingLogic(existing.pricingLogic, extracted.pricingLogic, now);
-  const ownerVoiceExamples = mergeOwnerVoice(existing.ownerVoiceExamples, extracted.ownerVoiceExamples, now);
+  // Sim count AFTER this extraction lands. Used for evidence-based ceilings.
+  const profile = await prisma.businessProfile.findUnique({
+    where: { id: profileId },
+    select: { completedScenarios: true },
+  });
+  const existingScenarios = profile?.completedScenarios ?? [];
+  const projectedScenarios = existingScenarios.includes(scenarioId)
+    ? existingScenarios
+    : [...existingScenarios, scenarioId];
+  const simCount = projectedScenarios.length;
+
+  let snapshot: ExistingProfileSnapshot = {
+    communicationStyle: mergeCommunicationStyle(existing.communicationStyle, extracted.communicationStyle, now),
+    objectionHandling: mergeObjectionHandling(existing.objectionHandling, extracted.objectionHandling, scenarioId, now),
+    qualificationCriteria: mergeQualificationCriteria(existing.qualificationCriteria, extracted.qualificationCriteria, now),
+    decisionMakingPatterns: mergeDecisionMaking(existing.decisionMakingPatterns, extracted.decisionMakingPatterns, now),
+    pricingLogic: mergePricingLogic(existing.pricingLogic, extracted.pricingLogic, now),
+    ownerVoiceExamples: mergeOwnerVoice(existing.ownerVoiceExamples, extracted.ownerVoiceExamples, now),
+  };
+
+  snapshot = applyEvidenceCeilings(snapshot, simCount);
 
   const breakdown = calculateProfileCompletion({
-    communicationStyle,
-    objectionHandling,
-    qualificationCriteria,
-    decisionMakingPatterns,
-    pricingLogic,
-    ownerVoiceExamples,
+    ...snapshot,
+    completedScenarios: projectedScenarios,
   });
 
   await prisma.businessProfile.update({
     where: { id: profileId },
     data: {
-      communicationStyle: communicationStyle as any,
-      objectionHandling: objectionHandling as any,
-      qualificationCriteria: qualificationCriteria as any,
-      decisionMakingPatterns: decisionMakingPatterns as any,
-      pricingLogic: pricingLogic as any,
-      ownerVoiceExamples: ownerVoiceExamples as any,
+      communicationStyle: snapshot.communicationStyle as any,
+      objectionHandling: snapshot.objectionHandling as any,
+      qualificationCriteria: snapshot.qualificationCriteria as any,
+      decisionMakingPatterns: snapshot.decisionMakingPatterns as any,
+      pricingLogic: snapshot.pricingLogic as any,
+      ownerVoiceExamples: snapshot.ownerVoiceExamples as any,
       completionPercentage: breakdown.total,
       completionScore: breakdown.total,
       isComplete: breakdown.total >= 100,
@@ -253,6 +249,7 @@ export async function mergeExtractionWithProfile(
 /**
  * Public merge — returns merged objects without persisting.
  * Used by re-extract loop to merge across many sims before a single DB write.
+ * Caller is responsible for applying ceilings with the final sim count.
  */
 export function mergeAll(
   existing: ExistingProfileSnapshot,
@@ -267,6 +264,74 @@ export function mergeAll(
     decisionMakingPatterns: mergeDecisionMaking(existing.decisionMakingPatterns, extracted.decisionMakingPatterns, now),
     pricingLogic: mergePricingLogic(existing.pricingLogic, extracted.pricingLogic, now),
     ownerVoiceExamples: mergeOwnerVoice(existing.ownerVoiceExamples, extracted.ownerVoiceExamples, now),
+  };
+}
+
+/**
+ * Clamp all confidence numbers in the merged snapshot to what the evidence
+ * actually supports. The raw merge functions may inflate confidence as
+ * patterns repeat; this pass is the single authority on what confidence can
+ * actually be reported. See lib/learning/evidence-ceiling.ts for rationale.
+ *
+ *   - Pattern-level confidences (communicationStyle, pricingLogic, overalls)
+ *     clamp to confidenceCeiling(simCount).
+ *   - Objection playbooks and deal breakers additionally clamp to
+ *     crossScenarioCeiling(distinct scenarios where they were seen) — the
+ *     same price objection handled in PRICE_OBJECTION + HOT_LEAD is worth
+ *     more than PRICE_OBJECTION run twice.
+ */
+export function applyEvidenceCeilings(
+  snapshot: ExistingProfileSnapshot,
+  simCount: number
+): ExistingProfileSnapshot {
+  const cs = snapshot.communicationStyle;
+  const oh = snapshot.objectionHandling;
+  const qc = snapshot.qualificationCriteria;
+  const dm = snapshot.decisionMakingPatterns;
+  const pl = snapshot.pricingLogic;
+
+  // Spread guard: the AI sometimes returns a bare string where the schema
+  // expects an object. Spreading a string produces { 0, 1, ..., N } — which
+  // breaks both the schema and React rendering. Only spread real objects.
+  const isObj = (v: any): v is Record<string, any> =>
+    v !== null && typeof v === 'object' && !Array.isArray(v);
+
+  return {
+    communicationStyle: cs
+      ? { ...cs, confidence: clampConfidence(cs.confidence, cs.evidenceCount ?? simCount) }
+      : null,
+    objectionHandling: oh
+      ? {
+          ...oh,
+          playbooks: oh.playbooks.filter(isObj).map((p: any) => {
+            const repCeiling = clampConfidence(p.confidenceScore, p.evidenceCount ?? 1);
+            const crossCeiling = crossScenarioCeiling(p.scenariosEncountered?.length ?? 1);
+            return { ...p, confidenceScore: Math.min(repCeiling, crossCeiling) };
+          }),
+          overallConfidence: clampConfidence(oh.overallConfidence, simCount),
+        }
+      : null,
+    qualificationCriteria: qc
+      ? {
+          ...qc,
+          greenFlags: qc.greenFlags.filter(isObj).map((f: any) => ({ ...f, confidence: clampConfidence(f.confidence, simCount) })),
+          yellowFlags: qc.yellowFlags.filter(isObj).map((f: any) => ({ ...f, confidence: clampConfidence(f.confidence, simCount) })),
+          redFlags: qc.redFlags.filter(isObj).map((f: any) => ({ ...f, confidence: clampConfidence(f.confidence, simCount) })),
+          // Deal breakers are critical — use cross-scenario ceiling against
+          // the scenarios they've been demonstrated in.
+          dealBreakers: qc.dealBreakers.filter(isObj).map((db: any) => {
+            const repCeiling = clampConfidence(db.confidence, db.evidenceCount ?? 1);
+            const crossCeiling = crossScenarioCeiling(db.scenariosDemonstrated?.length ?? 1);
+            return { ...db, confidence: Math.min(repCeiling, crossCeiling) };
+          }),
+          overallConfidence: clampConfidence(qc.overallConfidence, simCount),
+        }
+      : null,
+    decisionMakingPatterns: dm
+      ? { ...dm, overallConfidence: clampConfidence(dm.overallConfidence, simCount) }
+      : null,
+    pricingLogic: pl ? { ...pl, confidence: clampConfidence(pl.confidence, simCount) } : null,
+    ownerVoiceExamples: snapshot.ownerVoiceExamples,
   };
 }
 
@@ -325,7 +390,7 @@ function mergeCommunicationStyle(
     typoTolerance: e.typoTolerance ?? existing.typoTolerance,
     verbosityPattern: e.verbosityPattern ?? existing.verbosityPattern,
 
-    confidence: Math.min(100, ((existing.confidence + (e.confidence ?? 50)) / 2) + 5),
+    confidence: Math.min(100, (((existing.confidence ?? 0) + (e.confidence ?? 50)) / 2) + 5),
     evidenceCount: existing.evidenceCount + 1,
     lastUpdated: now,
   };
@@ -608,8 +673,11 @@ function mergeFlags<T extends { flagType: string; signalExamples: string[]; conf
   existing: T[],
   extracted: T[]
 ): T[] {
-  const merged = [...existing];
-  for (const incoming of extracted) {
+  // Drop non-object entries — the AI occasionally returns bare strings that
+  // would break both the schema and downstream rendering.
+  const isFlag = (f: any): f is T => f !== null && typeof f === 'object' && !Array.isArray(f);
+  const merged = [...(existing ?? []).filter(isFlag)];
+  for (const incoming of (extracted ?? []).filter(isFlag)) {
     const i = merged.findIndex((f) => f.flagType === incoming.flagType);
     if (i >= 0) {
       merged[i] = {
@@ -625,8 +693,10 @@ function mergeFlags<T extends { flagType: string; signalExamples: string[]; conf
 }
 
 function mergeDealBreakers(existing: DealBreaker[], extracted: DealBreaker[]): DealBreaker[] {
-  const merged = [...existing];
-  for (const incoming of extracted) {
+  const isDB = (d: any): d is DealBreaker =>
+    d !== null && typeof d === 'object' && !Array.isArray(d) && typeof d.rule === 'string';
+  const merged = [...(existing ?? []).filter(isDB)];
+  for (const incoming of (extracted ?? []).filter(isDB)) {
     const i = merged.findIndex((d) => d.rule === incoming.rule);
     if (i >= 0) {
       merged[i] = {

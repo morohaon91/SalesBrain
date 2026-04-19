@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/prisma';
-import { extractRawFromMessages, mergeAll } from '@/lib/extraction/extraction-engine';
+import { extractRawFromMessages, mergeAll, applyEvidenceCeilings } from '@/lib/extraction/extraction-engine';
 import { calculateProfileCompletion } from '@/lib/extraction/completion';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -88,9 +88,13 @@ async function handler(req: AuthenticatedRequest) {
       );
     }
 
+    const finalScenarios = Array.from(completedScenarioIds);
+    accumulated = applyEvidenceCeilings(accumulated, finalScenarios.length);
+
     const breakdown = calculateProfileCompletion({
       ...profile,
       ...accumulated,
+      completedScenarios: finalScenarios,
     });
 
     await prisma.businessProfile.update({
@@ -103,7 +107,7 @@ async function handler(req: AuthenticatedRequest) {
         pricingLogic: accumulated.pricingLogic as any,
         ownerVoiceExamples: accumulated.ownerVoiceExamples as any,
         simulationCount: successCount,
-        completedScenarios: Array.from(completedScenarioIds),
+        completedScenarios: finalScenarios,
         completionPercentage: breakdown.total,
         completionScore: breakdown.total,
         isComplete: breakdown.total >= 100,

@@ -213,6 +213,7 @@ export default function RegisterPage() {
           {errors.industry && (
             <p className="text-sm text-danger-600">{errors.industry.message}</p>
           )}
+          <p className="text-xs text-gray-500">{t("auth:register.industryHint")}</p>
         </div>
 
         <div className="space-y-2">

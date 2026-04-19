@@ -1,25 +1,33 @@
-import { QuestionnaireData, QuestionnaireValidation, QuestionnaireValidationError } from '@/lib/types/onboarding';
-import { QuestionnaireDataSchema } from '@/lib/validation/business-profile-schemas';
+import {
+  QuestionnaireFormPayload,
+  QuestionnaireValidation,
+  QuestionnaireValidationError,
+} from '@/lib/types/onboarding';
+import { QuestionnairePayloadSchema } from '@/lib/validation/business-profile-schemas';
 import { ZodError, ZodTypeAny } from 'zod';
 
 export type ValidateQuestionnaireOptions = {
-  /** Defaults to {@link QuestionnaireDataSchema} (English API messages). */
+  /** Defaults to {@link QuestionnairePayloadSchema} (English API messages). */
   schema?: ZodTypeAny;
   duplicateQuestions?: string;
   addOneQuestion?: string;
 };
 
-export function validateQuestionnaireData(
-  data: QuestionnaireData,
+export type QuestionnaireValidationResult = QuestionnaireValidation & {
+  parsed?: QuestionnaireFormPayload;
+};
+
+export function validateQuestionnairePayload(
+  data: unknown,
   options?: ValidateQuestionnaireOptions
-): QuestionnaireValidation {
+): QuestionnaireValidationResult {
   const errors: QuestionnaireValidationError[] = [];
-  const schema = options?.schema ?? QuestionnaireDataSchema;
+  const schema = options?.schema ?? QuestionnairePayloadSchema;
 
   try {
-    schema.parse(data);
+    const parsed = schema.parse(data) as QuestionnaireFormPayload;
 
-    if (!data.commonClientQuestions || data.commonClientQuestions.length === 0) {
+    if (!parsed.commonClientQuestions || parsed.commonClientQuestions.length === 0) {
       errors.push({
         field: 'commonClientQuestions',
         message: options?.addOneQuestion ?? 'Please add at least one common client question',
@@ -27,21 +35,25 @@ export function validateQuestionnaireData(
     }
 
     const uniqueQuestions = new Set(
-      (data.commonClientQuestions || []).map((q) => q.toLowerCase().trim())
+      (parsed.commonClientQuestions || []).map((q) => q.toLowerCase().trim())
     );
-    if (uniqueQuestions.size !== (data.commonClientQuestions || []).length) {
+    if (uniqueQuestions.size !== (parsed.commonClientQuestions || []).length) {
       errors.push({
         field: 'commonClientQuestions',
         message: options?.duplicateQuestions ?? 'Duplicate questions detected',
       });
     }
 
-    return { isValid: errors.length === 0, errors };
+    if (errors.length > 0) {
+      return { isValid: false, errors };
+    }
+
+    return { isValid: true, errors: [], parsed };
   } catch (error) {
     if (error instanceof ZodError) {
       error.errors.forEach((err) => {
         errors.push({
-          field: (err.path[0] as keyof QuestionnaireData) || 'industry',
+          field: (err.path[0] as keyof QuestionnaireFormPayload) || 'serviceDescription',
           message: err.message,
         });
       });
@@ -49,3 +61,6 @@ export function validateQuestionnaireData(
     return { isValid: false, errors };
   }
 }
+
+/** @deprecated Use {@link validateQuestionnairePayload} */
+export const validateQuestionnaireData = validateQuestionnairePayload;

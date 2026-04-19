@@ -109,8 +109,7 @@ export default function LearningDashboardPage() {
   const competencyLabels = useMemo(
     () => ({
       required: t("learning:competencies.required"),
-      examplesOne: t("learning:competencies.examples_one"),
-      examplesOther: t("learning:competencies.examples_other", { count: 0 }),
+      examples: (count: number) => t("learning:competencies.examples", { count }),
       statusLabel: t("learning:competencies.statusLabel"),
       requirements: t("learning:competencies.requirements"),
       minConfidence: (value: number) =>

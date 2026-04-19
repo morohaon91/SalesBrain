@@ -28,7 +28,7 @@ export default function ProfileProgressAnimation({
     return () => clearInterval(interval);
   }, [currentPercentage, previousPercentage]);
 
-  const color = displayValue >= 70 ? 'text-green-600' : displayValue >= 40 ? 'text-yellow-600' : 'text-orange-600';
+  const color = displayValue >= 90 ? 'text-green-600' : displayValue >= 40 ? 'text-yellow-600' : 'text-orange-600';
 
   return (
     <div className="space-y-3">
@@ -47,11 +47,11 @@ export default function ProfileProgressAnimation({
         </div>
       </div>
       <Progress value={displayValue} className="h-3" />
-      {displayValue >= 70 && (
+      {displayValue >= 90 && (
         <p className="text-xs text-green-600 font-medium">You're ready to go live!</p>
       )}
-      {displayValue < 70 && (
-        <p className="text-xs text-gray-500">{70 - displayValue}% more needed to activate AI</p>
+      {displayValue < 90 && (
+        <p className="text-xs text-gray-500">{90 - displayValue}% more needed to activate AI</p>
       )}
     </div>
   );

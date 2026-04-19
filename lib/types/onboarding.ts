@@ -3,8 +3,8 @@
  * Used for the initial questionnaire and onboarding flow
  */
 
-export interface QuestionnaireData {
-  industry: string;
+/** Submitted from the questionnaire UI (industry comes from the tenant, set at registration). */
+export interface QuestionnaireFormPayload {
   serviceDescription: string;
   targetClientType: string;
   typicalBudgetRange: string;
@@ -15,8 +15,13 @@ export interface QuestionnaireData {
   teamSize: string;
 }
 
+/** Full profile questionnaire input including industry (server merges tenant industry). */
+export interface QuestionnaireData extends QuestionnaireFormPayload {
+  industry: string;
+}
+
 export interface QuestionnaireValidationError {
-  field: keyof QuestionnaireData;
+  field: keyof QuestionnaireFormPayload | keyof QuestionnaireData;
   message: string;
 }
 

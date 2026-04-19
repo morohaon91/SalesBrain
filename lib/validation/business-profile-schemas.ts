@@ -1,11 +1,7 @@
 import { z } from 'zod';
 import type { TFunction } from 'i18next';
 
-/**
- * Questionnaire data validation schema (English defaults for API / server)
- */
-export const QuestionnaireDataSchema = z.object({
-  industry: z.string().min(1, 'Industry is required'),
+const questionnaireFields = {
   serviceDescription: z.string().min(10, 'Service description must be at least 10 characters').max(1000),
   targetClientType: z.string().min(5, 'Target client type must be at least 5 characters').max(200),
   typicalBudgetRange: z.string().min(3, 'Budget range is required').max(100),
@@ -19,15 +15,24 @@ export const QuestionnaireDataSchema = z.object({
   teamSize: z.enum(['Solo', '2-5', '6-10', '10+'], {
     errorMap: () => ({ message: 'Please select a team size' }),
   }),
-});
+};
+
+/**
+ * Body the client sends (no industry — taken from the tenant record set at registration).
+ */
+export const QuestionnairePayloadSchema = z.object(questionnaireFields);
+
+/**
+ * @deprecated Use {@link QuestionnairePayloadSchema}; industry is applied server-side from the tenant.
+ */
+export const QuestionnaireDataSchema = QuestionnairePayloadSchema;
 
 /**
  * Localized questionnaire schema for client-side forms (onboarding namespace).
  */
 /** Pass `t` scoped to the `onboarding` namespace (e.g. from useI18n('onboarding')). */
-export function createQuestionnaireDataSchema(t: TFunction) {
+export function createQuestionnairePayloadSchema(t: TFunction) {
   return z.object({
-    industry: z.string().min(1, t('validation.industryRequired')),
     serviceDescription: z
       .string()
       .min(10, t('validation.serviceDescriptionMin'))
@@ -50,7 +55,11 @@ export function createQuestionnaireDataSchema(t: TFunction) {
   });
 }
 
-export type QuestionnaireDataInput = z.infer<typeof QuestionnaireDataSchema>;
+/** @deprecated Use {@link createQuestionnairePayloadSchema} */
+export const createQuestionnaireDataSchema = createQuestionnairePayloadSchema;
+
+export type QuestionnairePayloadInput = z.infer<typeof QuestionnairePayloadSchema>;
+export type QuestionnaireDataInput = QuestionnairePayloadInput;
 
 /**
  * Business facts schema

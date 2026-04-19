@@ -11,10 +11,41 @@ interface PatternReviewCardProps {
   onReject?: () => void;
 }
 
+function extractLabel(obj: Record<string, unknown>): string {
+  const labelKeys = ['rule', 'objectionType', 'flagType', 'type', 'name', 'signal', 'phrase'];
+  for (const k of labelKeys) {
+    if (typeof obj[k] === 'string') return obj[k] as string;
+  }
+  const firstStr = Object.values(obj).find((v) => typeof v === 'string');
+  return typeof firstStr === 'string' ? firstStr : '—';
+}
+
 function renderValue(val: unknown): string {
-  if (Array.isArray(val)) return val.join(', ') || '—';
-  if (typeof val === 'object' && val !== null) return JSON.stringify(val);
   if (val === null || val === undefined) return '—';
+  if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+  if (Array.isArray(val)) {
+    if (val.length === 0) return '—';
+    return val
+      .map((item) =>
+        item !== null && typeof item === 'object'
+          ? extractLabel(item as Record<string, unknown>)
+          : String(item)
+      )
+      .join(', ');
+  }
+  if (typeof val === 'object') {
+    const entries = Object.entries(val as Record<string, unknown>)
+      .filter(([, v]) => v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && (v as unknown[]).length === 0))
+      .map(([k, v]) => {
+        const label = k.replace(/([A-Z])/g, ' $1').toLowerCase();
+        let display: string;
+        if (typeof v === 'boolean') display = v ? 'yes' : 'no';
+        else if (Array.isArray(v)) display = (v as unknown[]).map(String).join(', ');
+        else display = String(v);
+        return `${label}: ${display}`;
+      });
+    return entries.join(' · ') || '—';
+  }
   return String(val);
 }
 

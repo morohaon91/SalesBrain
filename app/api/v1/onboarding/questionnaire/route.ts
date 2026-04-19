@@ -1,28 +1,54 @@
 import { NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
-import { validateQuestionnaireData } from '@/lib/onboarding/questionnaire-validator';
+import { validateQuestionnairePayload } from '@/lib/onboarding/questionnaire-validator';
 import { initializeProfile } from '@/lib/onboarding/profile-initializer';
-import { getNextRecommendedScenario } from '@/lib/scenarios/mandatory-scenarios';
+import { getNextRecommendedScenario, INDUSTRY_LIST } from '@/lib/scenarios/mandatory-scenarios';
 import { prisma } from '@/lib/prisma';
+import type { QuestionnaireData } from '@/lib/types/onboarding';
 
 async function handler(req: AuthenticatedRequest) {
   try {
     const tenantId = req.auth.tenantId;
 
-    const data = await req.json();
-    const validation = validateQuestionnaireData(data);
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { industry: true },
+    });
 
-    if (!validation.isValid) {
+    const body = await req.json();
+    const validation = validateQuestionnairePayload(body);
+
+    if (!validation.isValid || !validation.parsed) {
       return NextResponse.json(
-        { success: false, error: { code: 'VALIDATION_ERROR', message: 'Validation failed' }, errors: validation.errors },
+        {
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Validation failed' },
+          errors: validation.errors,
+        },
         { status: 400 }
       );
     }
 
+    const industry = (tenant?.industry ?? '').trim();
+    if (!industry || !INDUSTRY_LIST.includes(industry)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'MISSING_INDUSTRY',
+            message:
+              'Your account needs a valid industry before continuing. Open Settings → Business profile, choose your industry, save, then return here.',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const fullPayload: QuestionnaireData = { ...validation.parsed, industry };
+
     // Prevent duplicate profiles
     const existing = await prisma.businessProfile.findUnique({ where: { tenantId } });
     if (existing) {
-      // Profile exists but onboardingStep may not have been updated — fix it
       await prisma.tenant.update({
         where: { id: tenantId },
         data: { onboardingStep: 'simulations' },
@@ -36,9 +62,8 @@ async function handler(req: AuthenticatedRequest) {
       });
     }
 
-    const profile = await initializeProfile(tenantId, data);
+    const profile = await initializeProfile(tenantId, fullPayload);
 
-    // Update tenant onboarding state
     await prisma.tenant.update({
       where: { id: tenantId },
       data: { onboardingStep: 'simulations' },

@@ -12,6 +12,7 @@ async function handler(req: AuthenticatedRequest) {
       onboardingStep: true,
       leadConversationsActive: true,
       activatedAt: true,
+      industry: true,
     },
   });
 
@@ -39,6 +40,7 @@ async function handler(req: AuthenticatedRequest) {
       onboardingStep: tenant.onboardingStep,
       leadConversationsActive: tenant.leadConversationsActive,
       activatedAt: tenant.activatedAt?.toISOString() ?? null,
+      tenantIndustry: tenant.industry ?? null,
       hasProfile: !!profile,
       profile: profile
         ? {

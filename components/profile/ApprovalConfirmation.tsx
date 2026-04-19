@@ -27,7 +27,7 @@ export default function ApprovalConfirmation({ isReady, onApprove }: ApprovalCon
     return (
       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
         <p className="text-sm text-gray-600">
-          Complete your profile to at least 70% to enable the approval button.
+          Complete your profile to at least 90% to enable the approval button.
         </p>
       </div>
     );

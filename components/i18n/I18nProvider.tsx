@@ -1,13 +1,11 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/i18n.config';
 import { isHebrewLocale } from '@/lib/i18n/locale';
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [isInitialized, setIsInitialized] = useState(false);
-
   useEffect(() => {
     const language =
       typeof window !== 'undefined' ? localStorage.getItem('language') || 'en' : 'en';
@@ -20,18 +18,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     html.dir = rtl ? 'rtl' : 'ltr';
     html.setAttribute('data-theme', rtl ? 'rtl' : 'ltr');
 
-    i18n.changeLanguage(language).then(() => {
-      setIsInitialized(true);
-    });
+    void i18n.changeLanguage(language);
   }, []);
 
-  if (!isInitialized) {
-    return <>{children}</>;
-  }
-
-  return (
-    <I18nextProvider i18n={i18n}>
-      {children}
-    </I18nextProvider>
-  );
+  // Always mount I18nextProvider. Delaying it until after changeLanguage meant the first paint
+  // (and sometimes longer) ran without React i18n context, so t() returned raw keys like
+  // "placeholders.interiorDesign.serviceDescription".
+  return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 }

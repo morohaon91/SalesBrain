@@ -12,8 +12,7 @@ interface CompetencyDetailsProps {
   requirement: CompetencyRequirement;
   labels: {
     required: string;
-    examplesOne: string;
-    examplesOther: string;
+    examples: (count: number) => string;
     statusLabel: string;
     requirements: string;
     minConfidence: (value: number) => string;
@@ -31,7 +30,9 @@ export function CompetencyDetails({ competency, requirement, labels }: Competenc
   const isAchieved =
     competency.status === "ACHIEVED" || competency.status === "MASTERED";
   const isMandatory = requirement.requiredForGoLive;
-  const confidence = Math.round(competency.currentConfidence);
+  const confidence = Number.isFinite(competency.currentConfidence)
+    ? Math.round(competency.currentConfidence)
+    : 0;
   const delta = Math.max(0, requirement.minimumConfidence - confidence);
 
   return (
@@ -95,9 +96,7 @@ export function CompetencyDetails({ competency, requirement, labels }: Competenc
           </div>
 
           <p className="mt-1 text-[11px] text-gray-400">
-            {competency.evidenceCount === 1
-              ? labels.examplesOne
-              : labels.examplesOther.replace("{{count}}", String(competency.evidenceCount))}
+            {labels.examples(competency.evidenceCount)}
           </p>
         </div>
 

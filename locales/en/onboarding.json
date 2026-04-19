@@ -1,37 +1,141 @@
 {
+  "shell": {
+    "headlineLead": "Set up your business profile.",
+    "headlineAccent": "We tailor practice to you.",
+    "subhead": "A few details about how you sell and who you serve help us tune simulations and your AI voice before you go live.",
+    "feature1": "Industry from your account — asked once at sign-up",
+    "feature2": "Practice scenarios match your vertical automatically",
+    "feature3": "You can refine everything later in Settings",
+    "mobileTag": "Onboarding",
+    "footer": "Secure, AI-powered lead warm-up for your business"
+  },
+  "progress": {
+    "questionnaireLabel": "Business details",
+    "questionnaireDesc": "How you sell and who you serve",
+    "simulationsLabel": "Practice",
+    "simulationsDesc": "Train your AI voice",
+    "approvalLabel": "Go live",
+    "approvalDesc": "Review and activate"
+  },
+  "placeholders": {
+    "default": {
+      "serviceDescription": "e.g., Quarterly planning workshops, operational audits, leadership coaching for scaling teams",
+      "targetClient": "e.g., Founders, COOs, heads of operations at 50–300 person companies",
+      "budget": "e.g., $8k–$20k workshops, $4k/month advisory retainers",
+      "commonQuestions": "e.g., 'What does week one look like?', 'Can you work alongside our internal team?'",
+      "certifications": "e.g., PMP, ICF-ACC coaching credential",
+      "serviceArea": "e.g., US Eastern time zone, hybrid in major metros"
+    },
+    "legalServices": {
+      "serviceDescription": "e.g., Outside counsel for startups, contract drafting and review, employment policies and handbooks",
+      "targetClient": "e.g., Seed–Series B founders, HR leaders, real estate investors closing acquisitions",
+      "budget": "e.g., $350–$450/hour, flat-fee contract packages from $2,500",
+      "commonQuestions": "e.g., 'What do you need to start a contract review?', 'How fast can you turn around an NDA?'",
+      "certifications": "e.g., Admitted to California Bar, Certified Privacy Professional (CIPP/US)",
+      "serviceArea": "e.g., Bay Area, statewide remote (California)"
+    },
+    "constructionContracting": {
+      "serviceDescription": "e.g., Kitchen and bathroom remodeling, custom cabinetry, general contracting for residential projects",
+      "targetClient": "e.g., Homeowners, property investors, small commercial landlords",
+      "budget": "e.g., $20k–$50k renovations, $100k+ full-home gut remodels",
+      "commonQuestions": "e.g., 'Do you handle permits?', 'How long does a kitchen remodel take?'",
+      "certifications": "e.g., Licensed General Contractor — California, EPA Lead-Safe Certified",
+      "serviceArea": "e.g., San Francisco Bay Area, Marin County"
+    },
+    "realEstateServices": {
+      "serviceDescription": "e.g., Buyer and seller representation, relocation support, investment property analysis",
+      "targetClient": "e.g., First-time buyers, relocating executives, investors building rental portfolios",
+      "budget": "e.g., Typical home prices you focus on: $450k–$900k in your farm area",
+      "commonQuestions": "e.g., 'How many offers should we expect?', 'What closing costs should we budget?'",
+      "certifications": "e.g., Realtor®, Broker license — Texas",
+      "serviceArea": "e.g., Austin metro, downtown condos and nearby suburbs"
+    },
+    "financialAdvisory": {
+      "serviceDescription": "e.g., Retirement income planning, portfolio management, equity-comp and concentrated-stock strategies",
+      "targetClient": "e.g., Pre-retirees 55+, tech employees with RSUs, small-business owners planning exit",
+      "budget": "e.g., $2k–$5k financial plan, ongoing 0.75%–1% AUM",
+      "commonQuestions": "e.g., 'Are you a fiduciary?', 'How do you handle a large single-stock position?'",
+      "certifications": "e.g., CFP®, CFA charterholder",
+      "serviceArea": "e.g., Remote U.S., in-person meetings in Chicago"
+    },
+    "businessConsulting": {
+      "serviceDescription": "e.g., Go-to-market for B2B SaaS, pricing and packaging, sales playbook and discovery training",
+      "targetClient": "e.g., Series A–B startups, PE-backed roll-ups, VP Sales with a lean team",
+      "budget": "e.g., $25k–$80k projects, $12k/month advisory retainers",
+      "commonQuestions": "e.g., 'What access do we get between working sessions?', 'Can you join our QBR?'",
+      "certifications": "e.g., MBA, HubSpot Sales Software certified",
+      "serviceArea": "e.g., North America, hybrid on-site + remote"
+    },
+    "marketingCreative": {
+      "serviceDescription": "e.g., Brand identity, paid social and search, content retainers, launch campaigns for D2C brands",
+      "targetClient": "e.g., E-commerce founders, marketing leads at mid-market brands, funded startups",
+      "budget": "e.g., $8k–$18k/month retainers, $25k–$60k launch projects",
+      "commonQuestions": "e.g., 'Who owns the ad accounts?', 'How often do we get reporting and creative rounds?'",
+      "certifications": "e.g., Google Ads Partner, Meta Blueprint certified",
+      "serviceArea": "e.g., US & EU time zones, remote-first studio"
+    },
+    "homeServices": {
+      "serviceDescription": "e.g., HVAC tune-ups and repairs, annual maintenance plans, emergency same-day service",
+      "targetClient": "e.g., Homeowners, property managers, small retail and office tenants",
+      "budget": "e.g., $150–$350 service calls, $5k–$15k full system replacements",
+      "commonQuestions": "e.g., 'Do you offer same-day appointments?', 'What warranty do you provide on parts and labor?'",
+      "certifications": "e.g., EPA 608 Universal, state HVAC contractor license",
+      "serviceArea": "e.g., Dallas–Fort Worth metro"
+    },
+    "healthWellness": {
+      "serviceDescription": "e.g., 1:1 nutrition coaching, habit and accountability coaching, 12-week transformation programs",
+      "targetClient": "e.g., Busy professionals, postpartum parents, recreational endurance athletes",
+      "budget": "e.g., $120–$180/session, $1,200 for a 90-day program",
+      "commonQuestions": "e.g., 'Do you accept HSA/FSA?', 'What is your cancellation policy?'",
+      "certifications": "e.g., NASM-CPT, Precision Nutrition Level 2",
+      "serviceArea": "e.g., Online worldwide, in-person in South Florida"
+    },
+    "itTechnology": {
+      "serviceDescription": "e.g., Managed IT for 20–250 seats, Microsoft 365 migration, endpoint security and backup",
+      "targetClient": "e.g., Office managers, IT-light CTOs, professional services and healthcare clinics",
+      "budget": "e.g., $110–$150/user/month managed services, $15k–$45k migration projects",
+      "commonQuestions": "e.g., 'What is your SLA for critical outages?', 'Do you support Mac and Windows equally?'",
+      "certifications": "e.g., CompTIA Security+, Microsoft Solutions Partner — Modern Work",
+      "serviceArea": "e.g., Southern California on-site, remote nationwide NOC"
+    },
+    "interiorDesign": {
+      "serviceDescription": "e.g., Full-service residential design, furnishings and procurement, kitchen and bath concept development",
+      "targetClient": "e.g., Homeowners on primary-residence remodels, custom home builders, boutique multifamily developers",
+      "budget": "e.g., $8k–$25k design fees per major space, $75k+ whole-home design and procurement",
+      "commonQuestions": "e.g., 'Is your fee hourly or flat?', 'How do you coordinate with our architect and contractor?'",
+      "certifications": "e.g., NCIDQ, ASID professional member",
+      "serviceArea": "e.g., Metro Atlanta, Southeast U.S. travel"
+    }
+  },
   "questionnaire": {
     "pageTitle": "Tell us about your business",
-    "pageSubtitle": "This helps us tailor simulations and your AI profile to your business.",
+    "pageSubtitle": "Industry is already saved from registration. The rest helps us tailor simulations and your AI profile.",
     "footer": "This takes about 3 minutes. You can always update this information later.",
     "submitError": "Failed to save questionnaire",
+    "missingIndustry": "Your account needs a valid industry. Open Settings → Business profile, choose your industry, save, then return to this page.",
+    "loadingExamples": "Loading tailored examples…",
     "genericError": "An error occurred"
   },
   "form": {
-    "sectionBasic": "Basic Business Information",
-    "sectionFacts": "Business Facts",
+    "sectionBasic": "Basic business information",
+    "sectionFacts": "Business facts",
     "factsIntro": "This information helps create more realistic practice scenarios",
-    "industryLabel": "Industry",
-    "industryHint": "This determines which practice scenarios you'll get",
+    "industryFromAccount": "Your industry is the one you chose when you created your account. It drives which practice scenarios you see. To change it, go to Settings → Business profile after onboarding.",
     "serviceDescriptionLabel": "Service Description",
     "serviceDescriptionHint": "What services do you provide?",
-    "serviceDescriptionPlaceholder": "e.g., Kitchen and bathroom remodeling, custom cabinetry, general contracting for residential projects",
     "targetClientLabel": "Target Client Type",
     "targetClientHint": "Who do you typically work with?",
-    "targetClientPlaceholder": "e.g., Homeowners, property investors, commercial clients",
     "budgetLabel": "Typical Budget Range",
     "budgetHint": "What's your typical project budget range?",
-    "budgetPlaceholder": "e.g., $20k-$50k, $100k+",
     "commonQuestionsLabel": "Common Client Questions",
     "commonQuestionsHint": "What do clients usually ask you?",
-    "commonQuestionsPlaceholder": "e.g., 'Do you handle permits?', 'How long does a kitchen take?'",
     "addQuestion": "Add Question",
     "yearsExperience": "Years of Experience",
+    "yearsExperiencePlaceholder": "e.g., 12",
     "certificationsLabel": "Certifications / Licenses",
     "certificationsHint": "Optional but helps establish credibility",
-    "certificationsPlaceholder": "e.g., Licensed General Contractor - California",
     "addCertification": "Add Certification",
     "serviceAreaLabel": "Service Area",
-    "serviceAreaPlaceholder": "e.g., San Francisco Bay Area",
     "teamSizeLabel": "Team Size",
     "teamSizePlaceholder": "Select team size",
     "teamSolo": "Solo (just me)",
@@ -42,7 +146,6 @@
     "continueButton": "Continue to Practice Simulations"
   },
   "validation": {
-    "industryRequired": "Industry is required",
     "serviceDescriptionMin": "Service description must be at least 10 characters",
     "targetClientMin": "Target client type must be at least 5 characters",
     "budgetRequired": "Budget range is required",

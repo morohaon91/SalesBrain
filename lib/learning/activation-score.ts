@@ -52,7 +52,9 @@ export function calculateActivationScore(profile: any): ActivationScore {
   if (profilePoints < 8) {
     blockingStep = 'profile';
     nextAction = 'Complete your business profile';
-  } else if (completedCount < 3) {
+  } else if (completedCount < 2) {
+    // No competency can unlock from a single simulation; need at least 2
+    // before checking competency progress.
     blockingStep = 'simulations';
     nextAction = 'Complete more training simulations';
   } else if (achievedCount < 9) {

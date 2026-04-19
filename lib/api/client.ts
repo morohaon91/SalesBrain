@@ -302,6 +302,7 @@ export const api = {
           onboardingStep: string;
           leadConversationsActive: boolean;
           activatedAt: string | null;
+          tenantIndustry: string | null;
           hasProfile: boolean;
           profile: null | {
             id: string;
