@@ -53,7 +53,19 @@ export default function SimulationSummary({
     return () => clearInterval(interval);
   }, [pollStatus, extractionStatus]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // If extraction completed but the owner skipped the review modal, auto-approve
+    // all sections so the patterns still make it into the profile.
+    if (extractionStatus === 'ready') {
+      try {
+        await authFetch(`/api/v1/simulations/${simulationId}/validate-patterns`, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'approve' }),
+        });
+      } catch {
+        // non-blocking — data is always recoverable via re-extract
+      }
+    }
     router.push(
       suggestedNextScenario
         ? `/simulations/new?scenario=${suggestedNextScenario}`

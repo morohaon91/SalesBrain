@@ -10,15 +10,30 @@ export const EXTRACTION_SYSTEM_PROMPT = `You are an expert business communicatio
 Your job is to analyze a business owner's performance in a lead simulation and extract patterns across 6 layers:
 
 ## LAYER 1: IDENTITY LAYER (Communication Style)
-Extract:
-- Tone (friendly/direct/formal/warm/assertive/consultative)
-- Energy level (low/medium/high)
-- Sentence structure: short/mixed/long
-- Humor usage: humorExamples as string[] — direct quotes where owner used humor ([] if none)
-- Empathy signals: empathyExamples as string[] — direct quotes where owner showed empathy ([] if none)
-- Common phrases (things they say repeatedly)
-- Punctuation style
-- Verbosity pattern
+Extract under "communicationStyle":
+- tone: one of friendly/direct/formal/warm/assertive/consultative
+- energyLevel: one of low/medium/high
+- sentenceLength: one of short/mixed/long
+- verbosityPattern: one of concise/balanced/detailed
+- punctuationStyle: one of minimal/standard/expressive
+- emojiUsage: one of none/occasional/frequent
+- pressureLevel: one of low/medium/high
+- usesHumor: boolean; humorExamples as string[] — direct quotes where owner used humor ([] if none)
+- usesEmpathy: boolean; empathyExamples as string[] — direct quotes where owner showed empathy ([] if none)
+- commonPhrases: string[] — exact phrases the owner repeats (e.g. "sure thing", "let me be straight with you")
+- commonOpenings: string[] — how owner typically opens messages
+- commonClosings: string[] — how owner typically closes messages
+- favoriteWords: string[] — distinctive words/filler words the owner uses
+- confidence: number 0-100 reflecting how clearly the style is established (base on number of messages and consistency of patterns)
+
+Also extract under "ownerVoiceExamples" (verbatim quotes from the owner's messages):
+- greetings: string[] — exact opening messages/greetings the owner used
+- discoveryQuestions: string[] — exact questions the owner asked to uncover needs
+- empathyStatements: string[] — exact phrases showing understanding or empathy
+- valueStatements: string[] — exact phrases where owner stated their value/differentiator
+- objectionResponses: string[] — exact phrases where owner responded to pushback
+- closingStatements: string[] — exact phrases where owner asked for next steps or closed
+- exitStatements: string[] — exact phrases where owner disengaged from a bad fit
 
 ## LAYER 2: STRATEGIC LAYER (Decision Making)
 Extract:
@@ -79,12 +94,12 @@ For each objection encountered, return under objectionHandling with this EXACT s
       "responseExamples": ["exact quotes from owner's response"],
       "escalationLogic": "string | null",
       "exitLogic": "string | null",
-      "confidenceScore": 0
+      "confidenceScore": 75
     }
   ],
-  "overallConfidence": 0
+  "overallConfidence": 70
 }
-Return playbooks: [] if no objections were encountered in this conversation.
+The confidenceScore and overallConfidence values shown above are EXAMPLES — replace with evidence-based scores 0-100. Return playbooks: [] if no objections were encountered in this conversation.
 
 ## LAYER 5: ADAPTATION LAYER
 Extract:

@@ -93,8 +93,9 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
     confidence: extracted.extractionConfidence,
   });
 
-  await mergeExtractionWithProfile(profile.id, simulation.scenarioType, extracted, existing);
-
+  // Store extracted patterns on the simulation. The actual profile merge happens
+  // when the owner approves via /validate-patterns. This ensures approval gates
+  // what gets learned — auto-merging before the owner reviews was misleading.
   await prisma.simulation.update({
     where: { id: simulationId },
     data: {
@@ -104,6 +105,8 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
     },
   });
 
+  // Track scenario completion regardless of approval so the learning page
+  // reflects how many scenarios have been run.
   if (scenario && !profile.completedScenarios.includes(scenario.id)) {
     await prisma.businessProfile.update({
       where: { id: profile.id },
@@ -111,7 +114,8 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
     });
   }
 
-  // Recalculate Go-Live readiness & next-recommended scenario
+  // Recalculate Go-Live readiness & next-recommended scenario based on
+  // existing profile data (patterns from this sim merge on approval).
   await updateProfileReadiness(profile.id).catch((err) => {
     console.error('[Extraction] Readiness update failed:', err);
   });
@@ -360,7 +364,7 @@ function mergeCommunicationStyle(
       emojiUsage: e.emojiUsage ?? null,
       typoTolerance: e.typoTolerance ?? null,
       verbosityPattern: e.verbosityPattern ?? null,
-      confidence: e.confidence ?? 30,
+      confidence: (e.confidence && Number.isFinite(e.confidence)) ? e.confidence : 30,
       evidenceCount: 1,
       lastUpdated: now,
     };
