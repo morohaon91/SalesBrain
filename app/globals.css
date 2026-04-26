@@ -67,7 +67,7 @@
 
   .text-display {
     font-family: 'Cormorant', Georgia, serif;
-    @apply text-4xl font-semibold tracking-tight;
+    @apply text-3xl font-semibold tracking-tight sm:text-4xl;
     line-height: 1.1;
   }
 
@@ -131,7 +131,7 @@
     border: 1px solid rgba(200, 136, 26, 0.22);
     padding: 4px 12px;
     border-radius: 100px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -152,7 +152,7 @@ html {
 
 body {
   font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   -webkit-font-smoothing: antialiased;

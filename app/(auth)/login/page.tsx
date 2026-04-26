@@ -117,11 +117,15 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2 cursor-pointer">
+        <div className="flex min-h-11 items-center justify-between gap-3 text-sm">
+          <label
+            htmlFor="remember-me"
+            className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg py-1 pe-2 ps-1 hover:bg-white/[0.04]"
+          >
             <input
+              id="remember-me"
               type="checkbox"
-              className="rounded border-[hsl(var(--border))] accent-primary-500"
+              className="h-5 w-5 shrink-0 rounded border-[hsl(var(--border))] accent-primary-500"
             />
             <span style={{ color: "hsl(228, 12%, 55%)" }}>{t("auth:login.rememberMe")}</span>
           </label>

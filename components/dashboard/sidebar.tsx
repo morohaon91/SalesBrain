@@ -53,11 +53,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           "w-64 flex flex-col overflow-hidden h-screen",
           "fixed inset-y-0 inset-inline-start-0 z-50 transform transition-transform duration-300",
           "lg:static lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          isOpen
+            ? "translate-x-0"
+            : "ltr:-translate-x-full rtl:translate-x-full lg:translate-x-0"
         )}
         style={{
           background: "hsl(228, 42%, 5%)",
-          borderRight: "1px solid rgba(255,255,255,0.07)",
+          borderInlineEnd: "1px solid rgba(255,255,255,0.07)",
         }}
       >
         {/* ── Wordmark ── */}
@@ -95,12 +97,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </Link>
 
           <button
+            type="button"
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-md transition-colors hover:bg-white/5"
+            className="lg:hidden inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/5"
             style={{ color: "hsl(228, 12%, 47%)" }}
             aria-label={t("sidebar.closeMenu")}
           >
-            <X className="w-4 h-4" />
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
 

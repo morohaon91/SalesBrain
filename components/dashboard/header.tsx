@@ -63,14 +63,15 @@ export function Header({ onMenuToggle }: HeaderProps) {
       {/* Left */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <button
+          type="button"
           onClick={onMenuToggle}
-          className="lg:hidden p-2 -ms-2 rounded-lg transition-colors"
+          className="lg:hidden inline-flex h-11 w-11 shrink-0 items-center justify-center -ms-2 rounded-lg transition-colors"
           style={{ color: "hsl(228, 12%, 52%)" }}
           onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
           onMouseLeave={e => (e.currentTarget.style.background = "")}
           aria-label={t("header.openMenu")}
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="h-5 w-5" aria-hidden />
         </button>
         <h2
           className="text-sm font-semibold truncate capitalize tracking-wide"
@@ -84,13 +85,14 @@ export function Header({ onMenuToggle }: HeaderProps) {
       <div className="flex items-center gap-1">
         {/* Notifications */}
         <button
-          className="relative p-2 rounded-lg transition-colors"
+          type="button"
+          className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors"
           style={{ color: "hsl(228, 12%, 52%)" }}
           onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
           onMouseLeave={e => (e.currentTarget.style.background = "")}
           aria-label={t("header.notifications")}
         >
-          <Bell className="w-4.5 h-4.5" />
+          <Bell className="h-5 w-5" aria-hidden />
           <span
             className="absolute top-1.5 end-1.5 w-1.5 h-1.5 rounded-full"
             style={{ background: "hsl(350,80%,55%)" }}
@@ -100,8 +102,9 @@ export function Header({ onMenuToggle }: HeaderProps) {
         {/* User menu */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-colors"
+            className="flex min-h-11 min-w-11 items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors"
             onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
             onMouseLeave={e => (e.currentTarget.style.background = "")}
           >

@@ -83,22 +83,7 @@ html[lang='he'] svg[class*='lucide-chevron-left'] {
   right: 0;
 }
 
-/* ============================================================================
-   SIDEBAR POSITIONING - Move to right in RTL
-   =========================================================================== */
-
-[dir='rtl'] .fixed.inset-y-0.left-0 {
-  left: auto;
-  right: 0;
-}
-
-[dir='rtl'] .fixed.inset-y-0.left-0.-translate-x-full {
-  transform: translateX(0);
-}
-
-[dir='rtl'] .fixed.inset-y-0.left-0.translate-x-0 {
-  transform: translateX(0);
-}
+/* Dashboard sidebar RTL off-canvas motion lives in components/dashboard/sidebar.tsx (ltr:/rtl: transforms). */
 
 /* ============================================================================
    TEXT DIRECTION & ALIGNMENT

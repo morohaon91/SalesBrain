@@ -20,6 +20,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
           className="inline-flex items-center gap-1.5"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
+          aria-label="Go to previous page"
         >
           <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>Previous</span>
@@ -30,6 +31,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
           className="inline-flex items-center gap-1.5"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
+          aria-label="Go to next page"
         >
           <span>Next</span>
           <ChevronRight className="h-3.5 w-3.5 shrink-0" aria-hidden />

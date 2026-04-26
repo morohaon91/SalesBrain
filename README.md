@@ -207,6 +207,7 @@ npx prisma migrate dev --name init
 - [Technical Planning](./Docs/MVP%20TECHNICAL%20PLANNING.md)
 - [Business verticals & simulation logic](./Docs/business-verticals-and-simulation-logic.md)
 - [Prompts directory audit (2026-04-15)](./Docs/audit-prompts-directory-2026-04-15.md)
+- [Performance audit (2026-04-26)](./Docs/audit-performance-2026-04-26.md)
 
 ## License
 

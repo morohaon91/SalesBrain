@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/hooks/useAuth";
 import { Providers } from "@/components/providers";
@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: "Concierge — Your AI Sales Rep, Always On",
   description: "AI-powered lead warm-up. Your concierge is always on.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

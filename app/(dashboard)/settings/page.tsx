@@ -42,7 +42,7 @@ export default function SettingsPage() {
 
       {/* ── Tab nav ── */}
       <div
-        className="flex overflow-x-auto"
+        className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch]"
         style={{ borderBottom: "1px solid hsl(var(--border))" }}
       >
         {tabs.map((tab) => {
@@ -50,8 +50,9 @@ export default function SettingsPage() {
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px"
+              className="flex snap-start items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors -mb-px"
               style={
                 isActive
                   ? {
