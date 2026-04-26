@@ -10,48 +10,37 @@ interface SimulationMessageBubbleProps {
   timestamp?: string | Date;
 }
 
-export function SimulationMessageBubble({
-  role,
-  content,
-  timestamp,
-}: SimulationMessageBubbleProps) {
+export function SimulationMessageBubble({ role, content, timestamp }: SimulationMessageBubbleProps) {
   const isOwner = role === 'BUSINESS_OWNER';
 
   return (
     <div className={cn('flex gap-3', isOwner ? 'justify-end' : 'justify-start')}>
       {!isOwner && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent-100 flex items-center justify-center">
-          <Users className="w-5 h-5 text-accent-700" />
+        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(200,136,26,0.12)', color: 'hsl(38,84%,61%)' }}>
+          <Users className="w-5 h-5" />
         </div>
       )}
 
       <div
-        className={cn(
-          'max-w-sm rounded-lg px-4 py-3 text-sm',
-          isOwner
-            ? 'bg-primary-600 text-white rounded-br-none'
-            : 'bg-gray-100 text-gray-900 rounded-bl-none'
-        )}
+        className="max-w-sm rounded-2xl px-4 py-3 text-sm"
+        style={isOwner
+          ? { background: 'linear-gradient(135deg, hsl(38,78%,46%), hsl(38,84%,61%))', color: '#fff', borderBottomRightRadius: '4px' }
+          : { background: 'hsl(228,32%,12%)', color: 'hsl(38,25%,90%)', border: '1px solid rgba(255,255,255,0.07)', borderBottomLeftRadius: '4px' }
+        }
       >
         <p className="whitespace-pre-wrap leading-relaxed">{content}</p>
-
         {timestamp && (
-          <p
-            className={cn(
-              'mt-2 text-xs',
-              isOwner ? 'text-primary-100' : 'text-gray-500'
-            )}
-          >
-            {typeof timestamp === 'string'
-              ? format(new Date(timestamp), 'HH:mm')
-              : format(timestamp, 'HH:mm')}
+          <p className="mt-2 text-xs opacity-60">
+            {typeof timestamp === 'string' ? format(new Date(timestamp), 'HH:mm') : format(timestamp, 'HH:mm')}
           </p>
         )}
       </div>
 
       {isOwner && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-          <User className="w-5 h-5 text-primary-700" />
+        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(200,136,26,0.15)', color: 'hsl(38,84%,61%)' }}>
+          <User className="w-5 h-5" />
         </div>
       )}
     </div>

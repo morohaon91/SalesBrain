@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
 import MultiInputField from '@/components/onboarding/MultiInputField';
+import { useI18n } from '@/lib/hooks/useI18n';
 
 interface ObjectionHandlingFormProps {
   value: Record<string, any>;
@@ -46,6 +47,8 @@ function blankPlaybook(): Playbook {
 }
 
 export default function ObjectionHandlingForm({ value, onChange }: ObjectionHandlingFormProps) {
+  const { t } = useI18n(['profile']);
+  const fe = 'profile:formEditor.objection';
   const playbooks: Playbook[] = value.playbooks ?? [];
 
   const updatePlaybook = (i: number, patch: Partial<Playbook>) => {
@@ -58,17 +61,20 @@ export default function ObjectionHandlingForm({ value, onChange }: ObjectionHand
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-gray-500">One playbook per objection type. Each playbook captures signals, strategy, and real responses.</p>
+      <p className="text-xs text-gray-500">{t(`${fe}.intro`)}</p>
 
       {playbooks.map((pb, i) => (
-        <div key={i} className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+        <div key={i} className="rounded-xl p-4 space-y-3" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1">
-              <Label>Objection Type</Label>
+              <Label>{t(`${fe}.objectionType`)}</Label>
               <Select
                 value={pb.objectionType}
                 onChange={(e) => updatePlaybook(i, { objectionType: e.target.value })}
-                options={TYPES.map((t) => ({ value: t, label: t }))}
+                options={TYPES.map((ty) => ({
+                  value: ty,
+                  label: t(`profile:enumLabels.objectionType.${ty}`),
+                }))}
               />
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)} className="mt-6">
@@ -77,70 +83,70 @@ export default function ObjectionHandlingForm({ value, onChange }: ObjectionHand
           </div>
 
           <div>
-            <Label>Signal Examples</Label>
-            <p className="text-xs text-gray-500 mb-1">How clients voice this objection</p>
+            <Label>{t(`${fe}.signalExamples`)}</Label>
+            <p className="text-xs text-gray-500 mb-1">{t(`${fe}.hintSignals`)}</p>
             <MultiInputField
               values={pb.signalExamples}
               onChange={(v) => updatePlaybook(i, { signalExamples: v })}
-              placeholder="e.g., 'That's more than we budgeted for'"
+              placeholder={t(`${fe}.phSignal`)}
               maxItems={8}
-              addButtonText="Add Signal"
+              addButtonText={t(`${fe}.addSignal`)}
             />
           </div>
 
           <div>
-            <Label>Response Strategy</Label>
+            <Label>{t(`${fe}.responseStrategy`)}</Label>
             <Textarea
               value={pb.responseStrategy}
               onChange={(e) => updatePlaybook(i, { responseStrategy: e.target.value })}
-              placeholder="Your overall approach for handling this objection"
+              placeholder={t(`${fe}.phStrategy`)}
               rows={3}
             />
           </div>
 
           <div>
-            <Label>Reframing Method</Label>
+            <Label>{t(`${fe}.reframing`)}</Label>
             <Input
               value={pb.reframingMethod ?? ''}
               onChange={(e) => updatePlaybook(i, { reframingMethod: e.target.value || null })}
-              placeholder="e.g., 'Shift from cost to ROI'"
+              placeholder={t(`${fe}.phReframing`)}
             />
           </div>
 
           <div>
-            <Label>Response Examples</Label>
-            <p className="text-xs text-gray-500 mb-1">Actual lines you use</p>
+            <Label>{t(`${fe}.responseExamples`)}</Label>
+            <p className="text-xs text-gray-500 mb-1">{t(`${fe}.hintResponses`)}</p>
             <MultiInputField
               values={pb.responseExamples}
               onChange={(v) => updatePlaybook(i, { responseExamples: v })}
-              placeholder="An actual response you'd give"
+              placeholder={t(`${fe}.phResponse`)}
               maxItems={8}
-              addButtonText="Add Response"
+              addButtonText={t(`${fe}.addResponse`)}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Escalation Logic</Label>
+              <Label>{t(`${fe}.escalation`)}</Label>
               <Input
                 value={pb.escalationLogic ?? ''}
                 onChange={(e) => updatePlaybook(i, { escalationLogic: e.target.value || null })}
-                placeholder="When to push harder"
+                placeholder={t(`${fe}.phEscalation`)}
               />
             </div>
             <div>
-              <Label>Exit Logic</Label>
+              <Label>{t(`${fe}.exitLogic`)}</Label>
               <Input
                 value={pb.exitLogic ?? ''}
                 onChange={(e) => updatePlaybook(i, { exitLogic: e.target.value || null })}
-                placeholder="When to walk away"
+                placeholder={t(`${fe}.phExit`)}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-2">
-              <span className="text-gray-500">Confidence:</span>
+              <span className="text-gray-500">{t('profile:formEditor.shared.confidence')}</span>
               <Input
                 type="number"
                 step={0.1}
@@ -152,7 +158,7 @@ export default function ObjectionHandlingForm({ value, onChange }: ObjectionHand
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-500">Evidence:</span>
+              <span className="text-gray-500">{t('profile:formEditor.shared.evidence')}</span>
               <Input
                 type="number"
                 min={0}
@@ -166,7 +172,7 @@ export default function ObjectionHandlingForm({ value, onChange }: ObjectionHand
       ))}
 
       <Button type="button" variant="outline" size="sm" onClick={add}>
-        <Plus className="h-4 w-4 mr-1" /> Add Playbook
+        <Plus className="h-4 w-4 mr-1" /> {t(`${fe}.addPlaybook`)}
       </Button>
     </div>
   );

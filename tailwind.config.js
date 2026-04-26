@@ -10,25 +10,26 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'DM Sans', 'sans-serif'],
+        serif: ['Cormorant', 'Georgia', 'serif'],
       },
       borderRadius: {
         '2xl': '1rem',
         '3xl': '1.5rem',
       },
       colors: {
-        // Primary accent: warm amber — premium, service-oriented
+        // Primary accent: burnished gold
         primary: {
           50: '#fffbeb',
           100: '#fef3c7',
           200: '#fde68a',
           300: '#fcd34d',
           400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
+          500: '#f0b445',
+          600: '#c8881a',
+          700: '#a06614',
+          800: '#7d4d10',
+          900: '#5c380c',
         },
         success: {
           50: '#f0fdf4',
@@ -66,7 +67,6 @@ module.exports = {
           800: '#9f1239',
           900: '#881337',
         },
-        // Muted teal for secondary accent usage
         accent: {
           50: '#f0fdfa',
           100: '#ccfbf1',
@@ -79,7 +79,7 @@ module.exports = {
           800: '#115e59',
           900: '#134e4a',
         },
-        // Sidebar / dark surface
+        // Dark surface palette
         slate: {
           50: '#f8fafc',
           100: '#f1f5f9',
@@ -93,9 +93,21 @@ module.exports = {
           900: '#0f172a',
           950: '#020617',
         },
+        // App dark surfaces
+        surface: {
+          0: '#07080f',
+          1: '#0d0f1a',
+          2: '#10121e',
+          3: '#141728',
+        },
       },
       spacing: {
         'sidebar-width': '16rem',
+      },
+      boxShadow: {
+        'gold': '0 8px 28px rgba(200, 136, 26, 0.35)',
+        'card': '0 4px 24px rgba(0, 0, 0, 0.4)',
+        'card-lg': '0 12px 48px rgba(0, 0, 0, 0.5)',
       },
     },
   },

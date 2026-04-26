@@ -16,6 +16,7 @@ AI-powered lead qualification platform for freelancers and agencies. Uses Claude
 - **Charts**: Recharts
 - **Forms**: React Hook Form + Zod
 - **Styling**: Tailwind CSS
+- **i18n**: react-i18next — strings in `locales/en` and `locales/he`; language in `localStorage` (`language`), Hebrew sets `dir="rtl"` on `<html>` via `I18nProvider`.
 
 ## Prerequisites
 
@@ -26,20 +27,21 @@ AI-powered lead qualification platform for freelancers and agencies. Uses Claude
 
 ## Quick Start
 
-### 1. Setup Environment
+### 1. Setup environment (two files only)
 
-```bash
-# Copy environment template
-cp .env.example .env.local
+Configuration lives in **only** these files at the repo root:
 
-# Edit .env.local and fill in:
-# - DATABASE_URL (PostgreSQL connection)
-# - REDIS_URL
-# - JWT secrets (generate with: openssl rand -base64 32)
-# - ANTHROPIC_API_KEY
-# - PINECONE_API_KEY
-# - RESEND_API_KEY
-```
+| File | Used when |
+|------|-----------|
+| `.env.development` | `npm run dev`, default `db:*` scripts, Prisma seeds |
+| `.env.production` | `npm run build`, `npm run start`, `db:*:prod` scripts |
+
+1. Edit **`.env.development`**: set `DATABASE_URL`, JWT secrets (`openssl rand -base64 32`), `ANTHROPIC_API_KEY`, and anything else you use locally.
+2. Edit **`.env.production`**: production `DATABASE_URL`, same secret pattern (use **different** JWT values than dev), production Resend/email, etc.
+
+Remove or ignore **`.env`** and **`.env.local`** so Next does not load conflicting variables (they are gitignored).
+
+Optional Prisma override when running `tsx prisma/…` by hand: `PRISMA_LOAD_ENV=production` to force `.env.production`.
 
 ### 2. Create Database
 
@@ -156,7 +158,10 @@ npm run lint         # Run ESLint
 npm run db:migrate   # Run Prisma migrations
 npm run db:push      # Push schema to database
 npm run db:seed      # Run seed script
-npm run db:studio    # Open Prisma Studio
+npm run db:studio    # Open Prisma Studio (dev env)
+npm run db:studio:prod  # Studio against production DATABASE_URL
+npm run db:migrate:deploy  # Apply migrations on server (uses .env.production)
+npm run db:seed:prod  # Seed using .env.production
 npm test            # Run unit tests
 npm run test:e2e    # Run E2E tests
 ```
@@ -173,7 +178,7 @@ pg_isready
 brew services start postgresql@14  # macOS
 sudo systemctl start postgresql    # Linux
 
-# Check connection string in .env.local
+# Check connection string in .env.development
 ```
 
 ### Redis Connection Failed

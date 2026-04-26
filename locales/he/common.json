@@ -1,6 +1,6 @@
 {
-  "appName": "Concierge",
-  "appDescription": "הסמכה של לידים מאוד על ידי AI לעצמאים וסוכנויות",
+  "appName": "קונסיירז'",
+  "appDescription": "הסמכת לידים מבוססת בינה מלאכותית לעצמאים ולסוכנויות",
   "navigation": {
     "dashboard": "לוח בקרה",
     "conversations": "שיחות",
@@ -76,7 +76,7 @@
     "tryAgain": "נסה שוב"
   },
   "home": {
-    "title": "Concierge",
+    "title": "קונסיירז'",
     "tagline": "פלטפורמת הסמכת לידים מבוססת AI",
     "launch": "מתכוננים להשקה..."
   },
@@ -101,5 +101,8 @@
     "score": "ציון",
     "conversation": "שיחה",
     "conversations": "שיחות"
+  },
+  "accessibility": {
+    "dismiss": "סגור"
   }
 }

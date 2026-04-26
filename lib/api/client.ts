@@ -345,6 +345,25 @@ export const api = {
       const response = await instance.post<ApiResponse<unknown>>(`/conversations/${id}/reanalyze`);
       return response.data;
     },
+
+    takeover: async (id: string) => {
+      const response = await instance.post<{
+        success: boolean;
+        conversation?: unknown;
+        message?: string;
+        error?: string;
+        alreadyManual?: boolean;
+      }>(`/conversations/${id}/takeover`);
+      return response.data;
+    },
+
+    sendOwnerMessage: async (id: string, data: { message: string }) => {
+      const response = await instance.post<{ success: boolean; message?: unknown; error?: string }>(
+        `/conversations/${id}/owner-message`,
+        data
+      );
+      return response.data;
+    },
   },
 
   /**
@@ -475,7 +494,10 @@ export const api = {
     },
 
     reExtract: async () => {
-      const response = await instance.post<ApiResponse<unknown>>('/profile/re-extract');
+      // Re-extract runs parallel AI calls — give it up to 3 minutes
+      const response = await instance.post<ApiResponse<unknown>>('/profile/re-extract', undefined, {
+        timeout: 180_000,
+      });
       return response.data;
     },
 

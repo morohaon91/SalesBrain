@@ -1,17 +1,8 @@
 import { BusinessProfile } from '@prisma/client';
-import { createChatCompletion } from '@/lib/ai/client';
+import { createChatCompletion, parseAiJson } from '@/lib/ai/client';
 
 /**
- * PHASE 2: CLOSER Framework System
- * Transforms generic AI responses into structured sales conversations using the CLOSER framework
- *
- * CLOSER:
- * C - CLARIFY: Understand why they reached out NOW
- * O - OVERVIEW: Deep-dive into their struggles
- * L - LABEL: Define the problem clearly
- * S - SELL: Focus on outcome, not tool
- * E - EXPLAIN: Handle objections
- * R - REINFORCE: Book the call, set expectations
+ * CLOSER framework — single round-trip per lead message (state + reply + phase).
  */
 
 export interface CloserPhase {
@@ -30,165 +21,182 @@ export interface CloserProgress {
   currentPhase: string;
 }
 
+const PHASE_ORDER = ['clarify', 'overview', 'label', 'sell', 'explain', 'reinforce'] as const;
+type CloserPhaseName = (typeof PHASE_ORDER)[number];
+
+export interface GenerateCloserContext {
+  conversationId?: string;
+}
+
 export async function generateCloserResponse(
   messages: Array<{ role: string; content: string }>,
   profile: BusinessProfile,
   currentProgress: CloserProgress | null,
-  tenantId?: string
+  tenantId: string,
+  context?: GenerateCloserContext
 ): Promise<{
   response: string;
   updatedProgress: CloserProgress;
-  phaseCompleted?: string;
+  phaseCompleted?: string | null;
+  tokensUsed: number;
+  latencyMs: number;
+  inputTokens: number;
+  outputTokens: number;
 }> {
-  // Initialize progress if null
-  if (!currentProgress) {
-    currentProgress = {
-      clarify: { phase: 'clarify', completed: false },
-      overview: { phase: 'overview', completed: false },
-      label: { phase: 'label', completed: false },
-      sell: { phase: 'sell', completed: false },
-      explain: { phase: 'explain', completed: false },
-      reinforce: { phase: 'reinforce', completed: false },
-      currentPhase: 'clarify',
-    };
-  }
+  const startWall = Date.now();
+  let progress = currentProgress ?? initialProgress();
+
+  const apiMessages = messages
+    .filter((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'LEAD')
+    .map((m) => ({
+      role: (m.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+      content: m.content,
+    }));
 
   try {
-    // Detect current conversation state
-    const conversationState = await analyzeConversationState(messages, currentProgress);
+    const cacheableCore = buildCacheableCloserCore(profile);
+    const systemSuffix = buildCloserDynamicSuffix(progress);
 
-    // Build phase-specific system prompt
-    const systemPrompt = buildCloserSystemPrompt(
-      profile,
-      conversationState.suggestedPhase,
-      conversationState
-    );
+    const ai = await createChatCompletion(apiMessages, cacheableCore, {
+      systemSuffix,
+      cacheSystemPrompt: true,
+      temperature: 0.7,
+      maxTokens: 900,
+      tenantId,
+      operationType: 'lead_chat',
+      metadata: {
+        conversationId: context?.conversationId,
+      },
+    });
 
-    // Generate response
-    const response = await createChatCompletion(
-      messages as any,
-      systemPrompt,
-      { temperature: 0.7, maxTokens: 500 }
-    );
+    let parsed: {
+      currentPhase?: string;
+      phaseComplete?: boolean;
+      response?: string;
+    };
+    try {
+      parsed = parseAiJson<typeof parsed>(ai.content);
+    } catch (e) {
+      console.error('Closer JSON parse failed:', e);
+      return {
+        response:
+          'Thanks for your message. Could you share a bit more about what you need so I can help?',
+        updatedProgress: progress,
+        tokensUsed: ai.tokensUsed,
+        latencyMs: ai.latencyMs,
+        inputTokens: ai.inputTokens,
+        outputTokens: ai.outputTokens,
+      };
+    }
 
-    // Detect if phase was completed in this response
-    const phaseCompleted = await detectPhaseCompletion((response.content || response) as string, conversationState.suggestedPhase);
+    const phaseRaw = (parsed.currentPhase || progress.currentPhase || 'clarify').toLowerCase();
+    const currentPhase = PHASE_ORDER.includes(phaseRaw as CloserPhaseName)
+      ? (phaseRaw as CloserPhaseName)
+      : (progress.currentPhase as CloserPhaseName) || 'clarify';
 
-    // Update progress
-    const updatedProgress = { ...currentProgress };
-    if (phaseCompleted) {
-      updatedProgress[phaseCompleted as keyof CloserProgress] = {
-        phase: phaseCompleted as any,
+    const reply =
+      typeof parsed.response === 'string' && parsed.response.trim().length > 0
+        ? parsed.response.trim()
+        : 'Thanks for reaching out. What should we tackle first?';
+
+    const updatedProgress = { ...progress };
+    let phaseCompleted: string | null = null;
+
+    if (parsed.phaseComplete === true) {
+      updatedProgress[currentPhase] = {
+        phase: currentPhase,
         completed: true,
         timestamp: new Date().toISOString(),
-      } as any;
-
-      // Move to next phase
-      updatedProgress.currentPhase = getNextPhase(phaseCompleted);
+      } as CloserPhase;
+      phaseCompleted = currentPhase;
+      updatedProgress.currentPhase = getNextPhase(currentPhase);
+    } else {
+      updatedProgress.currentPhase = currentPhase;
     }
 
     return {
-      response: (response.content || response) as string,
+      response: reply,
       updatedProgress,
       phaseCompleted,
+      tokensUsed: ai.tokensUsed,
+      latencyMs: ai.latencyMs,
+      inputTokens: ai.inputTokens,
+      outputTokens: ai.outputTokens,
     };
   } catch (e) {
     console.error('Error in generateCloserResponse:', e);
-    // Return generic response on error
     return {
       response:
         'Thank you for sharing that. Tell me more about your needs so I can better understand how to help.',
-      updatedProgress: currentProgress,
+      updatedProgress: progress,
+      tokensUsed: 0,
+      latencyMs: Date.now() - startWall,
+      inputTokens: 0,
+      outputTokens: 0,
     };
   }
 }
 
+function initialProgress(): CloserProgress {
+  return {
+    clarify: { phase: 'clarify', completed: false },
+    overview: { phase: 'overview', completed: false },
+    label: { phase: 'label', completed: false },
+    sell: { phase: 'sell', completed: false },
+    explain: { phase: 'explain', completed: false },
+    reinforce: { phase: 'reinforce', completed: false },
+    currentPhase: 'clarify',
+  };
+}
 
-async function analyzeConversationState(
-  messages: Array<{ role: string; content: string }>,
-  progress: CloserProgress
-): Promise<{
-  suggestedPhase: string;
-  objectionsDetected: string[];
-  needsClarification: boolean;
-  readyToReinforce: boolean;
-}> {
-  const recentMessages = messages.slice(-6); // Last 3 exchanges
-  const transcript = recentMessages.map((m) => `${m.role}: ${m.content}`).join('\n');
+function buildCloserDynamicSuffix(progress: CloserProgress): string {
+  const snapshot = {
+    clarify: progress.clarify.completed,
+    overview: progress.overview.completed,
+    label: progress.label.completed,
+    sell: progress.sell.completed,
+    explain: progress.explain.completed,
+    reinforce: progress.reinforce.completed,
+    suggestedFocus: progress.currentPhase,
+  };
 
-  const analysisPrompt = `Analyze this conversation to determine the current CLOSER phase.
+  return `CONVERSATION PROGRESS (authoritative):
+${JSON.stringify(snapshot, null, 2)}
 
-Conversation:
-${transcript}
-
-Current progress:
-- Clarify: ${progress.clarify.completed ? 'DONE' : 'NOT DONE'}
-- Overview Pain: ${progress.overview.completed ? 'DONE' : 'NOT DONE'}
-- Label: ${progress.label.completed ? 'DONE' : 'NOT DONE'}
-- Sell Outcome: ${progress.sell.completed ? 'DONE' : 'NOT DONE'}
-- Explain Concerns: ${progress.explain.completed ? 'DONE' : 'NOT DONE'}
-- Reinforce: ${progress.reinforce.completed ? 'DONE' : 'NOT DONE'}
-
-Determine:
-1. What CLOSER phase should we focus on now?
-2. Has client raised any objections (budget, timeline, quality, competitor)?
-3. Do we need more clarification before moving forward?
-4. Is client ready to book/commit (reinforce phase)?
-
-Return JSON:
+You must produce ONE JSON object only (no markdown), with this exact shape:
 {
-  "suggestedPhase": "clarify" | "overview" | "label" | "sell" | "explain" | "reinforce",
-  "objectionsDetected": ["budget", "timeline"],
-  "needsClarification": boolean,
-  "readyToReinforce": boolean,
-  "reasoning": "why this phase"
-}`;
-
-  try {
-    const response = await createChatCompletion(
-      [{ role: 'user', content: analysisPrompt }],
-      'You are analyzing conversation flow. Return ONLY valid JSON, no markdown formatting.',
-      { temperature: 0.1, maxTokens: 300 }
-    );
-
-    // Extract JSON from response (handle markdown-wrapped JSON)
-    let jsonStr = (response.content || response) as string;
-    // Remove markdown code blocks if present
-    jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    const result = JSON.parse(jsonStr);
-    return result;
-  } catch (e) {
-    console.error('Error analyzing conversation state:', e);
-    return {
-      suggestedPhase: 'clarify',
-      objectionsDetected: [],
-      needsClarification: true,
-      readyToReinforce: false,
-    };
-  }
+  "currentPhase": "clarify" | "overview" | "label" | "sell" | "explain" | "reinforce",
+  "phaseComplete": boolean,
+  "response": "plain text the lead reads — no JSON inside this string"
 }
 
-function buildCloserSystemPrompt(
-  profile: BusinessProfile & { businessName?: string },
-  currentPhase: string,
-  state: any
-): string {
-  const closerFramework = (profile.closerFramework as any) || {};
-  const ownerVoiceExamples = (profile.ownerVoiceExamples as any) || {};
-  const communicationStyle = (profile.communicationStyle as any) || {};
+Rules:
+- "response" is the only text the lead sees: warm, concise (usually 2–5 sentences), in the owner's voice.
+- currentPhase is the CLOSER step you are executing in this turn (normally the earliest step not yet true in progress above).
+- phaseComplete is true only if this reply substantially completes that step's goals (see phase guide in the cached system instructions).
+- Never put markdown or JSON inside "response".`;
+}
 
-  // If no closerFramework but has voice examples, use those
-  if ((!closerFramework || Object.keys(closerFramework).length === 0) && Object.keys(ownerVoiceExamples).length === 0) {
-    return buildFallbackPrompt(profile, communicationStyle);
+/** Static owner + CLOSER guidance — safe to prompt-cache per profile. */
+function buildCacheableCloserCore(profile: BusinessProfile & { businessName?: string }): string {
+  const closerFramework = (profile.closerFramework as Record<string, unknown>) || {};
+  const ownerVoiceExamples = (profile.ownerVoiceExamples as Record<string, unknown>) || {};
+  const communicationStyle = (profile.communicationStyle as Record<string, unknown>) || {};
+
+  if (
+    (!closerFramework || Object.keys(closerFramework).length === 0) &&
+    Object.keys(ownerVoiceExamples).length === 0
+  ) {
+    return `${buildFallbackPrompt(profile, communicationStyle)}
+
+${allPhaseReferenceGuide()}
+`;
   }
 
-  // Base prompt
   let prompt = `You are ${profile.businessName || 'our team'}, talking to a potential lead.
 
 OWNER'S VOICE & COMMUNICATION STYLE:`;
 
-  // Inject actual voice examples and communication style
   if (Object.keys(ownerVoiceExamples).length > 0) {
     prompt += `
 ${Object.entries(ownerVoiceExamples)
@@ -203,264 +211,120 @@ ${Object.entries(communicationStyle)
   .join('\n')}`;
   }
 
-  if (closerFramework.keyPhrases) {
+  const fw = closerFramework as any;
+  if (fw.keyPhrases?.length) {
     prompt += `
-${closerFramework.keyPhrases.join('\n')}`;
+Key phrases:
+${fw.keyPhrases.join('\n')}`;
   }
 
   prompt += `
 
-You follow the CLOSER framework to guide this conversation effectively.
+You follow the CLOSER framework. Phase order: clarify → overview → label → sell → explain → reinforce.
+Only advance when the prior phase is complete in progress (provided separately each request).
 
-CURRENT PHASE: ${currentPhase.toUpperCase()}
+${buildAllPhaseGuidance(fw)}
 
-`;
+${fw.commonQuestions?.length ? `COMMON Q&A (answer using these when relevant):\n${fw.commonQuestions.map((q: any) => `Q: ${q.question}\nA: ${q.answer}`).join('\n\n')}` : ''}
 
-  // Phase-specific instructions
-  switch (currentPhase) {
-    case 'clarify':
-      prompt += `
-CLARIFY PHASE - Your goal: Understand WHY they're reaching out NOW
-
-Use these clarifying questions (your actual phrases):
-${closerFramework.clarifyingQuestions?.join('\n') || '- What brought you to consider this now?'}
-
-Focus on:
-- Understanding their timing and urgency
-- What triggered this decision
-- What's their deadline/timeline
-
-Don't jump to solutions yet - just understand the situation.
-`;
-      break;
-
-    case 'overview':
-      prompt += `
-OVERVIEW PAIN PHASE - Your goal: Deep-dive into their struggles
-
-Use these empathy phrases (your actual words):
-${closerFramework.painEmpathyPhrases?.join('\n') || '- I understand that can be frustrating'}
-
-Ask about:
-- What have they tried before?
-- What's been frustrating?
-- What are the consequences of not solving this?
-
-Show empathy and build rapport.
-`;
-      break;
-
-    case 'label':
-      prompt += `
-LABEL PHASE - Your goal: Define the problem clearly and get agreement
-
-Use these labeling phrases (your actual words):
-${closerFramework.labelingPhrases?.join('\n') || '- So it sounds like you\'re looking for...'}
-
-Summarize:
-- What you've heard
-- What they need
-- What success looks like
-
-Get confirmation: "Is that right?" "Did I capture that correctly?"
-`;
-      break;
-
-    case 'sell':
-      prompt += `
-SELL OUTCOME PHASE - Your goal: Paint vision of success (not features)
-
-Use this outcome-focused language (your actual words):
-${closerFramework.outcomeSelling?.join('\n') || '- What we\'re really building here is...'}
-
-Focus on:
-- The transformation, not the tool
-- How their life/business improves
-- The peace of mind/relief they'll feel
-
-Don't list features - paint the picture of success.
-`;
-      break;
-
-    case 'explain':
-      prompt += `
-EXPLAIN CONCERNS PHASE - Your goal: Handle objections proactively
-
-${
-  state.objectionsDetected && state.objectionsDetected.length > 0
-    ? `
-OBJECTIONS DETECTED: ${state.objectionsDetected.join(', ')}
-
-Use your exact objection responses:
-${state.objectionsDetected
-  .map(
-    (obj: string) => `
-${obj.toUpperCase()}:
-${closerFramework.objectionHandling?.[obj] || 'Address this concern professionally'}
-`
-  )
-  .join('\n')}
-`
-    : `
-Proactively ask: "What concerns do you have?" or "What questions can I answer?"
-
-When objections come up, use your responses:
-Budget: ${closerFramework.objectionHandling?.budget || 'Explain value'}
-Timeline: ${closerFramework.objectionHandling?.timeline || 'Explain typical timeline'}
-Quality: ${closerFramework.objectionHandling?.quality || 'Explain quality approach'}
-`
-}
-
-Remove barriers to moving forward.
-`;
-      break;
-
-    case 'reinforce':
-      prompt += `
-REINFORCE PHASE - Your goal: Book the call and set expectations
-
-Use these reinforcement phrases (your actual words):
-${closerFramework.reinforcement?.join('\n') || '- Let\'s schedule a time to discuss this in detail'}
-
-Create commitment:
-- Book a specific next step
-- Set clear expectations
-- Reinforce the decision
-- Thank them for their time
-
-End on a positive, committed note.
-`;
-      break;
-  }
-
-  // Common questions section
-  if (closerFramework.commonQuestions && closerFramework.commonQuestions.length > 0) {
-    prompt += `
-
-COMMON QUESTIONS (answer using these verbatim):
-${closerFramework.commonQuestions
-  .map(
-    (q: any) => `
-Q: ${q.question}
-A: ${q.answer}
-`
-  )
-  .join('\n')}
-`;
-  }
-
-  prompt += `
-
-IMPORTANT GUIDELINES:
-- Sound exactly like the owner (use their phrases)
-- Follow CLOSER framework naturally (don't be robotic)
-- One phase at a time - don't rush
-- Be conversational and warm
-- Listen more than you talk
-- Ask questions before giving answers
-
-DO NOT:
-- Use phrases that don't sound like the owner
-- Jump phases (stick to current phase)
-- Sound scripted or salesy
-- Make commitments the owner wouldn't make
-`;
+IMPORTANT:
+- Sound exactly like the owner.
+- One primary CLOSER focus per reply; do not rush phases.
+- Listen more than you talk; ask before pitching.
+- Do not make commitments the owner would not make.`;
 
   return prompt;
 }
 
-async function detectPhaseCompletion(response: string, currentPhase: string): Promise<string | null> {
-  const detectionPrompt = `Did this AI response complete the ${currentPhase} phase of CLOSER?
-
-AI Response:
-"${response}"
-
-Phase: ${currentPhase}
-
-Completion criteria:
-- clarify: Asked why they're considering this now, understood timing
-- overview: Explored their pain, asked about past attempts
-- label: Summarized their needs and got confirmation
-- sell: Painted vision of successful outcome
-- explain: Addressed concerns/objections
-- reinforce: Booked next step or got commitment
-
-Return ONLY valid JSON with no markdown:
-{
-  "phaseCompleted": boolean,
-  "phaseName": "${currentPhase}" or null
-}`;
-
-  try {
-    const analysis = await createChatCompletion(
-      [{ role: 'user', content: detectionPrompt }],
-      'You are analyzing conversation phases. Return ONLY valid JSON.',
-      { temperature: 0.1, maxTokens: 100 }
-    );
-
-    // Extract JSON from response (handle markdown-wrapped JSON)
-    let jsonStr = (analysis.content || analysis) as string;
-    // Remove markdown code blocks if present
-    jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    const result = JSON.parse(jsonStr);
-    return result.phaseCompleted ? result.phaseName : null;
-  } catch (e) {
-    console.error('Error detecting phase completion:', e);
-    return null;
-  }
+function allPhaseReferenceGuide(): string {
+  return `CLOSER phases (in order):
+1) CLARIFY — why they reached out now, timing, urgency.
+2) OVERVIEW — struggles, what they tried, consequences.
+3) LABEL — summarize needs, confirm understanding.
+4) SELL — outcome vision, transformation (not feature dump).
+5) EXPLAIN — objections, concerns, trust.
+6) REINFORCE — next step, commitment, expectations.`;
 }
 
-function getNextPhase(completedPhase: string): string {
-  const phases = ['clarify', 'overview', 'label', 'sell', 'explain', 'reinforce'];
-  const currentIndex = phases.indexOf(completedPhase);
+function buildAllPhaseGuidance(framework: any): string {
+  const clar = framework.clarifyingQuestions?.join('\n') || '- What brought you to consider this now?';
+  const emp = framework.painEmpathyPhrases?.join('\n') || '- I understand that can be frustrating';
+  const lab = framework.labelingPhrases?.join('\n') || "- So it sounds like you're looking for...";
+  const out = framework.outcomeSelling?.join('\n') || "- What we're really building here is...";
+  const rein = framework.reinforcement?.join('\n') || "- Let's schedule a time to discuss this in detail";
 
-  if (currentIndex === -1 || currentIndex === phases.length - 1) {
-    return 'reinforce'; // Default to reinforce if unknown or already at end
-  }
+  return `
+### CLARIFY
+Use clarifying questions:
+${clar}
 
-  return phases[currentIndex + 1];
+### OVERVIEW
+Empathy / pain exploration:
+${emp}
+
+### LABEL
+Labeling / confirmation:
+${lab}
+
+### SELL
+Outcome selling:
+${out}
+
+### EXPLAIN
+If objections appear (budget, timeline, quality, competitor, process, trust), address using the owner's patterns:
+Budget: ${framework.objectionHandling?.budget || 'Explain value'}
+Timeline: ${framework.objectionHandling?.timeline || 'Explain typical timeline'}
+Quality: ${framework.objectionHandling?.quality || 'Explain quality approach'}
+
+### REINFORCE
+Commitment / next step:
+${rein}
+`;
 }
 
-function buildFallbackPrompt(profile: BusinessProfile & { businessName?: string }, communicationStyle?: any): string {
-  const ownerVoiceExamples = (profile.ownerVoiceExamples as any) || {};
+function buildFallbackPrompt(
+  profile: BusinessProfile & { businessName?: string },
+  communicationStyle?: Record<string, unknown>
+): string {
+  const ownerVoiceExamples = (profile.ownerVoiceExamples as Record<string, unknown>) || {};
 
-  let basePrompt = `You are speaking as ${(profile as any).businessName || 'our team'}.
+  let base = `You are speaking as ${(profile as any).businessName || 'our team'}.
 
 Industry: ${profile.industry}
 Service: ${profile.serviceDescription}`;
 
-  // If we have communication style examples, inject them
   if (communicationStyle && Object.keys(communicationStyle).length > 0) {
-    basePrompt += `
+    base += `
 
-OWNER'S COMMUNICATION STYLE (from real sales conversations):
+OWNER'S COMMUNICATION STYLE:
 ${Object.entries(communicationStyle)
   .map(([key, value]) => `- ${key}: ${value}`)
   .join('\n')}`;
   }
 
-  // If we have voice examples, inject them
-  if (ownerVoiceExamples && Object.keys(ownerVoiceExamples).length > 0) {
-    basePrompt += `
+  if (Object.keys(ownerVoiceExamples).length > 0) {
+    base += `
 
-OWNER'S ACTUAL PHRASES (use these to sound authentic):
+OWNER'S ACTUAL PHRASES:
 ${Object.entries(ownerVoiceExamples)
   .map(([key, value]) => `- ${key}: ${value}`)
   .join('\n')}`;
   }
 
-  basePrompt += `
+  base += `
 
-Follow the CLOSER framework to guide this conversation:
-C - Clarify why they're reaching out now
-O - Overview their pain and struggles
-L - Label the problem clearly
-S - Sell the outcome (not features)
-E - Explain away concerns
-R - Reinforce and book next step
+Follow CLOSER: Clarify → Overview pain → Label → Sell outcome → Explain concerns → Reinforce next step.
+Sound authentic, not scripted.`;
 
-IMPORTANT: Sound exactly like the owner. Use their phrases and style from above. Be warm, conversational, and authentic - NOT scripted.`;
+  return base;
+}
 
-  return basePrompt;
+function getNextPhase(completedPhase: string): string {
+  const currentIndex = PHASE_ORDER.indexOf(completedPhase as CloserPhaseName);
+
+  if (currentIndex === -1 || currentIndex === PHASE_ORDER.length - 1) {
+    return 'reinforce';
+  }
+
+  return PHASE_ORDER[currentIndex + 1];
 }

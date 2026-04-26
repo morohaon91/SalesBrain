@@ -23,20 +23,35 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-6 py-12 text-center",
+        "flex flex-col items-center justify-center rounded-xl px-6 py-14 text-center",
         className
       )}
+      style={{
+        background: "rgba(255,255,255,0.02)",
+        border: "1px dashed rgba(255,255,255,0.1)",
+      }}
     >
-      {Icon && <Icon className="mb-4 h-12 w-12 text-gray-300" />}
-      <h3 className="text-heading-3 mb-2 text-gray-900">{title}</h3>
+      {Icon && (
+        <div
+          className="mb-4 w-14 h-14 rounded-2xl flex items-center justify-center"
+          style={{ background: "rgba(200,136,26,0.08)", border: "1px solid rgba(200,136,26,0.15)" }}
+        >
+          <Icon className="h-6 w-6" style={{ color: "hsl(38, 84%, 61%)" }} />
+        </div>
+      )}
+      <h3
+        className="text-heading-3 mb-2"
+        style={{ color: "hsl(38, 25%, 88%)", fontFamily: "'Cormorant', Georgia, serif", fontWeight: 600 }}
+      >
+        {title}
+      </h3>
       {description && (
-        <p className="mb-6 text-small text-gray-600">{description}</p>
+        <p className="mb-6 text-small max-w-xs" style={{ color: "hsl(228, 12%, 47%)" }}>
+          {description}
+        </p>
       )}
       {action && (
-        <Button
-          onClick={action.onClick}
-          className="bg-primary-600 hover:bg-primary-700 text-white"
-        >
+        <Button onClick={action.onClick}>
           {action.label}
         </Button>
       )}

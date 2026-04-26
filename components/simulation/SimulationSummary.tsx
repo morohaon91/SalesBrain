@@ -83,13 +83,13 @@ export default function SimulationSummary({
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="flex items-center justify-center gap-2 text-yellow-500 mb-3">
+          <div className="flex items-center justify-center gap-2 mb-3" style={{ color: 'hsl(38,84%,61%)' }}>
             <Sparkles className="h-8 w-8" />
             <Sparkles className="h-6 w-6" />
             <Sparkles className="h-8 w-8" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Great job!</h1>
-          <p className="text-gray-600 mt-2">Simulation complete. Your AI is learning from this conversation.</p>
+          <h1 className="text-3xl font-bold" style={{ fontFamily: "'Cormorant', Georgia, serif", color: 'hsl(38,25%,90%)' }}>Great job!</h1>
+          <p className="mt-2" style={{ color: 'hsl(228,12%,47%)' }}>Simulation complete. Your AI is learning from this conversation.</p>
         </div>
 
         {/* Profile Progress */}
@@ -103,7 +103,7 @@ export default function SimulationSummary({
         {/* Patterns Demonstrated */}
         {demonstratedPatterns.length > 0 && (
           <Card className="p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">You demonstrated:</h2>
+            <h2 className="font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>You demonstrated:</h2>
             <PatternDemonstrated patterns={demonstratedPatterns} />
           </Card>
         )}
@@ -112,15 +112,15 @@ export default function SimulationSummary({
         <div className="flex items-center gap-3 text-sm">
           {extractionStatus === 'extracting' && (
             <>
-              <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-              <span className="text-gray-600">Extracting patterns from your conversation...</span>
+              <Loader2 className="h-4 w-4 animate-spin" style={{ color: 'hsl(38,84%,61%)' }} />
+              <span style={{ color: 'hsl(228,12%,47%)' }}>Extracting patterns from your conversation...</span>
             </>
           )}
           {extractionStatus === 'ready' && (
-            <span className="text-green-600 font-medium">Patterns extracted and ready for review</span>
+            <span className="font-medium" style={{ color: '#4ade80' }}>Patterns extracted and ready for review</span>
           )}
           {extractionStatus === 'failed' && (
-            <span className="text-red-600">Extraction failed — patterns will be saved on next simulation</span>
+            <span style={{ color: '#fb7185' }}>Extraction failed — patterns will be saved on next simulation</span>
           )}
         </div>
 

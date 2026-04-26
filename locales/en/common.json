@@ -101,5 +101,8 @@
     "score": "Score",
     "conversation": "conversation",
     "conversations": "conversations"
+  },
+  "accessibility": {
+    "dismiss": "Dismiss"
   }
 }

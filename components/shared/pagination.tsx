@@ -7,14 +7,10 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export function Pagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: PaginationProps) {
+export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   return (
     <div className="flex items-center justify-between">
-      <p className="text-small text-gray-600">
+      <p className="text-xs" style={{ color: "hsl(228, 12%, 47%)" }}>
         Page {currentPage} of {totalPages}
       </p>
       <div className="flex gap-2">
@@ -25,7 +21,7 @@ export function Pagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+          <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>Previous</span>
         </Button>
         <Button
@@ -36,7 +32,7 @@ export function Pagination({
           disabled={currentPage === totalPages}
         >
           <span>Next</span>
-          <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
         </Button>
       </div>
     </div>

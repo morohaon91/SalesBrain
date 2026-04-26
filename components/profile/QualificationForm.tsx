@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
 import MultiInputField from '@/components/onboarding/MultiInputField';
+import { useI18n } from '@/lib/hooks/useI18n';
 
 interface QualificationFormProps {
   value: Record<string, any>;
@@ -47,18 +48,35 @@ function blankDealBreaker(): DealBreakerItem {
 }
 
 function FlagEditor({
-  title,
-  description,
+  variant,
   items,
   onChange,
-  variant,
 }: {
-  title: string;
-  description: string;
+  variant: 'green' | 'yellow' | 'red';
   items: FlagItem[];
   onChange: (items: FlagItem[]) => void;
-  variant: 'green' | 'yellow' | 'red';
 }) {
+  const { t } = useI18n(['profile']);
+  const q = 'profile:formEditor.qualification';
+  const title =
+    variant === 'green'
+      ? t(`${q}.greenTitle`)
+      : variant === 'yellow'
+        ? t(`${q}.yellowTitle`)
+        : t(`${q}.redTitle`);
+  const description =
+    variant === 'green'
+      ? t(`${q}.greenDesc`)
+      : variant === 'yellow'
+        ? t(`${q}.yellowDesc`)
+        : t(`${q}.redDesc`);
+  const addItemLabel =
+    variant === 'green'
+      ? t(`${q}.addGreenFlag`)
+      : variant === 'yellow'
+        ? t(`${q}.addYellowFlag`)
+        : t(`${q}.addRedFlag`);
+
   const update = (i: number, patch: Partial<FlagItem>) => {
     const next = [...items];
     next[i] = { ...next[i], ...patch };
@@ -67,7 +85,12 @@ function FlagEditor({
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
   const add = () => onChange([...items, blankFlag()]);
 
-  const bg = variant === 'green' ? 'border-green-200 bg-green-50/40' : variant === 'yellow' ? 'border-yellow-200 bg-yellow-50/40' : 'border-red-200 bg-red-50/40';
+  const bg =
+    variant === 'green'
+      ? 'border-green-200 bg-green-50/40'
+      : variant === 'yellow'
+        ? 'border-yellow-200 bg-yellow-50/40'
+        : 'border-red-200 bg-red-50/40';
 
   return (
     <div>
@@ -80,7 +103,7 @@ function FlagEditor({
               <Input
                 value={item.flagType}
                 onChange={(e) => update(i, { flagType: e.target.value })}
-                placeholder="Flag type (e.g., 'budget_aligned')"
+                placeholder={t(`${q}.phFlagType`)}
                 className="flex-1"
               />
               <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
@@ -90,15 +113,15 @@ function FlagEditor({
             <Textarea
               value={item.description}
               onChange={(e) => update(i, { description: e.target.value })}
-              placeholder="Description"
+              placeholder={t(`${q}.phDescription`)}
               rows={2}
             />
             <MultiInputField
               values={item.signalExamples}
               onChange={(v) => update(i, { signalExamples: v })}
-              placeholder="Signal example"
+              placeholder={t(`${q}.phSignalExample`)}
               maxItems={5}
-              addButtonText="Add Signal"
+              addButtonText={t(`${q}.addSignal`)}
             />
             {variant === 'red' && (
               <label className="flex items-center gap-2 text-xs">
@@ -108,18 +131,18 @@ function FlagEditor({
                   checked={!!item.triggersExit}
                   onChange={(e) => update(i, { triggersExit: e.target.checked })}
                 />
-                Triggers exit
+                {t(`${q}.triggersExit`)}
               </label>
             )}
             {variant === 'yellow' && (
               <Input
                 value={item.ownerResponse ?? ''}
                 onChange={(e) => update(i, { ownerResponse: e.target.value || null })}
-                placeholder="Owner response (how you'd handle it)"
+                placeholder={t(`${q}.phOwnerResponse`)}
               />
             )}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Confidence:</span>
+              <span className="text-xs text-gray-500">{t('profile:formEditor.shared.confidence')}</span>
               <Input
                 type="number"
                 step={0.1}
@@ -133,7 +156,7 @@ function FlagEditor({
           </div>
         ))}
         <Button type="button" variant="outline" size="sm" onClick={add}>
-          <Plus className="h-4 w-4 mr-1" /> Add {title.replace(/s$/, '')}
+          <Plus className="h-4 w-4 mr-1" /> {addItemLabel}
         </Button>
       </div>
     </div>
@@ -141,6 +164,8 @@ function FlagEditor({
 }
 
 function DealBreakerEditor({ items, onChange }: { items: DealBreakerItem[]; onChange: (items: DealBreakerItem[]) => void }) {
+  const { t } = useI18n(['profile']);
+  const q = 'profile:formEditor.qualification';
   const update = (i: number, patch: Partial<DealBreakerItem>) => {
     const next = [...items];
     next[i] = { ...next[i], ...patch };
@@ -151,16 +176,16 @@ function DealBreakerEditor({ items, onChange }: { items: DealBreakerItem[]; onCh
 
   return (
     <div>
-      <Label>Deal-Breakers</Label>
-      <p className="text-xs text-gray-500 mb-2">Absolute rules for declining a client</p>
+      <Label>{t(`${q}.dealBreakersTitle`)}</Label>
+      <p className="text-xs text-gray-500 mb-2">{t(`${q}.dealBreakersDesc`)}</p>
       <div className="space-y-3">
         {items.map((item, i) => (
-          <div key={i} className="rounded-lg border border-gray-200 bg-gray-50/50 p-3 space-y-2">
+          <div key={i} className="rounded-xl p-3 space-y-2" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="flex justify-between items-start gap-2">
               <Input
                 value={item.rule}
                 onChange={(e) => update(i, { rule: e.target.value })}
-                placeholder="Rule (e.g., 'No projects under $5k')"
+                placeholder={t(`${q}.phRule`)}
                 className="flex-1"
               />
               <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>
@@ -170,7 +195,7 @@ function DealBreakerEditor({ items, onChange }: { items: DealBreakerItem[]; onCh
             <Textarea
               value={item.reasoning}
               onChange={(e) => update(i, { reasoning: e.target.value })}
-              placeholder="Why this rule exists"
+              placeholder={t(`${q}.phReasoning`)}
               rows={2}
             />
             <div className="flex items-center gap-4 flex-wrap">
@@ -181,10 +206,10 @@ function DealBreakerEditor({ items, onChange }: { items: DealBreakerItem[]; onCh
                   checked={item.isAbsolute}
                   onChange={(e) => update(i, { isAbsolute: e.target.checked })}
                 />
-                Absolute (no exceptions)
+                {t(`${q}.absoluteNoExceptions`)}
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Evidence:</span>
+                <span className="text-xs text-gray-500">{t('profile:formEditor.shared.evidence')}</span>
                 <Input
                   type="number"
                   min={0}
@@ -194,7 +219,7 @@ function DealBreakerEditor({ items, onChange }: { items: DealBreakerItem[]; onCh
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Confidence:</span>
+                <span className="text-xs text-gray-500">{t('profile:formEditor.shared.confidence')}</span>
                 <Input
                   type="number"
                   step={0.1}
@@ -209,7 +234,7 @@ function DealBreakerEditor({ items, onChange }: { items: DealBreakerItem[]; onCh
           </div>
         ))}
         <Button type="button" variant="outline" size="sm" onClick={add}>
-          <Plus className="h-4 w-4 mr-1" /> Add Deal-Breaker
+          <Plus className="h-4 w-4 mr-1" /> {t(`${q}.addDealBreaker`)}
         </Button>
       </div>
     </div>
@@ -219,6 +244,8 @@ function DealBreakerEditor({ items, onChange }: { items: DealBreakerItem[]; onCh
 const FIRMNESS_OPTIONS = ['soft', 'moderate', 'firm'];
 
 export default function QualificationForm({ value, onChange }: QualificationFormProps) {
+  const { t } = useI18n(['profile']);
+  const q = 'profile:formEditor.qualification';
   const update = (field: string, v: unknown) => onChange({ ...value, [field]: v });
   const walk = value.walkAwayStrategy ?? {
     exitLanguage: [],
@@ -229,49 +256,36 @@ export default function QualificationForm({ value, onChange }: QualificationForm
   };
   const updateWalk = (patch: Record<string, unknown>) => update('walkAwayStrategy', { ...walk, ...patch });
 
+  const firmOpts = FIRMNESS_OPTIONS.map((o) => ({
+    value: o,
+    label: t(`profile:enumLabels.firmness.${o}`),
+  }));
+
   return (
     <div className="space-y-6">
-      <FlagEditor
-        title="Green Flags"
-        description="Positive client signals"
-        items={value.greenFlags ?? []}
-        onChange={(v) => update('greenFlags', v)}
-        variant="green"
-      />
+      <FlagEditor variant="green" items={value.greenFlags ?? []} onChange={(v) => update('greenFlags', v)} />
 
-      <FlagEditor
-        title="Yellow Flags"
-        description="Client signals that warrant caution"
-        items={value.yellowFlags ?? []}
-        onChange={(v) => update('yellowFlags', v)}
-        variant="yellow"
-      />
+      <FlagEditor variant="yellow" items={value.yellowFlags ?? []} onChange={(v) => update('yellowFlags', v)} />
 
-      <FlagEditor
-        title="Red Flags"
-        description="Strong warning signs"
-        items={value.redFlags ?? []}
-        onChange={(v) => update('redFlags', v)}
-        variant="red"
-      />
+      <FlagEditor variant="red" items={value.redFlags ?? []} onChange={(v) => update('redFlags', v)} />
 
       <DealBreakerEditor items={value.dealBreakers ?? []} onChange={(v) => update('dealBreakers', v)} />
 
-      <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-3 space-y-3">
-        <Label>Walk-Away Strategy</Label>
+      <div className="rounded-xl p-3 space-y-3" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <Label>{t(`${q}.walkAwayTitle`)}</Label>
         <MultiInputField
           values={walk.exitLanguage ?? []}
           onChange={(v) => updateWalk({ exitLanguage: v })}
-          placeholder="e.g., 'We're not the right fit for this project'"
+          placeholder={t(`${q}.phExitLang`)}
           maxItems={10}
-          addButtonText="Add Exit Phrase"
+          addButtonText={t(`${q}.addExitPhrase`)}
         />
         <div className="grid grid-cols-2 gap-3">
           <Select
             value={walk.exitFirmness ?? ''}
             onChange={(e) => updateWalk({ exitFirmness: e.target.value || null })}
-            placeholder="Exit firmness"
-            options={FIRMNESS_OPTIONS.map((o) => ({ value: o, label: o }))}
+            placeholder={t(`${q}.phFirmness`)}
+            options={firmOpts}
           />
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-xs">
@@ -281,7 +295,7 @@ export default function QualificationForm({ value, onChange }: QualificationForm
                 checked={!!walk.leavesDoorOpen}
                 onChange={(e) => updateWalk({ leavesDoorOpen: e.target.checked })}
               />
-              Leaves door open
+              {t(`${q}.leavesDoorOpen`)}
             </label>
             <label className="flex items-center gap-2 text-xs">
               <input
@@ -290,7 +304,7 @@ export default function QualificationForm({ value, onChange }: QualificationForm
                 checked={!!walk.offersAlternatives}
                 onChange={(e) => updateWalk({ offersAlternatives: e.target.checked })}
               />
-              Offers alternatives
+              {t(`${q}.offersAlternatives`)}
             </label>
           </div>
         </div>
@@ -298,9 +312,9 @@ export default function QualificationForm({ value, onChange }: QualificationForm
           <MultiInputField
             values={walk.alternativeExamples ?? []}
             onChange={(v) => updateWalk({ alternativeExamples: v })}
-            placeholder="e.g., 'Try our scaled-down package'"
+            placeholder={t(`${q}.phAlternative`)}
             maxItems={10}
-            addButtonText="Add Alternative"
+            addButtonText={t(`${q}.addAlternative`)}
           />
         )}
       </div>

@@ -1,5 +1,5 @@
 import { BusinessProfile } from '@prisma/client';
-import { createChatCompletion } from '@/lib/ai/client';
+import { createChatCompletion, parseAiJson } from '@/lib/ai/client';
 
 /**
  * PHASE 1: Hybrid Lead Scoring Engine
@@ -13,9 +13,20 @@ import { createChatCompletion } from '@/lib/ai/client';
  * Total: 0-100 points
  */
 
+export interface LeadExtractedInfo {
+  leadName: string | null;
+  leadEmail: string | null;
+  budget: number | null;
+  timeline: string | null;
+  projectType: string | null;
+}
+
 export interface ScoringBreakdown {
   totalScore: number; // 0-100
   temperature: 'hot' | 'warm' | 'cold';
+
+  /** Name, email, and numeric extraction for CRM + /end without a duplicate AI call */
+  extractedInfo: LeadExtractedInfo;
 
   components: {
     budgetFit: {
@@ -58,10 +69,24 @@ export interface ScoringBreakdown {
 
 export async function scoreConversation(
   transcript: string,
-  profile: BusinessProfile
+  profile: BusinessProfile,
+  tenantId?: string
 ): Promise<ScoringBreakdown> {
-  // PART 1: Extract lead information from transcript using AI
-  const leadInfo = await extractLeadInfo(transcript);
+  const scoringOpts = {
+    operationType: 'scoring' as const,
+    tenantId,
+  };
+
+  // PART 1: Two independent AI extractions in parallel (rules use extraction only)
+  const [leadInfo, aiAnalysis] = await Promise.all([
+    extractLeadInfo(transcript, scoringOpts),
+    analyzeEngagementAndAlignment(
+      transcript,
+      profile.qualificationCriteria as any,
+      profile.ownerValues as any,
+      scoringOpts
+    ),
+  ]);
 
   // PART 2: Rules-based scoring (60% - deterministic)
   const ownerNorms = (profile.ownerNorms ?? {}) as {
@@ -73,13 +98,6 @@ export async function scoreConversation(
 
   const timelineScore = calculateTimelineFit(leadInfo.timeline, ownerNorms.typicalTimelines as any);
 
-  // PART 3: AI-powered scoring (40% - intelligence)
-  const aiAnalysis = await analyzeEngagementAndAlignment(
-    transcript,
-    profile.qualificationCriteria as any,
-    profile.ownerValues as any
-  );
-
   // PART 4: Combine scores
   const totalScore = budgetScore.score + timelineScore.score + aiAnalysis.engagementScore + aiAnalysis.alignmentScore;
 
@@ -90,9 +108,18 @@ export async function scoreConversation(
   // PART 6: Generate recommendation
   const recommendation = generateRecommendation(totalScore, temperature, aiAnalysis.qualificationAnalysis);
 
+  const extractedInfo: LeadExtractedInfo = {
+    leadName: leadInfo.leadName,
+    leadEmail: leadInfo.leadEmail,
+    budget: leadInfo.budget,
+    timeline: leadInfo.timeline,
+    projectType: leadInfo.projectType,
+  };
+
   return {
     totalScore,
     temperature,
+    extractedInfo,
     components: {
       budgetFit: budgetScore,
       timelineFit: timelineScore,
@@ -309,24 +336,45 @@ function extractWeeksFromTimeline(timeline: string): number | null {
 // ============================================================================
 
 async function extractLeadInfo(
-  transcript: string
+  transcript: string,
+  opts?: { tenantId?: string; operationType?: 'scoring' }
 ): Promise<{
+  leadName: string | null;
+  leadEmail: string | null;
   budget: number | null;
   timeline: string | null;
   projectType: string | null;
 }> {
-  const extractionPrompt = `Extract lead information from this conversation transcript.
+  const empty = (): {
+    leadName: string | null;
+    leadEmail: string | null;
+    budget: number | null;
+    timeline: string | null;
+    projectType: string | null;
+  } => ({
+    leadName: null,
+    leadEmail: null,
+    budget: null,
+    timeline: null,
+    projectType: null,
+  });
+
+  const extractionPrompt = `Extract structured lead information from this conversation transcript.
 
 Transcript:
 ${transcript}
 
 Extract:
-1. Budget (if mentioned) - return as number or null
-2. Timeline (if mentioned) - return as string or null
-3. Project type (if mentioned) - return as string or null
+1. leadName — full name if clearly stated, else null
+2. leadEmail — email if clearly stated, else null
+3. budget — numeric budget if mentioned (number only), else null
+4. timeline — free-text timeline if mentioned, else null
+5. projectType — short description of what they want, else null
 
 Return JSON only:
 {
+  "leadName": string | null,
+  "leadEmail": string | null,
   "budget": number | null,
   "timeline": string | null,
   "projectType": string | null
@@ -335,21 +383,34 @@ Return JSON only:
   const response = await createChatCompletion(
     [{ role: 'user', content: extractionPrompt }],
     'You are a precise data extraction assistant. Return only valid JSON.',
-    { temperature: 0.1, maxTokens: 200 }
+    {
+      temperature: 0.1,
+      maxTokens: 400,
+      tenantId: opts?.tenantId,
+      operationType: opts?.operationType ?? 'scoring',
+    }
   );
 
   try {
-    return JSON.parse(response.content);
+    const parsed = parseAiJson<any>(response.content);
+    return {
+      leadName: typeof parsed.leadName === 'string' ? parsed.leadName : null,
+      leadEmail: typeof parsed.leadEmail === 'string' ? parsed.leadEmail : null,
+      budget: typeof parsed.budget === 'number' ? parsed.budget : null,
+      timeline: typeof parsed.timeline === 'string' ? parsed.timeline : null,
+      projectType: typeof parsed.projectType === 'string' ? parsed.projectType : null,
+    };
   } catch (e) {
     console.error('Failed to parse lead info extraction:', e);
-    return { budget: null, timeline: null, projectType: null };
+    return empty();
   }
 }
 
 async function analyzeEngagementAndAlignment(
   transcript: string,
   qualificationCriteria: any,
-  ownerValues: any
+  ownerValues: any,
+  opts?: { tenantId?: string; operationType?: 'scoring' }
 ): Promise<{
   engagementScore: number;
   engagementReasoning: string;
@@ -408,11 +469,16 @@ Return JSON:
   const response = await createChatCompletion(
     [{ role: 'user', content: analysisPrompt }],
     'You are an expert sales analyst. Analyze conversations and return precise JSON.',
-    { temperature: 0.2, maxTokens: 600 }
+    {
+      temperature: 0.2,
+      maxTokens: 600,
+      tenantId: opts?.tenantId,
+      operationType: opts?.operationType ?? 'scoring',
+    }
   );
 
   try {
-    const parsed = JSON.parse(response.content);
+    const parsed = parseAiJson<any>(response.content);
     return {
       engagementScore: Math.min(25, Math.max(0, parsed.engagementScore || 0)),
       engagementReasoning: parsed.engagementReasoning || 'Unable to analyze engagement',

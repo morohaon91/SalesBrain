@@ -63,8 +63,8 @@ function MetricCard({
 }) {
   return (
     <div
-      className="bg-white rounded-xl border p-5 card-hover"
-      style={{ borderColor: 'hsl(var(--border))' }}
+      className="rounded-xl p-5 card-hover"
+      style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
     >
       <div className="flex items-start justify-between">
         <div>
@@ -150,39 +150,39 @@ export default function AnalyticsPage() {
           label={t('metrics.conversations')}
           value={isLoading ? '…' : totalConversations}
           icon={MessageSquare}
-          iconColor="hsl(38, 92%, 42%)"
-          iconBg="hsl(38 92% 50% / 0.1)"
+          iconColor="hsl(38,84%,61%)"
+          iconBg="rgba(200,136,26,0.12)"
         />
         <MetricCard
           label={t('metrics.qualified')}
           value={isLoading ? '…' : qualifiedLeads}
           sub={`${conversionRate.toFixed(1)}% conversion`}
           icon={Users}
-          iconColor="hsl(142, 76%, 30%)"
-          iconBg="hsl(142 76% 36% / 0.1)"
+          iconColor="#4ade80"
+          iconBg="rgba(74,222,128,0.1)"
         />
         <MetricCard
           label={t('metrics.avgScoreShort')}
           value={isLoading ? '…' : averageScore > 0 ? averageScore : '—'}
           icon={TrendingUp}
-          iconColor="hsl(38, 92%, 42%)"
-          iconBg="hsl(38 92% 50% / 0.1)"
+          iconColor="hsl(38,84%,61%)"
+          iconBg="rgba(200,136,26,0.12)"
         />
         <MetricCard
           label={t('metrics.responseTime')}
           value="0.8s"
           sub="avg AI response"
           icon={Zap}
-          iconColor="hsl(174, 100%, 26%)"
-          iconBg="hsl(174 100% 29% / 0.1)"
+          iconColor="#4ade80"
+          iconBg="rgba(74,222,128,0.1)"
         />
       </div>
 
       {/* ── Lead score distribution ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div
-          className="bg-white rounded-xl border p-6 card-hover"
-          style={{ borderColor: 'hsl(var(--border))' }}
+          className="rounded-xl p-6 card-hover"
+          style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
         >
           <div className="flex items-center gap-2 mb-5">
             <BarChart3 className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
@@ -208,21 +208,21 @@ export default function AnalyticsPage() {
                 value={qualifiedLeads}
                 max={totalLeads}
                 barColor="hsl(21, 90%, 48%)"
-                textColor="hsl(21, 90%, 38%)"
+                textColor="#fb923c"
               />
               <SegmentBar
                 label={`✦ ${t('distribution.warm')}`}
                 value={maybeLeads}
                 max={totalLeads}
                 barColor="hsl(38, 92%, 50%)"
-                textColor="hsl(38, 92%, 38%)"
+                textColor="hsl(38,84%,61%)"
               />
               <SegmentBar
                 label={`◦ ${t('distribution.cold')}`}
                 value={unqualifiedLeads}
                 max={totalLeads}
                 barColor="hsl(215, 20%, 65%)"
-                textColor="hsl(215, 20%, 42%)"
+                textColor="hsl(228,12%,55%)"
               />
             </div>
           )}
@@ -230,8 +230,8 @@ export default function AnalyticsPage() {
 
         {/* Conversion funnel */}
         <div
-          className="bg-white rounded-xl border p-6 card-hover"
-          style={{ borderColor: 'hsl(var(--border))' }}
+          className="rounded-xl p-6 card-hover"
+          style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
         >
           <div className="flex items-center gap-2 mb-5">
             <TrendingUp className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
@@ -265,7 +265,7 @@ export default function AnalyticsPage() {
               <div className="mt-4 pt-4" style={{ borderTop: '1px solid hsl(var(--border))' }}>
                 <div className="flex justify-between items-center">
                   <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Conversion Rate</span>
-                  <span className="text-2xl font-bold tabular-nums" style={{ color: conversionRate >= 50 ? 'hsl(142, 76%, 32%)' : 'hsl(38, 92%, 44%)' }}>
+                  <span className="text-2xl font-bold tabular-nums" style={{ color: conversionRate >= 50 ? '#4ade80' : 'hsl(38,84%,61%)' }}>
                     {conversionRate.toFixed(1)}%
                   </span>
                 </div>

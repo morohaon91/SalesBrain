@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { ConversationStatus } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import { extractTokenFromHeader, verifyAccessToken } from '@/lib/auth/jwt';
 
 const bodySchema = z.object({
   message: z.string().min(1).max(8000),
@@ -19,16 +19,15 @@ export async function POST(
   try {
     const { id } = await params;
 
-    // Authenticate from Bearer token
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    const token = extractTokenFromHeader(req.headers.get('authorization'));
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.slice(7);
-    let decoded: any;
+    let userId: string;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+      const payload = verifyAccessToken(token);
+      userId = payload.userId;
     } catch {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
@@ -47,7 +46,7 @@ export async function POST(
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId || decoded.sub },
+      where: { id: userId },
     });
 
     if (!user) {

@@ -3,23 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
   {
     variants: {
       variant: {
         default:
-          "border border-transparent bg-primary-500 text-white hover:bg-primary-600",
+          "bg-primary-600/20 text-primary-400 border border-primary-500/30",
         secondary:
-          "border border-transparent bg-gray-100 text-gray-900 hover:bg-gray-200",
+          "bg-white/[0.07] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))]",
         destructive:
-          "border border-transparent bg-danger-500 text-white hover:bg-danger-600",
-        outline: "border border-gray-300 text-gray-900",
+          "bg-danger-500/15 text-danger-400 border border-danger-500/25",
+        outline:
+          "border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]",
         success:
-          "border border-transparent bg-success-500 text-white hover:bg-success-600",
+          "bg-success-500/15 text-success-400 border border-success-500/25",
         warning:
-          "border border-transparent bg-warning-500 text-white hover:bg-warning-600",
+          "bg-warning-500/15 text-warning-400 border border-warning-500/25",
         accent:
-          "border border-transparent bg-accent-500 text-white hover:bg-accent-600",
+          "bg-accent-500/15 text-accent-400 border border-accent-500/25",
       },
     },
     defaultVariants: {

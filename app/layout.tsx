@@ -4,7 +4,11 @@ import { AuthProvider } from "@/lib/hooks/useAuth";
 import { Providers } from "@/components/providers";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: "Concierge — Your AI Sales Rep, Always On",
   description: "AI-powered lead warm-up. Your concierge is always on.",
 };

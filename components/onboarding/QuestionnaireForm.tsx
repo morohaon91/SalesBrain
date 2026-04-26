@@ -89,9 +89,9 @@ export default function QuestionnaireForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900">{t('form.sectionBasic')}</h2>
+        <h2 className="text-xl font-semibold" style={{ color: 'hsl(38,25%,90%)' }}>{t('form.sectionBasic')}</h2>
 
-        <p className="text-sm rounded-lg border border-gray-200 bg-gray-50/90 text-gray-600 px-4 py-3">
+        <p className="text-sm rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'hsl(228,12%,47%)' }}>
           {t('form.industryFromAccount')}
         </p>
 
@@ -166,11 +166,11 @@ export default function QuestionnaireForm({
         </div>
       </div>
 
-      <div className="border-t border-gray-200" />
+      <div className="border-t" style={{ borderColor: 'rgba(255,255,255,0.07)' }} />
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">{t('form.sectionFacts')}</h2>
+          <h2 className="text-xl font-semibold" style={{ color: 'hsl(38,25%,90%)' }}>{t('form.sectionFacts')}</h2>
           <p className="text-sm text-gray-600">{t('form.factsIntro')}</p>
         </div>
 

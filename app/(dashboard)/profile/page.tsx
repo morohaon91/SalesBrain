@@ -145,18 +145,25 @@ export default function ProfilePage() {
     mutationFn: () => api.profile.reExtract(),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['activation-status'] });
 
       if (data?.data?.simulationsProcessed > 0) {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
-        // No simulations yet
         setAlertMessage({
           type: 'info',
           text: t('messages.noSimulationsInfo'),
         });
         setTimeout(() => setAlertMessage(null), 5000);
       }
+    },
+    onError: (err: any) => {
+      setAlertMessage({
+        type: 'error',
+        text: err?.response?.data?.error?.message || 'Re-extraction failed. Please try again.',
+      });
+      setTimeout(() => setAlertMessage(null), 8000);
     },
   });
 
@@ -242,7 +249,7 @@ export default function ProfilePage() {
             const isLive = s === 'APPROVED' || s === 'LIVE';
             return isLive ? (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-                style={{ backgroundColor: 'hsl(142 76% 36% / 0.1)', color: 'hsl(142, 76%, 30%)' }}>
+                style={{ backgroundColor: 'rgba(74,222,128,0.12)', color: '#4ade80' }}>
                 <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'hsl(142, 76%, 40%)' }} />
                 AI is live
               </div>
@@ -997,22 +1004,31 @@ export default function ProfilePage() {
                 })()}
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-4 border-t border-gray-200">
-                  <Button
-                    variant="outline"
-                    onClick={() => reExtractMutation.mutateAsync()}
-                    disabled={reExtractMutation.isPending}
-                    className="flex items-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    {reExtractMutation.isPending
-                      ? t('businessProfile.reextracting')
-                      : t('businessProfile.reextract')}
-                  </Button>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Download className="w-4 h-4" />
-                    {t('businessProfile.exportProfile')}
-                  </Button>
+                <div className="flex flex-col gap-2 pt-4 border-t border-gray-200">
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => reExtractMutation.mutate()}
+                      disabled={reExtractMutation.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      {reExtractMutation.isPending
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <RefreshCw className="w-4 h-4" />}
+                      {reExtractMutation.isPending
+                        ? t('businessProfile.reextracting')
+                        : t('businessProfile.reextract')}
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Download className="w-4 h-4" />
+                      {t('businessProfile.exportProfile')}
+                    </Button>
+                  </div>
+                  {reExtractMutation.isPending && (
+                    <p className="text-xs text-gray-500">
+                      Analyzing all simulations — this takes about 30–60 seconds…
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1033,15 +1049,20 @@ export default function ProfilePage() {
                 <div className="flex flex-col gap-3 items-center mt-6">
                   <Button
                     variant="outline"
-                    onClick={() => reExtractMutation.mutateAsync()}
+                    onClick={() => reExtractMutation.mutate()}
                     disabled={reExtractMutation.isPending}
                     className="flex items-center gap-2"
                   >
-                    <RefreshCw className="w-4 h-4" />
+                    {reExtractMutation.isPending
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <RefreshCw className="w-4 h-4" />}
                     {reExtractMutation.isPending
                       ? t('businessProfile.checkingUpdates')
                       : t('businessProfile.checkUpdates')}
                   </Button>
+                  {reExtractMutation.isPending && (
+                    <p className="text-xs text-gray-500">Analyzing simulations — ~30–60 seconds…</p>
+                  )}
                   <Button
                     onClick={() => router.push('/simulations/new')}
                     className="bg-primary-600 hover:bg-primary-700 text-white"

@@ -404,8 +404,13 @@ export function getScenarioByType(type: ScenarioType): UniversalScenario | undef
   return MANDATORY_SCENARIOS.find((s) => s.scenarioType === type);
 }
 
+/** Match by scenario id ('hot_lead_universal') OR legacy scenarioType ('HOT_LEAD'). */
+function scenarioMatches(s: UniversalScenario, id: string): boolean {
+  return s.id === id || s.scenarioType === id;
+}
+
 export function getUncompletedScenarios(completedScenarioIds: string[]): UniversalScenario[] {
-  return MANDATORY_SCENARIOS.filter((s) => !completedScenarioIds.includes(s.id));
+  return MANDATORY_SCENARIOS.filter((s) => !completedScenarioIds.some((id) => scenarioMatches(s, id)));
 }
 
 export function getNextRecommendedScenario(completedScenarioIds: string[]): UniversalScenario | null {
@@ -415,5 +420,5 @@ export function getNextRecommendedScenario(completedScenarioIds: string[]): Univ
 }
 
 export function allMandatoryScenariosCompleted(completedScenarioIds: string[]): boolean {
-  return MANDATORY_SCENARIOS.every((s) => completedScenarioIds.includes(s.id));
+  return MANDATORY_SCENARIOS.every((s) => completedScenarioIds.some((id) => scenarioMatches(s, id)));
 }

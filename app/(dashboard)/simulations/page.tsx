@@ -35,23 +35,23 @@ interface Simulation {
 const difficultyMap: Record<string, { label: string; bg: string; color: string }> = {
   PRICE_SENSITIVE: {
     label: 'Price Sensitive',
-    bg: 'hsl(38 92% 50% / 0.1)',
-    color: 'hsl(38, 92%, 38%)',
+    bg: 'rgba(200,136,26,0.12)',
+    color: 'hsl(38,84%,61%)',
   },
   TIME_CONSTRAINED: {
     label: 'Time Constrained',
-    bg: 'hsl(174 100% 29% / 0.1)',
-    color: 'hsl(174, 100%, 26%)',
+    bg: 'rgba(74,222,128,0.1)',
+    color: '#4ade80',
   },
   BUDGET_FOCUSED: {
     label: 'Budget Focused',
-    bg: 'hsl(142 76% 36% / 0.1)',
-    color: 'hsl(142, 76%, 30%)',
+    bg: 'rgba(74,222,128,0.1)',
+    color: '#4ade80',
   },
 };
 
 function ScenarioBadge({ type }: { type: string }) {
-  const style = difficultyMap[type] ?? { label: type, bg: 'hsl(215 20% 65% / 0.1)', color: 'hsl(215, 20%, 42%)' };
+  const style = difficultyMap[type] ?? { label: type, bg: 'rgba(255,255,255,0.06)', color: 'hsl(228,12%,55%)' };
   return (
     <span
       className="px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -66,7 +66,7 @@ function StatusBadge({ status }: { status: string }) {
   return status === 'COMPLETED' ? (
     <span
       className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-      style={{ backgroundColor: 'hsl(142 76% 36% / 0.08)', color: 'hsl(142, 76%, 30%)' }}
+      style={{ backgroundColor: 'rgba(74,222,128,0.1)', color: '#4ade80' }}
     >
       <CheckCircle2 className="w-3 h-3" />
       Completed
@@ -74,7 +74,7 @@ function StatusBadge({ status }: { status: string }) {
   ) : (
     <span
       className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-      style={{ backgroundColor: 'hsl(38 92% 50% / 0.08)', color: 'hsl(38, 92%, 38%)' }}
+      style={{ backgroundColor: 'rgba(200,136,26,0.12)', color: 'hsl(38,84%,61%)' }}
     >
       <PlayCircle className="w-3 h-3" />
       In Progress
@@ -225,14 +225,14 @@ export default function SimulationsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: t('simulations:stats.total'), value: simulations.length, color: 'hsl(var(--foreground))' },
-          { label: t('simulations:stats.completed'), value: completedCount, color: 'hsl(142, 76%, 32%)' },
-          { label: t('simulations:stats.messages'), value: simulations.reduce((acc, s) => acc + s.messageCount, 0), color: 'hsl(38, 92%, 44%)' },
-          { label: t('simulations:stats.avgQuality'), value: avgQuality ? `${avgQuality}%` : '—', color: 'hsl(174, 100%, 29%)' },
+          { label: t('simulations:stats.completed'), value: completedCount, color: '#4ade80' },
+          { label: t('simulations:stats.messages'), value: simulations.reduce((acc, s) => acc + s.messageCount, 0), color: 'hsl(38,84%,61%)' },
+          { label: t('simulations:stats.avgQuality'), value: avgQuality ? `${avgQuality}%` : '—', color: '#4ade80' },
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="bg-white rounded-xl border p-4 card-hover"
-            style={{ borderColor: 'hsl(var(--border))' }}
+            className="rounded-xl p-4 card-hover"
+            style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {label}
@@ -250,8 +250,8 @@ export default function SimulationsPage() {
 
       {/* ── Filter ── */}
       <div
-        className="bg-white rounded-xl border p-3"
-        style={{ borderColor: 'hsl(var(--border))' }}
+        className="rounded-xl p-3"
+        style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
         <div className="flex gap-1">
           {['ALL', 'COMPLETED', 'IN_PROGRESS'].map((status) => {
@@ -269,8 +269,8 @@ export default function SimulationsPage() {
                 style={
                   isActive
                     ? {
-                        backgroundColor: 'hsl(38 92% 50% / 0.1)',
-                        color: 'hsl(38, 92%, 38%)',
+                        backgroundColor: 'rgba(200,136,26,0.12)',
+                        color: 'hsl(38,84%,61%)',
                       }
                     : {
                         color: 'hsl(var(--muted-foreground))',
@@ -292,8 +292,8 @@ export default function SimulationsPage() {
           </div>
         ) : filteredSimulations.length === 0 ? (
           <div
-            className="bg-white rounded-xl border py-16 text-center"
-            style={{ borderColor: 'hsl(var(--border))' }}
+            className="rounded-xl py-16 text-center"
+            style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             <BrainCircuit
               className="w-10 h-10 mx-auto mb-3"
@@ -318,8 +318,10 @@ export default function SimulationsPage() {
           filteredSimulations.map((sim) => (
             <Link key={sim.id} href={`/simulations/${sim.id}`}>
               <div
-                className="bg-white rounded-xl border p-4 transition-colors card-hover flex items-center gap-4"
-                style={{ borderColor: 'hsl(var(--border))' }}
+                className="rounded-xl p-4 transition-colors card-hover flex items-center gap-4"
+                style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,136,26,0.25)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'}
               >
                 {/* Status icon */}
                 <div
@@ -327,14 +329,14 @@ export default function SimulationsPage() {
                   style={{
                     backgroundColor:
                       sim.status === 'COMPLETED'
-                        ? 'hsl(142 76% 36% / 0.08)'
-                        : 'hsl(38 92% 50% / 0.08)',
+                        ? 'rgba(74,222,128,0.1)'
+                        : 'rgba(200,136,26,0.12)',
                   }}
                 >
                   {sim.status === 'COMPLETED' ? (
-                    <CheckCircle2 className="w-5 h-5" style={{ color: 'hsl(142, 76%, 34%)' }} />
+                    <CheckCircle2 className="w-5 h-5" style={{ color: '#4ade80' }} />
                   ) : (
-                    <PlayCircle className="w-5 h-5" style={{ color: 'hsl(38, 92%, 44%)' }} />
+                    <PlayCircle className="w-5 h-5" style={{ color: 'hsl(38,84%,61%)' }} />
                   )}
                 </div>
 
@@ -354,7 +356,7 @@ export default function SimulationsPage() {
                       {sim.messageCount} {t('common:units.msgs')}
                     </span>
                     {sim.qualityScore !== null && (
-                      <span className="flex items-center gap-1 font-semibold" style={{ color: 'hsl(142, 76%, 34%)' }}>
+                      <span className="flex items-center gap-1 font-semibold" style={{ color: '#4ade80' }}>
                         <TrendingUp className="w-3.5 h-3.5" />
                         {sim.qualityScore}% quality
                       </span>

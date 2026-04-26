@@ -19,7 +19,7 @@ const PATTERN_LABELS: Record<string, string> = {
 
 export default function PatternDemonstrated({ patterns }: PatternDemonstratedProps) {
   if (patterns.length === 0) {
-    return <p className="text-sm text-gray-500">No specific patterns were detected in this simulation.</p>;
+    return <p className="text-sm" style={{ color: 'hsl(228,12%,47%)' }}>No specific patterns were detected in this simulation.</p>;
   }
 
   return (

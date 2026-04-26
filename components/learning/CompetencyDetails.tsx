@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, CheckCircle2, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import type { CompetencyRequirement, CompetencyStatus } from "@/lib/learning/competencies";
 
 interface CompetencyDetailsProps {
@@ -24,112 +23,97 @@ interface CompetencyDetailsProps {
   };
 }
 
+const C = {
+  card: 'hsl(228,32%,8%)',
+  border: 'rgba(255,255,255,0.07)',
+  borderInner: 'rgba(255,255,255,0.05)',
+  fg: 'hsl(38,25%,90%)',
+  muted: 'hsl(228,12%,47%)',
+  muted2: 'hsl(228,12%,55%)',
+};
+
 export function CompetencyDetails({ competency, requirement, labels }: CompetencyDetailsProps) {
   const [isOpen, setIsOpen] = useState(false);
-
-  const isAchieved =
-    competency.status === "ACHIEVED" || competency.status === "MASTERED";
+  const isAchieved = competency.status === "ACHIEVED" || competency.status === "MASTERED";
   const isMandatory = requirement.requiredForGoLive;
-  const confidence = Number.isFinite(competency.currentConfidence)
-    ? Math.round(competency.currentConfidence)
-    : 0;
+  const confidence = Number.isFinite(competency.currentConfidence) ? Math.round(competency.currentConfidence) : 0;
   const delta = Math.max(0, requirement.minimumConfidence - confidence);
 
   return (
     <div
-      className={cn(
-        "rounded-xl border bg-white transition-shadow",
-        isAchieved
-          ? "border-success-200"
-          : isMandatory
-            ? "border-gray-200"
-            : "border-gray-200"
-      )}
+      className="rounded-xl transition-all duration-150"
+      style={{ background: C.card, border: `1px solid ${isAchieved ? 'rgba(74,222,128,0.2)' : C.border}` }}
     >
       <button
         type="button"
-        onClick={() => setIsOpen((v) => !v)}
-        className="flex w-full items-start gap-4 rounded-xl p-4 text-left transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+        onClick={() => setIsOpen(v => !v)}
+        className="flex w-full items-start gap-4 rounded-xl p-4 text-left transition-colors focus:outline-none focus-visible:ring-2"
+        style={{ '--tw-ring-color': 'rgba(200,136,26,0.3)' } as React.CSSProperties}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
         aria-expanded={isOpen}
       >
         <div
-          className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          style={
             isAchieved
-              ? "bg-success-100 text-success-600"
-              : "bg-gray-100 text-gray-500"
-          )}
+              ? { background: 'rgba(74,222,128,0.12)', color: '#4ade80' }
+              : { background: 'rgba(255,255,255,0.06)', color: 'hsl(228,12%,47%)' }
+          }
         >
-          {isAchieved ? (
-            <CheckCircle2 className="h-5 w-5" />
-          ) : (
-            <AlertCircle className="h-5 w-5" />
-          )}
+          {isAchieved ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-sm font-semibold text-gray-900">{requirement.name}</h4>
-            {isMandatory ? (
-              <Badge variant="outline" className="text-[10px]">
-                {labels.required}
-              </Badge>
-            ) : null}
+            <h4 className="text-sm font-semibold" style={{ color: C.fg }}>{requirement.name}</h4>
+            {isMandatory && <Badge variant="outline" className="text-[10px]">{labels.required}</Badge>}
           </div>
-          <p className="mt-1 text-xs text-gray-500 leading-relaxed">{requirement.description}</p>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: C.muted }}>{requirement.description}</p>
 
           <div className="mt-3 flex items-center gap-3">
             <Progress
               value={confidence}
-              className={cn(
-                "h-1.5 flex-1",
-                isAchieved
-                  ? "[&>div]:bg-success-500"
-                  : confidence > 0
-                    ? "[&>div]:bg-primary-500"
-                    : "[&>div]:bg-gray-300"
-              )}
+              variant={isAchieved ? 'success' : confidence > 0 ? 'gold' : 'default'}
+              className="h-1.5 flex-1"
             />
-            <span className="text-xs font-semibold text-gray-700 tabular-nums">
+            <span className="text-xs font-semibold tabular-nums" style={{ color: isAchieved ? '#4ade80' : C.muted2 }}>
               {confidence}%
             </span>
           </div>
 
-          <p className="mt-1 text-[11px] text-gray-400">
+          <p className="mt-1 text-[11px]" style={{ color: C.muted }}>
             {labels.examples(competency.evidenceCount)}
           </p>
         </div>
 
-        <div className="shrink-0 pt-1 text-gray-400">
+        <div className="shrink-0 pt-1" style={{ color: C.muted }}>
           {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </div>
       </button>
 
-      {isOpen ? (
-        <div className="border-t border-gray-100 px-4 py-4 space-y-4">
+      {isOpen && (
+        <div className="px-4 py-4 space-y-4" style={{ borderTop: `1px solid ${C.borderInner}` }}>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
               {labels.statusLabel}
             </p>
-            <Badge
-              variant={isAchieved ? "success" : "secondary"}
-              className="mt-1.5 text-[10px]"
-            >
+            <Badge variant={isAchieved ? "success" : "secondary"} className="mt-1.5 text-[10px]">
               {labels.statusText[competency.status]}
             </Badge>
           </div>
 
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
               {labels.requirements}
             </p>
-            <ul className="mt-1.5 space-y-1 text-xs text-gray-600">
+            <ul className="mt-1.5 space-y-1 text-xs" style={{ color: C.muted2 }}>
               <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-gray-400" />
+                <span className="h-1 w-1 rounded-full" style={{ background: C.muted }} />
                 {labels.minConfidence(requirement.minimumConfidence)}
               </li>
               <li className="flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-gray-400" />
+                <span className="h-1 w-1 rounded-full" style={{ background: C.muted }} />
                 {confidence >= requirement.minimumConfidence
                   ? labels.currentMet(confidence)
                   : labels.currentShort(confidence, delta)}
@@ -137,30 +121,31 @@ export function CompetencyDetails({ competency, requirement, labels }: Competenc
             </ul>
           </div>
 
-          {competency.blockingReasons.length > 0 ? (
+          {competency.blockingReasons.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-warning-600">
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#fb923c' }}>
                 {labels.whatsNeeded}
               </p>
               <ul className="mt-1.5 space-y-1">
                 {competency.blockingReasons.map((reason, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                    <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warning-500" />
-                    <span>{reason}</span>
+                  <li key={i} className="flex items-start gap-2 text-xs" style={{ color: C.muted2 }}>
+                    <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: '#fb923c' }} />
+                    {reason}
                   </li>
                 ))}
               </ul>
             </div>
-          ) : null}
+          )}
 
-          {isAchieved ? (
-            <div className="flex items-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-xs font-medium text-success-700">
+          {isAchieved && (
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium"
+              style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)', color: '#4ade80' }}>
               <CheckCircle2 className="h-4 w-4" />
-              <span>{labels.achievedMessage}</span>
+              {labels.achievedMessage}
             </div>
-          ) : null}
+          )}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

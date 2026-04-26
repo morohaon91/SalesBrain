@@ -21,13 +21,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div
       className="flex h-screen"
-      style={{ backgroundColor: "hsl(var(--background))" }}
+      style={{ background: "hsl(228, 42%, 5%)" }}
     >
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Header onMenuToggle={() => setIsSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto">
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{ background: "hsl(228, 38%, 6%)" }}
+        >
           <div className="p-5 sm:p-7 max-w-7xl mx-auto">{children}</div>
         </main>
       </div>

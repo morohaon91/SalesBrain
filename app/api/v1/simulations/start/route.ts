@@ -98,7 +98,14 @@ Start the simulation now with this opening: "${persona.openingMessage}"`;
       const aiResponse = await createChatCompletion(
         [{ role: "user", content: "Start the simulation with your opening line as the client." }],
         personaPrompt,
-        { maxTokens: 300, temperature: 0.8 }
+        {
+          maxTokens: 300,
+          temperature: 0.8,
+          tenantId,
+          operationType: "simulation",
+          metadata: { scenarioId },
+          cacheSystemPrompt: personaPrompt.length >= 2500,
+        }
       );
 
       const personaDetails = persona as unknown as Record<string, unknown>;
@@ -149,7 +156,14 @@ Start the simulation now with this opening: "${persona.openingMessage}"`;
     const aiResponse = await createChatCompletion(
       [{ role: "user", content: "Start the conversation. You are a potential client. Begin naturally, as if making first contact." }],
       systemPrompt,
-      { maxTokens: 300, temperature: 0.8 }
+      {
+        maxTokens: 300,
+        temperature: 0.8,
+        tenantId,
+        operationType: "simulation",
+        metadata: { scenarioType },
+        cacheSystemPrompt: systemPrompt.length >= 2500,
+      }
     );
 
     const simulation = await prisma.simulation.create({

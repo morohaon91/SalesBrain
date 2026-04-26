@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import MultiInputField from '@/components/onboarding/MultiInputField';
+import { useI18n } from '@/lib/hooks/useI18n';
 
 interface DecisionMakingFormProps {
   value: Record<string, any>;
@@ -18,6 +19,8 @@ const CTA_DIRECTNESS = ['subtle', 'moderate', 'direct'];
 const NEXT_STEP = ['call', 'meeting', 'quote', 'demo', 'audit', 'proposal'];
 
 export default function DecisionMakingForm({ value, onChange }: DecisionMakingFormProps) {
+  const { t } = useI18n(['profile']);
+  const fe = 'profile:formEditor.decision';
   const discovery = value.discovery ?? { firstQuestions: [], discoveryOrder: [], prioritizedInfo: [], moveToValueTrigger: null };
   const pain = value.pain ?? { deepensPain: false, painDepthLevel: null, normalizesProblem: false, painApproach: null };
   const vp = value.valuePositioning ?? { primaryValueLens: null, secondaryValueLens: [], proofSignalsUsed: [] };
@@ -27,55 +30,56 @@ export default function DecisionMakingForm({ value, onChange }: DecisionMakingFo
     onChange({ ...value, [key]: { ...(value[key] ?? {}), ...patch } });
   };
 
+  const enumOpt = (group: string, values: string[]) =>
+    values.map((v) => ({ value: v, label: t(`profile:enumLabels.${group}.${v}`) }));
+
   return (
     <div className="space-y-6">
-      {/* Discovery */}
       <section className="rounded-lg border p-3 space-y-3">
-        <h3 className="font-semibold">Discovery</h3>
+        <h3 className="font-semibold">{t(`${fe}.discoveryTitle`)}</h3>
         <div>
-          <Label>First Questions</Label>
+          <Label>{t(`${fe}.firstQuestions`)}</Label>
           <MultiInputField
             values={discovery.firstQuestions ?? []}
             onChange={(v) => updateSub('discovery', { firstQuestions: v })}
-            placeholder="e.g., 'What's driving this project now?'"
+            placeholder={t(`${fe}.phFirstQ`)}
             maxItems={8}
-            addButtonText="Add Question"
+            addButtonText={t(`${fe}.addQuestion`)}
           />
         </div>
         <div>
-          <Label>Discovery Order</Label>
-          <p className="text-xs text-gray-500 mb-1">Topics you cover, in order</p>
+          <Label>{t(`${fe}.discoveryOrder`)}</Label>
+          <p className="text-xs text-gray-500 mb-1">{t(`${fe}.hintOrder`)}</p>
           <MultiInputField
             values={discovery.discoveryOrder ?? []}
             onChange={(v) => updateSub('discovery', { discoveryOrder: v })}
-            placeholder="e.g., 'timeline', 'budget', 'goals'"
+            placeholder={t(`${fe}.phOrder`)}
             maxItems={10}
-            addButtonText="Add Topic"
+            addButtonText={t(`${fe}.addTopic`)}
           />
         </div>
         <div>
-          <Label>Prioritized Info</Label>
+          <Label>{t(`${fe}.prioritizedInfo`)}</Label>
           <MultiInputField
             values={discovery.prioritizedInfo ?? []}
             onChange={(v) => updateSub('discovery', { prioritizedInfo: v })}
-            placeholder="What you always want to know"
+            placeholder={t(`${fe}.phPrioritized`)}
             maxItems={8}
-            addButtonText="Add"
+            addButtonText={t(`${fe}.addPrioritized`)}
           />
         </div>
         <div>
-          <Label>Move-to-Value Trigger</Label>
+          <Label>{t(`${fe}.moveToValue`)}</Label>
           <Input
             value={discovery.moveToValueTrigger ?? ''}
             onChange={(e) => updateSub('discovery', { moveToValueTrigger: e.target.value || null })}
-            placeholder="What makes you shift from discovery to pitching"
+            placeholder={t(`${fe}.phMoveToValue`)}
           />
         </div>
       </section>
 
-      {/* Pain */}
       <section className="rounded-lg border p-3 space-y-3">
-        <h3 className="font-semibold">Pain Exploration</h3>
+        <h3 className="font-semibold">{t(`${fe}.painTitle`)}</h3>
         <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -84,7 +88,7 @@ export default function DecisionMakingForm({ value, onChange }: DecisionMakingFo
               checked={!!pain.deepensPain}
               onChange={(e) => updateSub('pain', { deepensPain: e.target.checked })}
             />
-            Deepens pain
+            {t(`${fe}.deepensPain`)}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -93,68 +97,66 @@ export default function DecisionMakingForm({ value, onChange }: DecisionMakingFo
               checked={!!pain.normalizesProblem}
               onChange={(e) => updateSub('pain', { normalizesProblem: e.target.checked })}
             />
-            Normalizes problem
+            {t(`${fe}.normalizesProblem`)}
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Pain Depth</Label>
+            <Label>{t(`${fe}.painDepth`)}</Label>
             <Select
               value={pain.painDepthLevel ?? ''}
               onChange={(e) => updateSub('pain', { painDepthLevel: e.target.value || null })}
-              placeholder="Select depth"
-              options={PAIN_DEPTH.map((o) => ({ value: o, label: o }))}
+              placeholder={t(`${fe}.phDepth`)}
+              options={enumOpt('painDepth', PAIN_DEPTH)}
             />
           </div>
           <div>
-            <Label>Pain Approach</Label>
+            <Label>{t(`${fe}.painApproach`)}</Label>
             <Select
               value={pain.painApproach ?? ''}
               onChange={(e) => updateSub('pain', { painApproach: e.target.value || null })}
-              placeholder="Select approach"
-              options={PAIN_APPROACH.map((o) => ({ value: o, label: o }))}
+              placeholder={t(`${fe}.phApproach`)}
+              options={enumOpt('painApproach', PAIN_APPROACH)}
             />
           </div>
         </div>
       </section>
 
-      {/* Value Positioning */}
       <section className="rounded-lg border p-3 space-y-3">
-        <h3 className="font-semibold">Value Positioning</h3>
+        <h3 className="font-semibold">{t(`${fe}.valueTitle`)}</h3>
         <div>
-          <Label>Primary Value Lens</Label>
+          <Label>{t(`${fe}.primaryLens`)}</Label>
           <Select
             value={vp.primaryValueLens ?? ''}
             onChange={(e) => updateSub('valuePositioning', { primaryValueLens: e.target.value || null })}
-            placeholder="Select lens"
-            options={VALUE_LENS.map((o) => ({ value: o, label: o }))}
+            placeholder={t(`${fe}.phLens`)}
+            options={enumOpt('valueLens', VALUE_LENS)}
           />
         </div>
         <div>
-          <Label>Secondary Value Lenses</Label>
+          <Label>{t(`${fe}.secondaryLenses`)}</Label>
           <MultiInputField
             values={vp.secondaryValueLens ?? []}
             onChange={(v) => updateSub('valuePositioning', { secondaryValueLens: v })}
-            placeholder="e.g., 'trust'"
+            placeholder={t(`${fe}.phSecondaryLens`)}
             maxItems={5}
-            addButtonText="Add Lens"
+            addButtonText={t(`${fe}.addLens`)}
           />
         </div>
         <div>
-          <Label>Proof Signals Used</Label>
+          <Label>{t(`${fe}.proofSignals`)}</Label>
           <MultiInputField
             values={vp.proofSignalsUsed ?? []}
             onChange={(v) => updateSub('valuePositioning', { proofSignalsUsed: v })}
-            placeholder="e.g., case studies, testimonials"
+            placeholder={t(`${fe}.phProof`)}
             maxItems={8}
-            addButtonText="Add Proof"
+            addButtonText={t(`${fe}.addProof`)}
           />
         </div>
       </section>
 
-      {/* Closing */}
       <section className="rounded-lg border p-3 space-y-3">
-        <h3 className="font-semibold">Closing</h3>
+        <h3 className="font-semibold">{t(`${fe}.closingTitle`)}</h3>
         <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -163,7 +165,7 @@ export default function DecisionMakingForm({ value, onChange }: DecisionMakingFo
               checked={!!closing.asksForNextStep}
               onChange={(e) => updateSub('closing', { asksForNextStep: e.target.checked })}
             />
-            Asks for next step
+            {t(`${fe}.asksNextStep`)}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -172,45 +174,45 @@ export default function DecisionMakingForm({ value, onChange }: DecisionMakingFo
               checked={!!closing.createsUrgency}
               onChange={(e) => updateSub('closing', { createsUrgency: e.target.checked })}
             />
-            Creates urgency
+            {t(`${fe}.createsUrgency`)}
           </label>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label>CTA Timing</Label>
+            <Label>{t(`${fe}.ctaTiming`)}</Label>
             <Select
               value={closing.ctaTiming ?? ''}
               onChange={(e) => updateSub('closing', { ctaTiming: e.target.value || null })}
-              placeholder="Timing"
-              options={CTA_TIMING.map((o) => ({ value: o, label: o }))}
+              placeholder={t(`${fe}.phTiming`)}
+              options={enumOpt('ctaTiming', CTA_TIMING)}
             />
           </div>
           <div>
-            <Label>CTA Directness</Label>
+            <Label>{t(`${fe}.ctaDirectness`)}</Label>
             <Select
               value={closing.ctaDirectness ?? ''}
               onChange={(e) => updateSub('closing', { ctaDirectness: e.target.value || null })}
-              placeholder="Directness"
-              options={CTA_DIRECTNESS.map((o) => ({ value: o, label: o }))}
+              placeholder={t(`${fe}.phDirectness`)}
+              options={enumOpt('ctaDirectness', CTA_DIRECTNESS)}
             />
           </div>
           <div>
-            <Label>Preferred Next Step</Label>
+            <Label>{t(`${fe}.preferredNext`)}</Label>
             <Select
               value={closing.preferredNextStep ?? ''}
               onChange={(e) => updateSub('closing', { preferredNextStep: e.target.value || null })}
-              placeholder="Select"
-              options={NEXT_STEP.map((o) => ({ value: o, label: o }))}
+              placeholder={t(`${fe}.phNextStep`)}
+              options={enumOpt('nextStep', NEXT_STEP)}
             />
           </div>
         </div>
         {closing.createsUrgency && (
           <div>
-            <Label>Urgency Method</Label>
+            <Label>{t(`${fe}.urgencyMethod`)}</Label>
             <Input
               value={closing.urgencyMethod ?? ''}
               onChange={(e) => updateSub('closing', { urgencyMethod: e.target.value || null })}
-              placeholder="How you create urgency"
+              placeholder={t(`${fe}.phUrgency`)}
             />
           </div>
         )}

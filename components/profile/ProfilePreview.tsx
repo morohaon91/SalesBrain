@@ -9,7 +9,7 @@ interface ProfilePreviewProps {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">{title}</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-wide mb-2" style={{ color: 'hsl(228,12%,47%)' }}>{title}</h3>
       {children}
     </div>
   );
@@ -20,12 +20,12 @@ function TagList({ items }: { items: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.slice(0, 5).map((item, i) => (
-        <span key={i} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+        <span key={i} className="px-2 py-1 text-xs rounded" style={{ background: 'rgba(255,255,255,0.07)', color: 'hsl(38,25%,90%)' }}>
           {item}
         </span>
       ))}
       {items.length > 5 && (
-        <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded">+{items.length - 5} more</span>
+        <span className="px-2 py-1 text-xs rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'hsl(228,12%,55%)' }}>+{items.length - 5} more</span>
       )}
     </div>
   );

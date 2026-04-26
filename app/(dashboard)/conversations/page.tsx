@@ -37,10 +37,10 @@ function ScorePill({ score, qualification }: { score: number; qualification: str
   const isWarm = score >= 45;
 
   const style = isHot
-    ? { bg: 'hsl(21 90% 48% / 0.1)', color: 'hsl(21, 90%, 38%)', border: 'hsl(21 90% 48% / 0.25)' }
+    ? { bg: 'rgba(249,115,22,0.12)', color: '#fb923c', border: 'rgba(249,115,22,0.25)' }
     : isWarm
-    ? { bg: 'hsl(38 92% 50% / 0.1)', color: 'hsl(38, 92%, 38%)', border: 'hsl(38 92% 50% / 0.25)' }
-    : { bg: 'hsl(215 20% 65% / 0.1)', color: 'hsl(215, 20%, 42%)', border: 'hsl(215 20% 65% / 0.2)' };
+    ? { bg: 'rgba(200,136,26,0.12)', color: 'hsl(38,84%,61%)', border: 'rgba(200,136,26,0.25)' }
+    : { bg: 'rgba(255,255,255,0.06)', color: 'hsl(228,12%,55%)', border: 'rgba(255,255,255,0.1)' };
 
   const label = isHot ? 'Hot' : isWarm ? 'Warm' : 'Cold';
 
@@ -60,10 +60,10 @@ function ScorePill({ score, qualification }: { score: number; qualification: str
 
 function QualBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string; label: string }> = {
-    QUALIFIED: { bg: 'hsl(142 76% 36% / 0.08)', color: 'hsl(142, 76%, 30%)', label: 'Qualified' },
-    UNQUALIFIED: { bg: 'hsl(350 89% 50% / 0.08)', color: 'hsl(350, 89%, 40%)', label: 'Unqualified' },
-    MAYBE: { bg: 'hsl(38 92% 50% / 0.08)', color: 'hsl(38, 92%, 38%)', label: 'Maybe' },
-    UNKNOWN: { bg: 'hsl(215 20% 65% / 0.08)', color: 'hsl(215, 20%, 42%)', label: 'Unknown' },
+    QUALIFIED: { bg: 'rgba(74,222,128,0.1)', color: '#4ade80', label: 'Qualified' },
+    UNQUALIFIED: { bg: 'rgba(244,63,94,0.1)', color: '#fb7185', label: 'Unqualified' },
+    MAYBE: { bg: 'rgba(200,136,26,0.1)', color: 'hsl(38,84%,61%)', label: 'Maybe' },
+    UNKNOWN: { bg: 'rgba(255,255,255,0.06)', color: 'hsl(228,12%,55%)', label: 'Unknown' },
   };
   const s = map[status] ?? map.UNKNOWN;
   return (
@@ -183,14 +183,14 @@ export default function ConversationsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: t('conversations:stats.total'), value: totalConversations, color: 'hsl(var(--foreground))' },
-          { label: t('conversations:stats.active'), value: activeConversations, color: 'hsl(142, 76%, 32%)' },
-          { label: t('conversations:stats.qualified'), value: qualifiedConversations, color: 'hsl(38, 92%, 44%)' },
-          { label: t('conversations:stats.avgScore'), value: avgScore || '—', color: 'hsl(174, 100%, 29%)' },
+          { label: t('conversations:stats.active'), value: activeConversations, color: '#4ade80' },
+          { label: t('conversations:stats.qualified'), value: qualifiedConversations, color: 'hsl(38,84%,61%)' },
+          { label: t('conversations:stats.avgScore'), value: avgScore || '—', color: '#4ade80' },
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="bg-white rounded-xl border p-4 card-hover"
-            style={{ borderColor: 'hsl(var(--border))' }}
+            className="rounded-xl p-4 card-hover"
+            style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
               {label}
@@ -208,8 +208,8 @@ export default function ConversationsPage() {
 
       {/* ── Filters ── */}
       <div
-        className="bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-3"
-        style={{ borderColor: 'hsl(var(--border))' }}
+        className="rounded-xl p-4 flex flex-col md:flex-row gap-3"
+        style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
         <div className="relative flex-1">
           <Search
@@ -265,8 +265,8 @@ export default function ConversationsPage() {
 
       {/* ── List ── */}
       <div
-        className="bg-white rounded-xl border overflow-hidden"
-        style={{ borderColor: 'hsl(var(--border))' }}
+        className="rounded-xl overflow-hidden"
+        style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
         {filteredConversations.length === 0 ? (
           <div className="py-16 text-center">
@@ -319,8 +319,8 @@ export default function ConversationsPage() {
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
                         style={{
-                          backgroundColor: 'hsl(38 92% 50% / 0.1)',
-                          color: 'hsl(38, 92%, 42%)',
+                          backgroundColor: 'rgba(200,136,26,0.12)',
+                          color: 'hsl(38,84%,61%)',
                         }}
                       >
                         {conv.leadName.charAt(0).toUpperCase()}

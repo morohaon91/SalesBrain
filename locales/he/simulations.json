@@ -82,5 +82,17 @@
     "createSuccess": "הסימולציה נוצרה בהצלחה",
     "startSuccess": "הסימולציה התחילה",
     "deleteConfirm": "למחוק סימולציה זו?"
+  },
+  "chat": {
+    "loading": "טוען סימולציה...",
+    "loadErrorTitle": "טעינת הסימולציה נכשלה",
+    "tryAgain": "נסו שוב",
+    "scenarioLabel": "תרחיש: {{type}}",
+    "noMessages": "אין עדיין הודעות. התחילו את השיחה למטה.",
+    "thinking": "ה-AI חושב...",
+    "inputPlaceholder": "הקלידו את תגובתכם ללקוח...",
+    "sending": "שולח...",
+    "send": "שליחה",
+    "completedHint": "הסימולציה הושלמה. צפו במשוב למעלה."
   }
 }

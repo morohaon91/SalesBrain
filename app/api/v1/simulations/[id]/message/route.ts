@@ -255,6 +255,10 @@ CRITICAL RULES:
       {
         maxTokens: 300,
         temperature: 0.8,
+        tenantId,
+        operationType: "simulation",
+        metadata: { simulationId },
+        cacheSystemPrompt: systemPrompt.length >= 2500,
       }
     );
 

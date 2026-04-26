@@ -51,11 +51,11 @@ export default function ValidationModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+      <div className="rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="sticky top-0 p-6 flex items-center justify-between" style={{ background: 'hsl(228,32%,8%)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Review Extracted Patterns</h2>
-            <p className="text-sm text-gray-600">Approve or reject the patterns your AI extracted</p>
+            <h2 className="text-xl font-bold" style={{ color: 'hsl(38,25%,90%)' }}>Review Extracted Patterns</h2>
+            <p className="text-sm" style={{ color: 'hsl(228,12%,47%)' }}>Approve or reject the patterns your AI extracted</p>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-5 w-5" />
@@ -82,14 +82,14 @@ export default function ValidationModal({
           ) : (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-              <span className="ml-3 text-gray-600">Waiting for extraction...</span>
+              <span className="ml-3" style={{ color: 'hsl(228,12%,47%)' }}>Waiting for extraction...</span>
             </div>
           )}
         </div>
 
         {extractedPatterns && (
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">
+          <div className="sticky bottom-0 p-6 flex items-center justify-between gap-4" style={{ background: 'hsl(228,32%,8%)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-sm" style={{ color: 'hsl(228,12%,47%)' }}>
               {approvedSections.length} of {PATTERN_SECTIONS.length} sections approved
             </p>
             <div className="flex gap-3">

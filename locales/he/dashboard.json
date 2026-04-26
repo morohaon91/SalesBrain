@@ -76,5 +76,23 @@
     "title": "ניסיון חינם",
     "body": "שדרגו לשיחות ולידים ללא הגבלה.",
     "upgrade": "שדרג תוכנית"
+  },
+  "setupProgress": {
+    "dismissAria": "סגור",
+    "activateHeadline": "הפעילו את ה-AI — {{pct}}% הושלמו",
+    "stepProfileDone": "הפרופיל נבנה",
+    "stepProfileTodo": "בנו את הפרופיל",
+    "stepProfileSub": "{{earned}}/15 נק'",
+    "stepTrainDone": "ה-AI אומן",
+    "stepTrainTodo": "אמנו את ה-AI",
+    "stepTrainSub": "{{scenarios}}/8 תרחישים · {{competencies}}/9 מיומנויות",
+    "stepLiveDone": "מוכן להפעלה",
+    "stepLiveTodo": "אשרו ועברו לשידור חי",
+    "stepLiveSub": "נפתח ב-90%"
+  },
+  "relativeTime": {
+    "minsAgo": "לפני {{count}} דק'",
+    "hoursAgo": "לפני {{count}} ש'",
+    "daysAgo": "לפני {{count}} ימים"
   }
 }

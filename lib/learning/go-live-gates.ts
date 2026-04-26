@@ -19,7 +19,7 @@ export function validateMandatoryScenariosGate(completedScenarioIds: string[]): 
   const allCompleted = allMandatoryScenariosCompleted(completedScenarioIds);
   const totalMandatory = MANDATORY_SCENARIOS.length;
   const completed = completedScenarioIds.filter((id) =>
-    MANDATORY_SCENARIOS.some((s) => s.id === id)
+    MANDATORY_SCENARIOS.some((s) => s.id === id || s.scenarioType === id)
   ).length;
 
   return {
@@ -39,9 +39,15 @@ export function validateCompetencyCoverageGate(profile: any): GateValidationResu
 
   const achieved = statuses.filter((s) => s.status === 'ACHIEVED' || s.status === 'MASTERED').length;
   const total = statuses.length;
-  const blocking = statuses
-    .filter((s) => s.status !== 'ACHIEVED' && s.status !== 'MASTERED')
-    .flatMap((s) => s.blockingReasons);
+  const unachieved = statuses.filter((s) => s.status !== 'ACHIEVED' && s.status !== 'MASTERED');
+
+  // Show competency names only — NOT their individual blocking reasons.
+  // Detailed reasons are shown on the learning page. Dumping all reasons here
+  // creates misleading duplication with the dedicated deal_breakers and
+  // objection_coverage gates that cover the same issues.
+  const blocking = unachieved.length > 0
+    ? [`${achieved}/${total} competencies achieved — ${unachieved.length} still need training`]
+    : [];
 
   return {
     gateId: 'competency_coverage',
@@ -88,15 +94,25 @@ export function validateDealBreakersGate(profile: any): GateValidationResult {
     };
   }
 
-  const validated = dealBreakers.filter((db) => (db?.confidence ?? 0) >= 75);
+  // 50% threshold: achievable when a deal breaker is extracted from any single
+  // scenario with evidenceCount >= 1. Deal breakers are naturally scenario-specific
+  // (pricing limits → PRICE_OBJECTION, scope → WRONG_FIT) so requiring cross-scenario
+  // evidence was architecturally unreachable. One clear extraction is sufficient.
+  const DEAL_BREAKER_THRESHOLD = 50;
+  const validated = dealBreakers.filter((db) => (db?.confidence ?? 0) >= DEAL_BREAKER_THRESHOLD);
   const hasMinimum = validated.length >= 1;
+  const bestConfidence = Math.max(0, ...dealBreakers.map((db) => db?.confidence ?? 0));
 
   return {
     gateId: 'deal_breakers',
     name: 'At Least 1 Deal Breaker Validated',
     status: hasMinimum ? 'PASSED' : 'BLOCKED',
-    progress: hasMinimum ? 100 : Math.min(80, validated.length * 40),
-    blockingReasons: hasMinimum ? [] : ['Need at least 1 deal breaker with 75%+ confidence'],
+    progress: hasMinimum ? 100 : Math.min(90, Math.round((bestConfidence / DEAL_BREAKER_THRESHOLD) * 100)),
+    blockingReasons: hasMinimum ? [] : [
+      bestConfidence > 0
+        ? `Deal breaker found but confidence too low (${bestConfidence}% — need ${DEAL_BREAKER_THRESHOLD}%). Complete a Wrong Fit or Price Objection scenario to strengthen it.`
+        : 'No deal breakers extracted yet. Complete a Wrong Fit scenario to demonstrate your minimum requirements.',
+    ],
   };
 }
 
@@ -104,7 +120,7 @@ export function validateLinguisticFingerprintGate(profile: any): GateValidationR
   const cs = profile?.communicationStyle;
   const voice = profile?.ownerVoiceExamples;
 
-  if (!cs || !voice) {
+  if (!cs) {
     return {
       gateId: 'linguistic_fingerprint',
       name: 'Linguistic Fingerprint Captured',
@@ -115,9 +131,14 @@ export function validateLinguisticFingerprintGate(profile: any): GateValidationR
   }
 
   const hasStyle = !!(cs.tone && cs.sentenceLength);
-  const hasPhrases = (cs.commonPhrases?.length || 0) >= 5;
-  const hasVoice =
-    (voice.greetings?.length || 0) >= 3 && (voice.closingStatements?.length || 0) >= 3;
+  const phraseCount = cs.commonPhrases?.length || 0;
+  const hasPhrases = phraseCount >= 5;
+
+  // Voice examples: check explicit voice arrays OR fall back to CS arrays.
+  // A rich phrase set (15+) also satisfies this — it proves deep linguistic capture.
+  const greetingCount = (voice?.greetings?.length || 0) + (cs.commonOpenings?.length || 0);
+  const closingCount = (voice?.closingStatements?.length || 0) + (cs.commonClosings?.length || 0);
+  const hasVoice = (greetingCount >= 3 && closingCount >= 3) || phraseCount >= 15;
 
   const checks = [hasStyle, hasPhrases, hasVoice];
   const passed = checks.filter(Boolean).length;
@@ -125,7 +146,7 @@ export function validateLinguisticFingerprintGate(profile: any): GateValidationR
   const blocking: string[] = [];
   if (!hasStyle) blocking.push('Need tone and sentence patterns');
   if (!hasPhrases) blocking.push('Need at least 5 common phrases');
-  if (!hasVoice) blocking.push('Need greetings and closing examples');
+  if (!hasVoice) blocking.push('Need greetings and closing examples (or 15+ common phrases)');
 
   return {
     gateId: 'linguistic_fingerprint',

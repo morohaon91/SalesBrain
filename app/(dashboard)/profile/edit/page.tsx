@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/hooks/useI18n';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import ObjectionHandlingForm from '@/components/profile/ObjectionHandlingForm';
 import DecisionMakingForm from '@/components/profile/DecisionMakingForm';
 
 export default function ProfileEditPage() {
+  const { t } = useI18n(['profile', 'common']);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,7 +35,7 @@ export default function ProfileEditPage() {
   const loadProfile = async () => {
     try {
       const res = await authFetch('/api/v1/profile');
-      if (!res.ok) throw new Error('Failed to load profile');
+      if (!res.ok) throw new Error(t('profile:patternEditor.loadFailed'));
       const data = await res.json();
       const p = data.data ?? data;
       setCommunicationStyle(p.communicationStyle ?? {});
@@ -42,7 +44,7 @@ export default function ProfileEditPage() {
       setObjectionHandling(p.objectionHandling ?? {});
       setDecisionMakingPatterns(p.decisionMakingPatterns ?? {});
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load');
+      setError(err instanceof Error ? err.message : t('profile:patternEditor.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,11 +67,11 @@ export default function ProfileEditPage() {
       });
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error?.message || 'Save failed');
+        throw new Error(d.error?.message || t('profile:patternEditor.saveFailed'));
       }
-      setSuccessMsg('Profile updated successfully');
+      setSuccessMsg(t('profile:patternEditor.updateSuccess'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed');
+      setError(err instanceof Error ? err.message : t('profile:patternEditor.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -89,13 +91,13 @@ export default function ProfileEditPage() {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-            <span>Back</span>
+            <span>{t('common:buttons.back')}</span>
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Profile Patterns</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('profile:patternEditor.title')}</h1>
         </div>
         <Button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2">
           {saving ? <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden /> : <Save className="h-4 w-4 shrink-0" aria-hidden />}
-          <span>Save Changes</span>
+          <span>{t('profile:actions.save')}</span>
         </Button>
       </div>
 
@@ -105,11 +107,11 @@ export default function ProfileEditPage() {
       <Card className="p-6">
         <Tabs defaultValue="communication">
           <TabsList className="mb-6 grid grid-cols-5 w-full">
-            <TabsTrigger value="communication">Communication</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-            <TabsTrigger value="qualification">Qualification</TabsTrigger>
-            <TabsTrigger value="objections">Objections</TabsTrigger>
-            <TabsTrigger value="decisions">Decisions</TabsTrigger>
+            <TabsTrigger value="communication">{t('profile:patternEditor.tabs.communication')}</TabsTrigger>
+            <TabsTrigger value="pricing">{t('profile:patternEditor.tabs.pricing')}</TabsTrigger>
+            <TabsTrigger value="qualification">{t('profile:patternEditor.tabs.qualification')}</TabsTrigger>
+            <TabsTrigger value="objections">{t('profile:patternEditor.tabs.objections')}</TabsTrigger>
+            <TabsTrigger value="decisions">{t('profile:patternEditor.tabs.decisions')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="communication">

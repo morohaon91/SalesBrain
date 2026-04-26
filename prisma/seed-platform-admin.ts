@@ -1,9 +1,4 @@
-import dotenv from "dotenv";
-import path from "path";
-
-// Load env before importing anything else
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
-dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
+import "./load-env";
 
 import bcrypt from "bcryptjs";
 import { PrismaClient, PlatformAdminRole } from "@prisma/client";

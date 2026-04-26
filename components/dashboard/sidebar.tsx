@@ -40,10 +40,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/70 z-40 lg:hidden backdrop-blur-sm"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -56,31 +55,40 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           "lg:static lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
-        style={{ backgroundColor: "hsl(222, 47%, 7%)" }}
+        style={{
+          background: "hsl(228, 42%, 5%)",
+          borderRight: "1px solid rgba(255,255,255,0.07)",
+        }}
       >
         {/* ── Wordmark ── */}
         <div
           className="px-5 py-5 flex items-center justify-between"
-          style={{ borderBottom: "1px solid hsl(222, 30%, 14%)" }}
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
         >
-          <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onClose}>
-            {/* Concierge bell mark */}
-            <svg
-              width="20"
-              height="26"
-              viewBox="0 0 20 26"
-              fill="hsl(38, 92%, 50%)"
-              aria-hidden="true"
-              className="flex-shrink-0"
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5 group"
+            onClick={onClose}
+          >
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm transition-transform duration-200 group-hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, hsl(38,84%,61%), hsl(38,78%,46%))",
+                color: "#060300",
+                fontFamily: "'Cormorant', Georgia, serif",
+                fontWeight: 700,
+                fontSize: "16px",
+              }}
             >
-              <circle cx="10" cy="1.75" r="1.75" />
-              <path d="M10 3.5 C13 3.5 17 7 17 14 H3 C3 7 7 3.5 10 3.5Z" />
-              <rect x="2.5" y="14" width="15" height="2.5" rx="1.25" />
-              <circle cx="10" cy="19" r="1.75" />
-            </svg>
+              ✦
+            </div>
             <span
-              className="text-base font-semibold"
-              style={{ color: "hsl(0, 0%, 100%)", letterSpacing: "0.06em" }}
+              className="text-base font-semibold tracking-wide"
+              style={{
+                color: "hsl(38, 25%, 90%)",
+                fontFamily: "'Cormorant', Georgia, serif",
+                letterSpacing: "0.06em",
+              }}
             >
               Concierge
             </span>
@@ -88,8 +96,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-md transition-colors"
-            style={{ color: "hsl(215, 20%, 60%)" }}
+            className="lg:hidden p-1.5 rounded-md transition-colors hover:bg-white/5"
+            style={{ color: "hsl(228, 12%, 47%)" }}
             aria-label={t("sidebar.closeMenu")}
           >
             <X className="w-4 h-4" />
@@ -108,35 +116,31 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 key={item.name}
                 href={item.href}
                 onClick={() => onClose?.()}
-                className={cn(
-                  "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150",
-                  "relative"
-                )}
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 relative"
                 style={
                   isActive
                     ? {
-                        backgroundColor: "hsl(222, 30%, 16%)",
-                        color: "hsl(0, 0%, 100%)",
-                        borderInlineStart: "2px solid hsl(38, 92%, 50%)",
+                        background: "rgba(200,136,26,0.1)",
+                        color: "hsl(38, 84%, 61%)",
+                        borderInlineStart: "2px solid hsl(38,78%,46%)",
                         paddingInlineStart: "calc(0.75rem - 2px)",
                       }
                     : {
-                        color: "hsl(215, 20%, 58%)",
+                        color: "hsl(228, 12%, 52%)",
                         borderInlineStart: "2px solid transparent",
                         paddingInlineStart: "calc(0.75rem - 2px)",
                       }
                 }
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.backgroundColor =
-                      "hsl(222, 30%, 12%)";
-                    (e.currentTarget as HTMLElement).style.color = "hsl(0, 0%, 90%)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
+                    (e.currentTarget as HTMLElement).style.color = "hsl(38, 25%, 85%)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = "";
-                    (e.currentTarget as HTMLElement).style.color = "hsl(215, 20%, 58%)";
+                    (e.currentTarget as HTMLElement).style.background = "";
+                    (e.currentTarget as HTMLElement).style.color = "hsl(228, 12%, 52%)";
                   }
                 }}
               >
@@ -150,30 +154,30 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         {/* ── Footer ── */}
         <div
           className="p-4 space-y-3"
-          style={{ borderTop: "1px solid hsl(222, 30%, 14%)" }}
+          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
         >
-          {/* Plan badge */}
           <div
             className="px-3 py-2.5 rounded-lg"
-            style={{ backgroundColor: "hsl(222, 30%, 12%)" }}
+            style={{ background: "rgba(200,136,26,0.07)", border: "1px solid rgba(200,136,26,0.15)" }}
           >
             <div className="flex items-center gap-2 mb-0.5">
-              <Zap className="w-3 h-3" style={{ color: "hsl(38, 92%, 60%)" }} />
-              <p className="text-xs font-semibold" style={{ color: "hsl(0, 0%, 90%)" }}>
+              <Zap className="w-3 h-3" style={{ color: "hsl(38, 84%, 61%)" }} />
+              <p className="text-xs font-semibold" style={{ color: "hsl(38, 25%, 88%)" }}>
                 {t("sidebar.trialPlan")}
               </p>
             </div>
-            <p className="text-xs" style={{ color: "hsl(215, 20%, 50%)" }}>
+            <p className="text-xs" style={{ color: "hsl(228, 12%, 47%)" }}>
               14 {t("sidebar.daysRemaining")}
             </p>
           </div>
 
           <Link href="/settings/subscription" className="block">
             <button
-              className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg transition-opacity hover:opacity-90 active:opacity-80"
+              className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 hover:-translate-y-px"
               style={{
-                backgroundColor: "hsl(38, 92%, 50%)",
-                color: "hsl(0, 0%, 100%)",
+                background: "linear-gradient(135deg, hsl(38,84%,61%), hsl(38,78%,46%))",
+                color: "#060300",
+                boxShadow: "0 4px 16px rgba(200,136,26,0.3)",
               }}
             >
               {t("buttons.upgrade")}

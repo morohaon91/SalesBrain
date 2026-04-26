@@ -3,6 +3,7 @@
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import MultiInputField from '@/components/onboarding/MultiInputField';
+import { useI18n } from '@/lib/hooks/useI18n';
 
 interface CommunicationStyleFormProps {
   value: Record<string, any>;
@@ -16,54 +17,61 @@ const SENTENCE_OPTIONS = ['short', 'mixed', 'long'];
 const PRESSURE_OPTIONS = ['low', 'medium', 'high'];
 
 export default function CommunicationStyleForm({ value, onChange }: CommunicationStyleFormProps) {
+  const { t } = useI18n(['profile']);
   const update = (field: string, v: unknown) => onChange({ ...value, [field]: v });
+
+  const enumOpt = (group: string, values: string[]) =>
+    values.map((v) => ({
+      value: v,
+      label: t(`profile:enumLabels.${group}.${v}`),
+    }));
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>Tone</Label>
+          <Label>{t('profile:formEditor.communication.tone')}</Label>
           <Select
             value={value.tone ?? ''}
             onChange={(e) => update('tone', e.target.value || null)}
-            placeholder="Select tone"
-            options={TONE_OPTIONS.map((t) => ({ value: t, label: t }))}
+            placeholder={t('profile:formEditor.communication.phTone')}
+            options={enumOpt('tone', TONE_OPTIONS)}
           />
         </div>
         <div>
-          <Label>Energy Level</Label>
+          <Label>{t('profile:formEditor.communication.energyLevel')}</Label>
           <Select
             value={value.energyLevel ?? ''}
             onChange={(e) => update('energyLevel', e.target.value || null)}
-            placeholder="Select energy"
-            options={ENERGY_OPTIONS.map((t) => ({ value: t, label: t }))}
+            placeholder={t('profile:formEditor.communication.phEnergy')}
+            options={enumOpt('energy', ENERGY_OPTIONS)}
           />
         </div>
         <div>
-          <Label>Verbosity</Label>
+          <Label>{t('profile:formEditor.communication.verbosity')}</Label>
           <Select
             value={value.verbosityPattern ?? ''}
             onChange={(e) => update('verbosityPattern', e.target.value || null)}
-            placeholder="Select verbosity"
-            options={VERBOSITY_OPTIONS.map((t) => ({ value: t, label: t }))}
+            placeholder={t('profile:formEditor.communication.phVerbosity')}
+            options={enumOpt('verbosity', VERBOSITY_OPTIONS)}
           />
         </div>
         <div>
-          <Label>Sentence Length</Label>
+          <Label>{t('profile:formEditor.communication.sentenceLength')}</Label>
           <Select
             value={value.sentenceLength ?? ''}
             onChange={(e) => update('sentenceLength', e.target.value || null)}
-            placeholder="Select length"
-            options={SENTENCE_OPTIONS.map((t) => ({ value: t, label: t }))}
+            placeholder={t('profile:formEditor.communication.phSentence')}
+            options={enumOpt('sentence', SENTENCE_OPTIONS)}
           />
         </div>
         <div>
-          <Label>Pressure Level</Label>
+          <Label>{t('profile:formEditor.communication.pressureLevel')}</Label>
           <Select
             value={value.pressureLevel ?? ''}
             onChange={(e) => update('pressureLevel', e.target.value || null)}
-            placeholder="Select pressure"
-            options={PRESSURE_OPTIONS.map((t) => ({ value: t, label: t }))}
+            placeholder={t('profile:formEditor.communication.phPressure')}
+            options={enumOpt('pressure', PRESSURE_OPTIONS)}
           />
         </div>
         <div className="flex items-end gap-4 pb-2">
@@ -74,7 +82,7 @@ export default function CommunicationStyleForm({ value, onChange }: Communicatio
               checked={!!value.usesHumor}
               onChange={(e) => update('usesHumor', e.target.checked)}
             />
-            Uses Humor
+            {t('profile:formEditor.communication.usesHumor')}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -83,81 +91,81 @@ export default function CommunicationStyleForm({ value, onChange }: Communicatio
               checked={!!value.usesEmpathy}
               onChange={(e) => update('usesEmpathy', e.target.checked)}
             />
-            Uses Empathy
+            {t('profile:formEditor.communication.usesEmpathy')}
           </label>
         </div>
       </div>
 
       <div>
-        <Label>Common Phrases</Label>
-        <p className="text-xs text-gray-500 mb-1">Recurring phrases you use</p>
+        <Label>{t('profile:formEditor.communication.commonPhrases')}</Label>
+        <p className="text-xs text-gray-500 mb-1">{t('profile:formEditor.communication.hintCommonPhrases')}</p>
         <MultiInputField
           values={value.commonPhrases ?? []}
           onChange={(v) => update('commonPhrases', v)}
-          placeholder="e.g., 'Let's make sure we're on the same page'"
+          placeholder={t('profile:formEditor.communication.phCommonPhrase')}
           maxItems={15}
-          addButtonText="Add Phrase"
+          addButtonText={t('profile:formEditor.communication.addPhrase')}
         />
       </div>
 
       <div>
-        <Label>Common Openings</Label>
-        <p className="text-xs text-gray-500 mb-1">How you typically start a message</p>
+        <Label>{t('profile:formEditor.communication.commonOpenings')}</Label>
+        <p className="text-xs text-gray-500 mb-1">{t('profile:formEditor.communication.hintOpenings')}</p>
         <MultiInputField
           values={value.commonOpenings ?? []}
           onChange={(v) => update('commonOpenings', v)}
-          placeholder="e.g., 'Thanks for reaching out'"
+          placeholder={t('profile:formEditor.communication.phOpening')}
           maxItems={10}
-          addButtonText="Add Opening"
+          addButtonText={t('profile:formEditor.communication.addOpening')}
         />
       </div>
 
       <div>
-        <Label>Common Closings</Label>
-        <p className="text-xs text-gray-500 mb-1">How you typically end a message</p>
+        <Label>{t('profile:formEditor.communication.commonClosings')}</Label>
+        <p className="text-xs text-gray-500 mb-1">{t('profile:formEditor.communication.hintClosings')}</p>
         <MultiInputField
           values={value.commonClosings ?? []}
           onChange={(v) => update('commonClosings', v)}
-          placeholder="e.g., 'Talk soon'"
+          placeholder={t('profile:formEditor.communication.phClosing')}
           maxItems={10}
-          addButtonText="Add Closing"
+          addButtonText={t('profile:formEditor.communication.addClosing')}
         />
       </div>
 
       {value.usesHumor && (
         <div>
-          <Label>Humor Examples</Label>
+          <Label>{t('profile:formEditor.communication.humorExamples')}</Label>
           <MultiInputField
             values={value.humorExamples ?? []}
             onChange={(v) => update('humorExamples', v)}
-            placeholder="An actual humorous line you've used"
+            placeholder={t('profile:formEditor.communication.phHumor')}
             maxItems={10}
-            addButtonText="Add Example"
+            addButtonText={t('profile:formEditor.communication.addHumor')}
           />
         </div>
       )}
 
       {value.usesEmpathy && (
         <div>
-          <Label>Empathy Examples</Label>
+          <Label>{t('profile:formEditor.communication.empathyExamples')}</Label>
           <MultiInputField
             values={value.empathyExamples ?? []}
             onChange={(v) => update('empathyExamples', v)}
-            placeholder="An empathetic line you've used"
+            placeholder={t('profile:formEditor.communication.phEmpathy')}
             maxItems={10}
-            addButtonText="Add Example"
+            addButtonText={t('profile:formEditor.communication.addEmpathy')}
           />
         </div>
       )}
 
       <div>
-        <Label>Favorite Words</Label>
+        <Label>{t('profile:formEditor.communication.favoriteWords')}</Label>
         <MultiInputField
           values={value.favoriteWords ?? []}
           onChange={(v) => update('favoriteWords', v)}
-          placeholder="e.g., 'aligned', 'partnership'"
+          placeholder={t('profile:formEditor.communication.phFavorite')}
           maxItems={15}
-          addButtonText="Add Word"
+          addButtonText={t('profile:formEditor.communication.addWord')}
         />
       </div>
     </div>

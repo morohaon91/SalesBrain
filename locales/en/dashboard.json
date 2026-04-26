@@ -76,5 +76,23 @@
     "title": "Free Trial",
     "body": "Upgrade to unlock unlimited conversations and leads.",
     "upgrade": "Upgrade Plan"
+  },
+  "setupProgress": {
+    "dismissAria": "Dismiss",
+    "activateHeadline": "Activate your AI — {{pct}}% complete",
+    "stepProfileDone": "Profile built",
+    "stepProfileTodo": "Build your profile",
+    "stepProfileSub": "{{earned}}/15 pts",
+    "stepTrainDone": "AI trained",
+    "stepTrainTodo": "Train your AI",
+    "stepTrainSub": "{{scenarios}}/8 scenarios · {{competencies}}/9 skills",
+    "stepLiveDone": "Ready to activate",
+    "stepLiveTodo": "Approve & go live",
+    "stepLiveSub": "Unlocks at 90%"
+  },
+  "relativeTime": {
+    "minsAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
   }
 }

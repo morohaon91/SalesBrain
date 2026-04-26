@@ -55,8 +55,8 @@ export default function SettingsPage() {
               style={
                 isActive
                   ? {
-                      color: "hsl(38, 92%, 44%)",
-                      borderColor: "hsl(38, 92%, 50%)",
+                      color: "hsl(38,84%,61%)",
+                      borderColor: "hsl(38,84%,61%)",
                     }
                   : {
                       color: "hsl(var(--muted-foreground))",
@@ -75,8 +75,8 @@ export default function SettingsPage() {
       <div>
         {activeTab === "account" && (
           <div
-            className="bg-white rounded-xl border p-6 space-y-6 max-w-xl"
-            style={{ borderColor: "hsl(var(--border))" }}
+            className="rounded-xl p-6 space-y-6 max-w-xl"
+            style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "hsl(var(--muted-foreground))" }}>
               {t("page.account.infoTitle")}
@@ -125,7 +125,7 @@ export default function SettingsPage() {
                 {t("page.account.saveChanges")}
               </button>
               {showSuccess && (
-                <div className="flex items-center gap-1.5 text-sm" style={{ color: "hsl(142, 76%, 32%)" }}>
+                <div className="flex items-center gap-1.5 text-sm" style={{ color: "#4ade80" }}>
                   <Check className="w-4 h-4" />
                   {t("page.account.saved")}
                 </div>
@@ -137,8 +137,8 @@ export default function SettingsPage() {
         {activeTab === "subscription" && (
           <div className="space-y-5 max-w-xl">
             <div
-              className="bg-white rounded-xl border p-6"
-              style={{ borderColor: "hsl(var(--border))" }}
+              className="rounded-xl p-6"
+              style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: "hsl(var(--muted-foreground))" }}>
                 {t("page.subscription.currentPlan")}
@@ -152,7 +152,7 @@ export default function SettingsPage() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-semibold" style={{ color: "hsl(38, 92%, 38%)" }}>
+                    <p className="font-semibold" style={{ color: "hsl(38,84%,61%)" }}>
                       {t("page.subscription.trialPlan")}
                     </p>
                     <p className="text-3xl font-bold mt-1" style={{ color: "hsl(var(--foreground))" }}>$0</p>
@@ -162,12 +162,12 @@ export default function SettingsPage() {
                   </div>
                   <div
                     className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                    style={{ backgroundColor: "hsl(38 92% 50% / 0.12)", color: "hsl(38, 92%, 38%)" }}
+                    style={{ backgroundColor: "rgba(200,136,26,0.12)", color: "hsl(38,84%,61%)" }}
                   >
                     Trial
                   </div>
                 </div>
-                <div className="mt-4 space-y-1.5 text-sm" style={{ color: "hsl(38, 92%, 38%)" }}>
+                <div className="mt-4 space-y-1.5 text-sm" style={{ color: "hsl(38,84%,61%)" }}>
                   <p>✓ {t("page.subscription.featSimulations")}</p>
                   <p>✓ {t("page.subscription.featAnalytics")}</p>
                   <p>✓ {t("page.subscription.featTeam")}</p>
@@ -195,8 +195,8 @@ export default function SettingsPage() {
         {activeTab === "widget" && (
           <div className="space-y-5 max-w-xl">
             <div
-              className="bg-white rounded-xl border p-6 space-y-5"
-              style={{ borderColor: "hsl(var(--border))" }}
+              className="rounded-xl p-6 space-y-5"
+              style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "hsl(var(--muted-foreground))" }}>
                 {t("page.widget.configTitle")}
@@ -259,8 +259,8 @@ export default function SettingsPage() {
         {activeTab === "security" && (
           <div className="space-y-5 max-w-xl">
             <div
-              className="bg-white rounded-xl border p-6 space-y-4"
-              style={{ borderColor: "hsl(var(--border))" }}
+              className="rounded-xl p-6 space-y-4"
+              style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "hsl(var(--muted-foreground))" }}>
                 {t("page.security.passwordTitle")}
@@ -300,17 +300,19 @@ export default function SettingsPage() {
                 borderColor: "hsl(350 89% 50% / 0.2)",
               }}
             >
-              <h3 className="font-semibold mb-1" style={{ color: "hsl(350, 89%, 40%)" }}>
+              <h3 className="font-semibold mb-1" style={{ color: "#fb7185" }}>
                 {t("page.security.dangerTitle")}
               </h3>
               <p className="text-sm mb-4" style={{ color: "hsl(var(--muted-foreground))" }}>
                 {t("page.security.dangerBody")}
               </p>
               <button
-                className="px-4 py-2 text-sm font-medium rounded-lg border transition-colors hover:bg-red-50"
+                className="px-4 py-2 text-sm font-medium rounded-lg border transition-colors"
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,63,94,0.08)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
                 style={{
                   borderColor: "hsl(350 89% 50% / 0.3)",
-                  color: "hsl(350, 89%, 40%)",
+                  color: "#fb7185",
                 }}
               >
                 {t("page.security.deleteAccount")}

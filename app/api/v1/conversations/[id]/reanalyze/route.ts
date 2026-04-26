@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
-import { createChatCompletion } from '@/lib/ai/client';
+import { createChatCompletion, parseAiJson } from '@/lib/ai/client';
 
 /**
  * POST /api/v1/conversations/[id]/reanalyze
@@ -55,10 +55,16 @@ Scoring guide: 80-100 = clearly interested, good fit, ready to move forward; 50-
   const aiResponse = await createChatCompletion(
     [{ role: 'user', content: analysisPrompt }],
     'You are a precise data extraction assistant. Always respond with valid JSON only.',
-    { maxTokens: 400, temperature: 0.2 }
+    {
+      maxTokens: 400,
+      temperature: 0.2,
+      tenantId,
+      operationType: 'reanalyze',
+      metadata: { conversationId: id },
+    }
   );
 
-  const parsed = JSON.parse(aiResponse.content);
+  const parsed = parseAiJson<any>(aiResponse.content);
 
   const leadName: string | null = parsed.leadName ?? null;
   const leadEmail: string | null = parsed.leadEmail ?? null;

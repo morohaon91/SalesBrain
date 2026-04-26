@@ -386,10 +386,10 @@ export const COMPETENCIES: CompetencyRequirement[] = [
       );
       const avgConfidence =
         dealBreakers.reduce((sum, db) => sum + (db?.confidence ?? 0), 0) / dealBreakers.length;
-      const hasStrong = dealBreakers.some((db) => (db?.confidence ?? 0) >= 65);
+      const hasStrong = dealBreakers.some((db) => (db?.confidence ?? 0) >= 50);
 
       const blocking: string[] = [];
-      if (!hasStrong) blocking.push('Need at least 1 deal breaker with 65%+ confidence');
+      if (!hasStrong) blocking.push('Need at least 1 deal breaker with 50%+ confidence');
       const simBlock = simGateReason(sims);
       if (simBlock) blocking.push(simBlock);
 

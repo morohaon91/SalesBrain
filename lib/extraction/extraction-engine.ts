@@ -7,7 +7,8 @@
 
 import { prisma } from '@/lib/prisma';
 import { createChatCompletion } from '@/lib/ai/client';
-import { getScenarioById } from '@/lib/scenarios/mandatory-scenarios';
+import { EXTRACTION_AI_TIMEOUT_MS } from '@/lib/extraction/timeouts';
+import { getScenarioById, getScenarioByType, type ScenarioType } from '@/lib/scenarios/mandatory-scenarios';
 import { EXTRACTION_SYSTEM_PROMPT, buildExtractionPrompt } from './extraction-prompts';
 import { calculateProfileCompletion } from './completion';
 import { updateProfileReadiness } from '@/lib/learning/readiness-calculator';
@@ -61,7 +62,8 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
   const profile = simulation.tenant.profiles[0];
   if (!profile) throw new Error('Business profile not found');
 
-  const scenario = getScenarioById(simulation.scenarioType);
+  const scenario = getScenarioById(simulation.scenarioType)
+    ?? getScenarioByType(simulation.scenarioType as ScenarioType);
   if (!scenario) console.warn(`Scenario ${simulation.scenarioType} not found - using legacy`);
 
   const existing: ExistingProfileSnapshot = {
@@ -83,7 +85,14 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
   const response = await createChatCompletion(
     [{ role: 'user', content: prompt }],
     EXTRACTION_SYSTEM_PROMPT,
-    { temperature: 0.1, maxTokens: 4000 }
+    {
+      temperature: 0.1,
+      maxTokens: 4000,
+      tenantId: simulation.tenantId,
+      operationType: 'extraction',
+      cacheSystemPrompt: true,
+      timeoutMs: EXTRACTION_AI_TIMEOUT_MS,
+    }
   );
 
   const extracted = parseExtractionResponse(response.content);
@@ -136,7 +145,8 @@ export async function extractPatternsFromSimulation(simulationId: string): Promi
 export async function extractRawFromMessages(
   messages: any[],
   scenarioType: string,
-  existing: ExistingProfileSnapshot | null
+  existing: ExistingProfileSnapshot | null,
+  tenantId?: string
 ): Promise<RawExtractionResponse> {
   const scenario = getScenarioById(scenarioType);
   const prompt = buildExtractionPrompt(
@@ -148,22 +158,67 @@ export async function extractRawFromMessages(
   const response = await createChatCompletion(
     [{ role: 'user', content: prompt }],
     EXTRACTION_SYSTEM_PROMPT,
-    { temperature: 0.1, maxTokens: 4000 }
+    {
+      temperature: 0.1,
+      maxTokens: 4000,
+      tenantId,
+      operationType: 'extraction',
+      cacheSystemPrompt: true,
+      timeoutMs: EXTRACTION_AI_TIMEOUT_MS,
+    }
   );
 
   return parseExtractionResponse(response.content);
 }
 
+/**
+ * Attempt to repair truncated JSON by closing any unclosed brackets/braces.
+ * The AI sometimes hits the token limit mid-response, leaving the JSON incomplete.
+ */
+function repairTruncatedJson(text: string): string {
+  const opens: string[] = [];
+  let inString = false;
+  let escape = false;
+
+  for (const ch of text) {
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') opens.push('}');
+    else if (ch === '[') opens.push(']');
+    else if (ch === '}' || ch === ']') opens.pop();
+  }
+
+  // Trim any trailing comma before closing (common truncation artifact)
+  let repaired = text.trimEnd().replace(/,\s*$/, '');
+  // Close all unclosed brackets in reverse order
+  return repaired + opens.reverse().join('');
+}
+
 function parseExtractionResponse(text: string): RawExtractionResponse {
   const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+
+  // Grab the largest JSON object in the response
+  const jsonMatch = cleaned.match(/\{[\s\S]*/);
   if (!jsonMatch) throw new Error('No JSON found in extraction response');
 
+  const raw = jsonMatch[0];
+
+  // First try: parse as-is
   try {
-    return unwrapScalarObjects(JSON.parse(jsonMatch[0]));
-  } catch (error) {
-    console.error('Failed to parse extraction JSON:', jsonMatch[0]);
-    throw new Error('Invalid JSON in extraction response');
+    return unwrapScalarObjects(JSON.parse(raw));
+  } catch {
+    // Second try: repair truncated JSON
+    try {
+      const repaired = repairTruncatedJson(raw);
+      const parsed = JSON.parse(repaired);
+      console.warn('[Extraction] Repaired truncated JSON — response was cut off at token limit');
+      return unwrapScalarObjects(parsed);
+    } catch (error) {
+      console.error('Failed to parse extraction JSON:', raw.slice(0, 500));
+      throw new Error('Invalid JSON in extraction response');
+    }
   }
 }
 
@@ -217,13 +272,17 @@ export async function mergeExtractionWithProfile(
     : [...existingScenarios, scenarioId];
   const simCount = projectedScenarios.length;
 
+  const mergedCs = mergeCommunicationStyle(existing.communicationStyle, extracted.communicationStyle, now);
+  const mergedDm = mergeDecisionMaking(existing.decisionMakingPatterns, extracted.decisionMakingPatterns, now);
+  const mergedVoice = mergeOwnerVoice(existing.ownerVoiceExamples, extracted.ownerVoiceExamples, now);
+
   let snapshot: ExistingProfileSnapshot = {
-    communicationStyle: mergeCommunicationStyle(existing.communicationStyle, extracted.communicationStyle, now),
+    communicationStyle: mergedCs,
     objectionHandling: mergeObjectionHandling(existing.objectionHandling, extracted.objectionHandling, scenarioId, now),
-    qualificationCriteria: mergeQualificationCriteria(existing.qualificationCriteria, extracted.qualificationCriteria, now),
-    decisionMakingPatterns: mergeDecisionMaking(existing.decisionMakingPatterns, extracted.decisionMakingPatterns, now),
+    qualificationCriteria: mergeQualificationCriteria(existing.qualificationCriteria, extracted.qualificationCriteria, scenarioId, now),
+    decisionMakingPatterns: mergedDm,
     pricingLogic: mergePricingLogic(existing.pricingLogic, extracted.pricingLogic, now),
-    ownerVoiceExamples: mergeOwnerVoice(existing.ownerVoiceExamples, extracted.ownerVoiceExamples, now),
+    ownerVoiceExamples: backfillVoiceFromProfile(mergedVoice, mergedCs, mergedDm),
   };
 
   snapshot = applyEvidenceCeilings(snapshot, simCount);
@@ -261,13 +320,37 @@ export function mergeAll(
   scenarioId: string
 ): ExistingProfileSnapshot {
   const now = new Date().toISOString();
+  const cs = mergeCommunicationStyle(existing.communicationStyle, extracted.communicationStyle, now);
+  const dm = mergeDecisionMaking(existing.decisionMakingPatterns, extracted.decisionMakingPatterns, now);
+  const voice = mergeOwnerVoice(existing.ownerVoiceExamples, extracted.ownerVoiceExamples, now);
   return {
-    communicationStyle: mergeCommunicationStyle(existing.communicationStyle, extracted.communicationStyle, now),
+    communicationStyle: cs,
     objectionHandling: mergeObjectionHandling(existing.objectionHandling, extracted.objectionHandling, scenarioId, now),
-    qualificationCriteria: mergeQualificationCriteria(existing.qualificationCriteria, extracted.qualificationCriteria, now),
-    decisionMakingPatterns: mergeDecisionMaking(existing.decisionMakingPatterns, extracted.decisionMakingPatterns, now),
+    qualificationCriteria: mergeQualificationCriteria(existing.qualificationCriteria, extracted.qualificationCriteria, scenarioId, now),
+    decisionMakingPatterns: dm,
     pricingLogic: mergePricingLogic(existing.pricingLogic, extracted.pricingLogic, now),
-    ownerVoiceExamples: mergeOwnerVoice(existing.ownerVoiceExamples, extracted.ownerVoiceExamples, now),
+    ownerVoiceExamples: backfillVoiceFromProfile(voice, cs, dm),
+  };
+}
+
+/**
+ * If the AI didn't populate ownerVoiceExamples sections but DID populate
+ * communicationStyle and decisionMakingPatterns with equivalent data,
+ * copy it across so the linguistic fingerprint gate has what it needs.
+ */
+function backfillVoiceFromProfile(
+  voice: OwnerVoiceExamples,
+  cs: CommunicationStyle | null,
+  dm: DecisionMakingPatterns | null
+): OwnerVoiceExamples {
+  return {
+    ...voice,
+    greetings: voice.greetings?.length ? voice.greetings : (cs?.commonOpenings ?? []),
+    closingStatements: voice.closingStatements?.length ? voice.closingStatements : (cs?.commonClosings ?? []),
+    empathyStatements: voice.empathyStatements?.length ? voice.empathyStatements : (cs?.empathyExamples ?? []),
+    discoveryQuestions: voice.discoveryQuestions?.length
+      ? voice.discoveryQuestions
+      : (dm?.discovery?.firstQuestions ?? []),
   };
 }
 
@@ -308,9 +391,11 @@ export function applyEvidenceCeilings(
       ? {
           ...oh,
           playbooks: oh.playbooks.filter(isObj).map((p: any) => {
-            const repCeiling = clampConfidence(p.confidenceScore, p.evidenceCount ?? 1);
+            const evidenceCount = (p.evidenceCount != null && Number.isFinite(p.evidenceCount) && p.evidenceCount > 0)
+              ? p.evidenceCount : 1;
+            const repCeiling = clampConfidence(p.confidenceScore, evidenceCount);
             const crossCeiling = crossScenarioCeiling(p.scenariosEncountered?.length ?? 1);
-            return { ...p, confidenceScore: Math.min(repCeiling, crossCeiling) };
+            return { ...p, evidenceCount, confidenceScore: Math.min(repCeiling, crossCeiling) };
           }),
           overallConfidence: clampConfidence(oh.overallConfidence, simCount),
         }
@@ -323,9 +408,22 @@ export function applyEvidenceCeilings(
           redFlags: qc.redFlags.filter(isObj).map((f: any) => ({ ...f, confidence: clampConfidence(f.confidence, simCount) })),
           // Deal breakers are critical — use cross-scenario ceiling against
           // the scenarios they've been demonstrated in.
+          // Deduplicate scenariosDemonstrated before counting: old data may store
+          // both the legacy type ('WRONG_FIT') and the canonical id ('wrong_fit_universal')
+          // for the same scenario, inflating the distinct-scenario count.
           dealBreakers: qc.dealBreakers.filter(isObj).map((db: any) => {
+            const rawScenarios: string[] = Array.isArray(db.scenariosDemonstrated) ? db.scenariosDemonstrated : [];
+            const distinctScenarios = new Set(
+              rawScenarios.map((s) => {
+                const byType = getScenarioByType(s as ScenarioType);
+                if (byType) return byType.id;
+                const byId = getScenarioById(s);
+                if (byId) return byId.id;
+                return s;
+              })
+            ).size || 1;
             const repCeiling = clampConfidence(db.confidence, db.evidenceCount ?? 1);
-            const crossCeiling = crossScenarioCeiling(db.scenariosDemonstrated?.length ?? 1);
+            const crossCeiling = crossScenarioCeiling(distinctScenarios);
             return { ...db, confidence: Math.min(repCeiling, crossCeiling) };
           }),
           overallConfidence: clampConfidence(qc.overallConfidence, simCount),
@@ -339,24 +437,46 @@ export function applyEvidenceCeilings(
   };
 }
 
+/**
+ * Derive a data-richness confidence floor from what's actually in the merged data.
+ * This prevents confidence from staying at 0 when the AI under-reports its certainty
+ * but the conversation clearly demonstrates the pattern.
+ */
+function csConfidenceFloor(evidenceCount: number, mergedPhrases: string[], hasBasics: boolean): number {
+  if (!hasBasics && mergedPhrases.length === 0) return 0;
+  // ~12 points per simulation (7 sims → ~84%), capped at 85 to leave room for AI-boosted confidence
+  return Math.min(85, evidenceCount * 12 + (mergedPhrases.length >= 5 ? 8 : 0));
+}
+
 function mergeCommunicationStyle(
   existing: CommunicationStyle | null,
   extracted: Partial<CommunicationStyle> | undefined,
   now: string
 ): CommunicationStyle {
   const e = extracted ?? {};
+  const mergedEmpathyExamples = existing
+    ? [...(existing.empathyExamples ?? []), ...(e.empathyExamples ?? [])].slice(0, 10)
+    : (e.empathyExamples ?? []);
+  const mergedHumorExamples = existing
+    ? [...(existing.humorExamples ?? []), ...(e.humorExamples ?? [])].slice(0, 10)
+    : (e.humorExamples ?? []);
+
   if (!existing) {
+    const newPhrases = e.commonPhrases ?? [];
+    const hasBasics = !!(e.tone || e.sentenceLength || e.energyLevel);
+    const floor = csConfidenceFloor(1, newPhrases, hasBasics);
+    const aiConf = (e.confidence && Number.isFinite(e.confidence) && e.confidence > 0) ? e.confidence : 0;
     return {
       tone: e.tone ?? null,
       energyLevel: e.energyLevel ?? null,
       sentenceLength: e.sentenceLength ?? null,
       complexityLevel: e.complexityLevel ?? null,
-      usesHumor: e.usesHumor ?? false,
-      humorExamples: e.humorExamples ?? [],
-      usesEmpathy: e.usesEmpathy ?? false,
-      empathyExamples: e.empathyExamples ?? [],
+      usesHumor: (e.usesHumor ?? false) || mergedHumorExamples.length > 0,
+      humorExamples: mergedHumorExamples,
+      usesEmpathy: (e.usesEmpathy ?? false) || mergedEmpathyExamples.length > 0,
+      empathyExamples: mergedEmpathyExamples,
       pressureLevel: e.pressureLevel ?? null,
-      commonPhrases: e.commonPhrases ?? [],
+      commonPhrases: newPhrases,
       commonOpenings: e.commonOpenings ?? [],
       commonClosings: e.commonClosings ?? [],
       favoriteWords: e.favoriteWords ?? [],
@@ -364,11 +484,19 @@ function mergeCommunicationStyle(
       emojiUsage: e.emojiUsage ?? null,
       typoTolerance: e.typoTolerance ?? null,
       verbosityPattern: e.verbosityPattern ?? null,
-      confidence: (e.confidence && Number.isFinite(e.confidence)) ? e.confidence : 30,
+      confidence: Math.max(floor, aiConf),
       evidenceCount: 1,
       lastUpdated: now,
     };
   }
+
+  const newEvidenceCount = (existing.evidenceCount || 0) + 1;
+  const mergedPhrases = mergeUnique(existing.commonPhrases, e.commonPhrases).slice(0, 20);
+  const hasBasics = !!(e.tone ?? existing.tone) || !!(e.sentenceLength ?? existing.sentenceLength);
+  const floor = csConfidenceFloor(newEvidenceCount, mergedPhrases, hasBasics);
+  const aiConf = (e.confidence && Number.isFinite(e.confidence) && e.confidence > 0) ? e.confidence : 0;
+  // Take the best of: floor, ai-reported, or existing+increment
+  const newConfidence = Math.min(100, Math.max(floor, aiConf, (existing.confidence || 0) + 5));
 
   return {
     tone: e.tone ?? existing.tone,
@@ -376,15 +504,15 @@ function mergeCommunicationStyle(
     sentenceLength: e.sentenceLength ?? existing.sentenceLength,
     complexityLevel: e.complexityLevel ?? existing.complexityLevel,
 
-    usesHumor: e.usesHumor || existing.usesHumor,
-    humorExamples: [...(existing.humorExamples ?? []), ...(e.humorExamples ?? [])].slice(0, 10),
+    usesHumor: (e.usesHumor ?? false) || existing.usesHumor || mergedHumorExamples.length > 0,
+    humorExamples: mergedHumorExamples,
 
-    usesEmpathy: e.usesEmpathy || existing.usesEmpathy,
-    empathyExamples: [...(existing.empathyExamples ?? []), ...(e.empathyExamples ?? [])].slice(0, 10),
+    usesEmpathy: (e.usesEmpathy ?? false) || existing.usesEmpathy || mergedEmpathyExamples.length > 0,
+    empathyExamples: mergedEmpathyExamples,
 
     pressureLevel: e.pressureLevel ?? existing.pressureLevel,
 
-    commonPhrases: mergeUnique(existing.commonPhrases, e.commonPhrases).slice(0, 20),
+    commonPhrases: mergedPhrases,
     commonOpenings: mergeUnique(existing.commonOpenings, e.commonOpenings).slice(0, 10),
     commonClosings: mergeUnique(existing.commonClosings, e.commonClosings).slice(0, 10),
     favoriteWords: mergeUnique(existing.favoriteWords, e.favoriteWords).slice(0, 20),
@@ -394,8 +522,8 @@ function mergeCommunicationStyle(
     typoTolerance: e.typoTolerance ?? existing.typoTolerance,
     verbosityPattern: e.verbosityPattern ?? existing.verbosityPattern,
 
-    confidence: Math.min(100, (((existing.confidence ?? 0) + (e.confidence ?? 50)) / 2) + 5),
-    evidenceCount: existing.evidenceCount + 1,
+    confidence: newConfidence,
+    evidenceCount: newEvidenceCount,
     lastUpdated: now,
   };
 }
@@ -408,14 +536,21 @@ function mergeObjectionHandling(
 ): ObjectionHandling {
   const incomingPlaybooks = extracted?.playbooks ?? [];
 
+  // Minimum confidence floor for a playbook that has actual response data.
+  // The AI sometimes returns 0 even when it clearly extracted a real strategy.
+  const playbookConfidenceFloor = (p: any): number =>
+    p.responseStrategy || (p.responseExamples?.length ?? 0) > 0 ? 40 : 0;
+
   if (!existing) {
     return {
       playbooks: incomingPlaybooks.map((p) => ({
         ...p,
         lastSeenAt: now,
+        evidenceCount: p.evidenceCount ?? 1,
+        confidenceScore: Math.max(p.confidenceScore ?? 0, playbookConfidenceFloor(p)),
         scenariosEncountered: p.scenariosEncountered?.length ? p.scenariosEncountered : [scenarioId],
       })),
-      overallConfidence: extracted?.overallConfidence ?? 0,
+      overallConfidence: extracted?.overallConfidence ?? 30,
       lastUpdated: now,
     };
   }
@@ -426,6 +561,7 @@ function mergeObjectionHandling(
     const i = merged.findIndex((p) => p.objectionType === incoming.objectionType);
     if (i >= 0) {
       const current = merged[i];
+      const currentConf = current.confidenceScore > 0 ? current.confidenceScore : playbookConfidenceFloor(current);
       merged[i] = {
         ...current,
         signalExamples: mergeUnique(current.signalExamples, incoming.signalExamples).slice(0, 10),
@@ -434,8 +570,8 @@ function mergeObjectionHandling(
         reframingMethod: incoming.reframingMethod ?? current.reframingMethod,
         escalationLogic: incoming.escalationLogic ?? current.escalationLogic,
         exitLogic: incoming.exitLogic ?? current.exitLogic,
-        confidenceScore: Math.min(100, current.confidenceScore + 10),
-        evidenceCount: current.evidenceCount + 1,
+        confidenceScore: Math.min(100, currentConf + 10),
+        evidenceCount: (current.evidenceCount ?? 1) + 1,
         lastSeenAt: now,
         scenariosEncountered: mergeUnique(
           current.scenariosEncountered,
@@ -446,6 +582,8 @@ function mergeObjectionHandling(
       merged.push({
         ...incoming,
         lastSeenAt: now,
+        evidenceCount: incoming.evidenceCount ?? 1,
+        confidenceScore: Math.max(incoming.confidenceScore ?? 0, playbookConfidenceFloor(incoming)),
         scenariosEncountered: incoming.scenariosEncountered?.length ? incoming.scenariosEncountered : [scenarioId],
       });
     }
@@ -453,7 +591,7 @@ function mergeObjectionHandling(
 
   return {
     playbooks: merged,
-    overallConfidence: Math.min(100, existing.overallConfidence + 5),
+    overallConfidence: Math.min(100, (existing.overallConfidence > 0 ? existing.overallConfidence : 30) + 5),
     lastUpdated: now,
   };
 }
@@ -461,6 +599,7 @@ function mergeObjectionHandling(
 function mergeQualificationCriteria(
   existing: QualificationCriteria | null,
   extracted: Partial<QualificationCriteria> | undefined,
+  scenarioId: string,
   now: string
 ): QualificationCriteria {
   const e = extracted ?? {};
@@ -474,7 +613,11 @@ function mergeQualificationCriteria(
       greenFlags: e.greenFlags ?? [],
       yellowFlags: e.yellowFlags ?? [],
       redFlags: e.redFlags ?? [],
-      dealBreakers: e.dealBreakers ?? [],
+      dealBreakers: (e.dealBreakers ?? []).map((db: any) => ({
+        ...db,
+        evidenceCount: db.evidenceCount ?? 1,
+        scenariosDemonstrated: db.scenariosDemonstrated?.length ? db.scenariosDemonstrated : [scenarioId],
+      })),
       walkAwayStrategy: e.walkAwayStrategy ?? {
         exitLanguage: [],
         leavesDoorOpen: true,
@@ -499,7 +642,7 @@ function mergeQualificationCriteria(
     greenFlags: mergedGreenFlags,
     yellowFlags: mergedYellowFlags,
     redFlags: mergedRedFlags,
-    dealBreakers: mergeDealBreakers(existing.dealBreakers, e.dealBreakers ?? []),
+    dealBreakers: mergeDealBreakers(existing.dealBreakers, e.dealBreakers ?? [], scenarioId),
     walkAwayStrategy: {
       exitLanguage: mergeUnique(
         existing.walkAwayStrategy.exitLanguage,
@@ -601,12 +744,65 @@ function mergeDecisionMaking(
   };
 }
 
+function normalizePricingLogic(raw: any): Partial<PricingLogic> {
+  if (!raw) return {};
+  // The AI sometimes returns non-standard field names. Alias them to schema fields.
+  return {
+    minimumBudget:
+      raw.minimumBudget ??
+      raw.priceRangeConfirmed ??
+      raw.minimumProjectSize ??
+      raw.minimumEngagement ??
+      null,
+    preferredBudgetRange:
+      raw.preferredBudgetRange ?? raw.budgetRange ?? raw.typicalRange ?? null,
+    priceDefenseStrategy:
+      raw.priceDefenseStrategy ??
+      raw.priceHandlingStyle ??
+      raw.priceStrategy ??
+      raw.pricingStrategy ??
+      null,
+    flexibleOn: Array.isArray(raw.flexibleOn)
+      ? raw.flexibleOn
+      : Array.isArray(raw.flexibleItems)
+      ? raw.flexibleItems
+      : [],
+    notFlexibleOn: Array.isArray(raw.notFlexibleOn)
+      ? raw.notFlexibleOn
+      : Array.isArray(raw.firmOn)
+      ? raw.firmOn
+      : Array.isArray(raw.notNegotiable)
+      ? raw.notNegotiable
+      : [],
+    valueAnchorPoints: Array.isArray(raw.valueAnchorPoints)
+      ? raw.valueAnchorPoints
+      : Array.isArray(raw.anchors)
+      ? raw.anchors
+      : [],
+    confidence:
+      typeof raw.confidence === 'number' && Number.isFinite(raw.confidence)
+        ? raw.confidence
+        : 0,
+  };
+}
+
 function mergePricingLogic(
   existing: PricingLogic | null,
   extracted: Partial<PricingLogic> | undefined,
   now: string
 ): PricingLogic {
-  const e = extracted ?? {};
+  const e = normalizePricingLogic(extracted);
+
+  const hasData = !!(
+    e.minimumBudget ||
+    e.preferredBudgetRange ||
+    e.priceDefenseStrategy ||
+    (e.flexibleOn?.length ?? 0) > 0 ||
+    (e.notFlexibleOn?.length ?? 0) > 0 ||
+    (e.valueAnchorPoints?.length ?? 0) > 0
+  );
+  // Give a meaningful confidence floor when the AI actually extracted pricing data
+  const aiConfidence = (e.confidence && e.confidence > 0) ? e.confidence : (hasData ? 40 : 0);
 
   if (!existing) {
     return {
@@ -616,10 +812,22 @@ function mergePricingLogic(
       notFlexibleOn: e.notFlexibleOn ?? [],
       priceDefenseStrategy: e.priceDefenseStrategy ?? null,
       valueAnchorPoints: e.valueAnchorPoints ?? [],
-      confidence: e.confidence ?? 0,
+      confidence: aiConfidence,
       lastUpdated: now,
     };
   }
+
+  const mergedHasData = !!(
+    (e.minimumBudget ?? existing.minimumBudget) ||
+    (e.preferredBudgetRange ?? existing.preferredBudgetRange) ||
+    (e.priceDefenseStrategy ?? existing.priceDefenseStrategy) ||
+    mergeUnique(existing.flexibleOn, e.flexibleOn ?? []).length > 0 ||
+    mergeUnique(existing.notFlexibleOn, e.notFlexibleOn ?? []).length > 0 ||
+    mergeUnique(existing.valueAnchorPoints, e.valueAnchorPoints ?? []).length > 0
+  );
+  const newConfidence = mergedHasData
+    ? Math.min(100, Math.max(aiConfidence, existing.confidence + 5))
+    : existing.confidence;
 
   return {
     minimumBudget: e.minimumBudget ?? existing.minimumBudget,
@@ -628,7 +836,7 @@ function mergePricingLogic(
     notFlexibleOn: mergeUnique(existing.notFlexibleOn, e.notFlexibleOn ?? []),
     priceDefenseStrategy: e.priceDefenseStrategy ?? existing.priceDefenseStrategy,
     valueAnchorPoints: mergeUnique(existing.valueAnchorPoints, e.valueAnchorPoints ?? []),
-    confidence: Math.min(100, existing.confidence + 5),
+    confidence: newConfidence,
     lastUpdated: now,
   };
 }
@@ -696,24 +904,42 @@ function mergeFlags<T extends { flagType: string; signalExamples: string[]; conf
   return merged;
 }
 
-function mergeDealBreakers(existing: DealBreaker[], extracted: DealBreaker[]): DealBreaker[] {
+function normalizeDealBreakerRule(rule: string): string {
+  return rule.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function mergeDealBreakers(existing: DealBreaker[], extracted: DealBreaker[], scenarioId: string): DealBreaker[] {
   const isDB = (d: any): d is DealBreaker =>
     d !== null && typeof d === 'object' && !Array.isArray(d) && typeof d.rule === 'string';
   const merged = [...(existing ?? []).filter(isDB)];
   for (const incoming of (extracted ?? []).filter(isDB)) {
-    const i = merged.findIndex((d) => d.rule === incoming.rule);
+    // Always include the current scenarioId so cross-scenario ceiling tracks properly.
+    // The AI rarely populates scenariosDemonstrated itself.
+    const incomingScenarios = incoming.scenariosDemonstrated?.length
+      ? mergeUnique(incoming.scenariosDemonstrated, [scenarioId])
+      : [scenarioId];
+
+    // Case-insensitive normalized match so "Budget under $10k" and "budget under $10k"
+    // merge into the same entry rather than creating duplicate deal breakers with evidenceCount=1.
+    const i = merged.findIndex(
+      (d) => normalizeDealBreakerRule(d.rule) === normalizeDealBreakerRule(incoming.rule)
+    );
     if (i >= 0) {
       merged[i] = {
         ...merged[i],
-        evidenceCount: merged[i].evidenceCount + 1,
-        confidence: Math.min(100, merged[i].confidence + 10),
+        evidenceCount: (merged[i].evidenceCount ?? 1) + 1,
+        confidence: Math.min(100, (merged[i].confidence ?? 0) + 10),
         scenariosDemonstrated: mergeUnique(
-          merged[i].scenariosDemonstrated,
-          incoming.scenariosDemonstrated ?? []
+          merged[i].scenariosDemonstrated ?? [],
+          incomingScenarios
         ),
       };
     } else {
-      merged.push(incoming);
+      merged.push({
+        ...incoming,
+        evidenceCount: incoming.evidenceCount ?? 1,
+        scenariosDemonstrated: incomingScenarios,
+      });
     }
   }
   return merged;

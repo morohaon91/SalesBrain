@@ -10,10 +10,10 @@ interface ReadinessRingProps {
   tone?: "emerald" | "amber" | "sky";
 }
 
-const TONE_MAP: Record<NonNullable<ReadinessRingProps["tone"]>, string> = {
-  emerald: "text-success-500",
-  amber: "text-warning-500",
-  sky: "text-primary-500",
+const TONE_COLORS: Record<NonNullable<ReadinessRingProps["tone"]>, string> = {
+  emerald: "#4ade80",
+  amber: "#fb923c",
+  sky: "hsl(38,84%,61%)",
 };
 
 export function ReadinessRing({
@@ -27,33 +27,39 @@ export function ReadinessRing({
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clamped / 100) * circumference;
+  const color = TONE_COLORS[tone];
 
   return (
     <div className={cn("relative inline-flex items-center justify-center", className)}>
       <svg width={size} height={size} className="-rotate-90">
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+          cx={size / 2} cy={size / 2} r={radius}
           strokeWidth={stroke}
-          className="stroke-gray-100"
+          stroke="rgba(255,255,255,0.07)"
           fill="none"
         />
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+          cx={size / 2} cy={size / 2} r={radius}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className={cn("transition-[stroke-dashoffset] duration-700 ease-out", TONE_MAP[tone])}
+          stroke={color}
           fill="none"
-          stroke="currentColor"
+          className="transition-[stroke-dashoffset] duration-700 ease-out"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-bold text-gray-900">{clamped}%</span>
+        <span
+          className="font-semibold tabular-nums"
+          style={{
+            fontFamily: "'Cormorant', Georgia, serif",
+            fontSize: `${size * 0.22}px`,
+            color,
+          }}
+        >
+          {clamped}%
+        </span>
       </div>
     </div>
   );

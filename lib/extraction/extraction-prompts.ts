@@ -26,14 +26,17 @@ Extract under "communicationStyle":
 - favoriteWords: string[] — distinctive words/filler words the owner uses
 - confidence: number 0-100 reflecting how clearly the style is established (base on number of messages and consistency of patterns)
 
-Also extract under "ownerVoiceExamples" (verbatim quotes from the owner's messages):
-- greetings: string[] — exact opening messages/greetings the owner used
-- discoveryQuestions: string[] — exact questions the owner asked to uncover needs
-- empathyStatements: string[] — exact phrases showing understanding or empathy
-- valueStatements: string[] — exact phrases where owner stated their value/differentiator
-- objectionResponses: string[] — exact phrases where owner responded to pushback
-- closingStatements: string[] — exact phrases where owner asked for next steps or closed
-- exitStatements: string[] — exact phrases where owner disengaged from a bad fit
+CRITICAL: Also extract under "ownerVoiceExamples" (verbatim quotes from the owner's messages only — copy exact text):
+{
+  "greetings": ["exact first message or greeting the owner sent"],
+  "discoveryQuestions": ["exact questions owner asked to understand the lead's situation"],
+  "empathyStatements": ["exact phrases where owner acknowledged lead's concern or situation"],
+  "valueStatements": ["exact phrases where owner explained their value or differentiator"],
+  "objectionResponses": ["exact phrases where owner responded to pushback or objections"],
+  "closingStatements": ["exact phrases where owner asked for next steps, a call, or a meeting"],
+  "exitStatements": ["exact phrases where owner politely declined or disengaged"]
+}
+These MUST be verbatim quotes from the OWNER side of the conversation. Copy them directly. Never leave all arrays empty — the conversation always has at least greetings and discoveryQuestions.
 
 ## LAYER 2: STRATEGIC LAYER (Decision Making)
 Extract:
@@ -82,6 +85,31 @@ Extract qualification signals from ANY scenario type - not just Wrong Fit or Ske
 
 IMPORTANT: If the lead revealed budget, timeline, authority, scope, or pain — that IS qualification signal. Extract it even if the scenario was primarily about something else (e.g., Hot Lead, Price Objection). Do NOT leave qualification empty just because the scenario type was not explicitly a qualification scenario.
 
+Return qualificationCriteria with this EXACT shape (all fields required):
+{
+  "greenFlags": [
+    { "flagType": "budget_confirmed", "description": "Lead confirmed budget matches service range", "signalExamples": ["exact quote from lead showing this signal"], "confidence": 75 }
+  ],
+  "yellowFlags": [
+    { "flagType": "vague_timeline", "description": "Lead unclear about when they need this", "signalExamples": ["exact quote"], "confidence": 60 }
+  ],
+  "redFlags": [
+    { "flagType": "budget_mismatch", "description": "Lead's budget clearly below minimum", "signalExamples": ["exact quote"], "confidence": 80 }
+  ],
+  "dealBreakers": [
+    { "rule": "budget below minimum threshold", "exampleQuote": "exact owner quote demonstrating disqualification", "confidence": 70, "evidenceCount": 1, "scenariosDemonstrated": [] }
+  ],
+  "walkAwayStrategy": {
+    "exitLanguage": ["exact phrases owner used to disengage"],
+    "leavesDoorOpen": true,
+    "exitFirmness": "polite",
+    "offersAlternatives": false,
+    "alternativeExamples": []
+  },
+  "overallConfidence": 65
+}
+Return empty arrays [] for any category with no evidence. ALWAYS return the qualificationCriteria object even if most arrays are empty.
+
 ## LAYER 4: OBJECTION LAYER
 For each objection encountered, return under objectionHandling with this EXACT shape:
 {
@@ -101,40 +129,39 @@ For each objection encountered, return under objectionHandling with this EXACT s
 }
 The confidenceScore and overallConfidence values shown above are EXAMPLES — replace with evidence-based scores 0-100. Return playbooks: [] if no objections were encountered in this conversation.
 
-## LAYER 5: ADAPTATION LAYER
-Extract:
-- When owner became more technical
-- When owner simplified language
-- When owner adjusted tone
-- Triggers for different approaches
-
-## LAYER 6: CONFIDENCE SCORING
-For each pattern:
-- Assign confidence score (0-100)
-- Count evidence strength
-- Determine status: STRONG (70+), MODERATE (40-69), WEAK (0-39)
+## LAYER 5: PRICING LAYER
+Return under "pricingLogic" with this EXACT shape (all fields required, use null/[] for missing):
+{
+  "minimumBudget": "string | null — minimum engagement size e.g. '$1,000', '$500/month', '5 hours minimum'",
+  "preferredBudgetRange": "string | null — ideal client budget range e.g. '$1,000-$5,000/month'",
+  "priceDefenseStrategy": "string | null — how owner defends price under pushback, e.g. 'anchors on ROI', 'compares to cost of inaction', 'offers payment plans', 'reframes as investment'",
+  "flexibleOn": ["string — items owner is willing to negotiate, e.g. 'payment schedule', 'project timeline'"],
+  "notFlexibleOn": ["string — items owner will not budge on, e.g. 'hourly rate', 'minimum retainer', 'project scope'"],
+  "valueAnchorPoints": ["exact phrases owner uses to justify price or explain value"],
+  "confidence": <number 0-100>
+}
+ALWAYS return the pricingLogic object. Extract it from ANY scenario — pricing signals appear in hot lead conversations, objection scenarios, and qualification conversations alike.
 
 CRITICAL RULES:
-1. Return ONLY valid JSON
-2. Use SPECIFIC EXAMPLES from the conversation
-3. Quote actual phrases the owner used
-4. Don't invent - only extract what's clearly present
-5. Confidence based on clarity and consistency
-6. Empty arrays if pattern not demonstrated
-7. Scalar fields (tone, energyLevel, sentenceLength, verbosityPattern, etc.) MUST be bare strings/numbers/booleans. Never wrap them as { value, status, evidence, confidence }. Confidence belongs only in the top-level "confidence" field of each section.
-8. String array items (signalExamples, responseExamples, commonPhrases, firstQuestions, exitLanguage, flexibleOn, valueAnchorPoints, etc.) MUST be plain strings. Never wrap them as { signal, evidence, ownerReaction } or any similar object. The string stands on its own.
+1. Return ONLY valid JSON — no trailing text, no markdown
+2. Use SPECIFIC EXAMPLES from the conversation — quote actual phrases
+3. Don't invent — only extract what's clearly present
+4. Confidence based on clarity and consistency (0-100)
+5. Empty arrays [] if a pattern was not demonstrated
+6. Scalar fields (tone, energyLevel, sentenceLength, verbosityPattern, etc.) MUST be bare strings/numbers/booleans. NEVER wrap them as objects.
+7. String array items MUST be plain strings — never wrap as { signal, evidence } objects.
+8. Keep arrays concise — max 5 items per array unless the data is truly distinct.
 
-Return this exact structure:
+Return ONLY this JSON structure (no extra fields, no adaptationPatterns):
 {
-  "communicationStyle": { ... },
-  "objectionHandling": { ... },
-  "qualificationCriteria": { ... },
-  "decisionMakingPatterns": { ... },
-  "pricingLogic": { ... },
-  "ownerVoiceExamples": { ... },
-  "adaptationPatterns": { ... },
   "overallQuality": <number 0-100>,
-  "extractionConfidence": <number 0-100>
+  "extractionConfidence": <number 0-100>,
+  "communicationStyle": { ... },
+  "ownerVoiceExamples": { ... },
+  "decisionMakingPatterns": { ... },
+  "qualificationCriteria": { ... },
+  "objectionHandling": { ... },
+  "pricingLogic": { ... }
 }`;
 
 export function buildExtractionPrompt(

@@ -49,7 +49,7 @@ export default function ReadinessChecklist({ report }: ReadinessChecklistProps) 
                 <X className="h-3.5 w-3.5 text-gray-400" />
               )}
             </div>
-            <span className={`text-sm flex-1 ${passed ? 'text-gray-900' : 'text-gray-500'}`}>
+            <span className="text-sm flex-1" style={{ color: passed ? 'hsl(38,25%,90%)' : 'hsl(228,12%,47%)' }}>
               {gate.name}
             </span>
             <span className="text-xs text-gray-400">{Math.round(gate.progress)}%</span>

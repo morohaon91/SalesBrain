@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { rtlMirrorIcon } from "@/lib/i18n/rtl-icons";
+import type { TFunction } from "i18next";
 
 interface RecentConversation {
   id: string;
@@ -46,9 +47,11 @@ const BLOCKING_STEP_HREF: Record<string, string> = {
 function SetupProgressBar({
   activation,
   onDismiss,
+  t,
 }: {
   activation: ActivationStatusResponse;
   onDismiss: () => void;
+  t: TFunction;
 }) {
   const { activationScore, canRequestGoLive, breakdown, blockingStep, nextAction } = activation;
 
@@ -58,20 +61,27 @@ function SetupProgressBar({
 
   const steps = [
     {
-      label: profileDone ? "Profile built" : "Build your profile",
-      sublabel: profileDone ? null : `${breakdown.profile.earned}/15 pts`,
+      label: profileDone
+        ? t("dashboard:setupProgress.stepProfileDone")
+        : t("dashboard:setupProgress.stepProfileTodo"),
+      sublabel: profileDone
+        ? null
+        : t("dashboard:setupProgress.stepProfileSub", { earned: breakdown.profile.earned }),
       done: profileDone,
     },
     {
-      label: trainDone ? "AI trained" : "Train your AI",
+      label: trainDone ? t("dashboard:setupProgress.stepTrainDone") : t("dashboard:setupProgress.stepTrainTodo"),
       sublabel: trainDone
         ? null
-        : `${breakdown.scenarios.completed}/8 scenarios · ${breakdown.competencies.achieved}/9 skills`,
+        : t("dashboard:setupProgress.stepTrainSub", {
+            scenarios: breakdown.scenarios.completed,
+            competencies: breakdown.competencies.achieved,
+          }),
       done: trainDone,
     },
     {
-      label: liveDone ? "Ready to activate" : "Approve & go live",
-      sublabel: liveDone ? null : "Unlocks at 90%",
+      label: liveDone ? t("dashboard:setupProgress.stepLiveDone") : t("dashboard:setupProgress.stepLiveTodo"),
+      sublabel: liveDone ? null : t("dashboard:setupProgress.stepLiveSub"),
       done: liveDone,
     },
   ];
@@ -89,7 +99,7 @@ function SetupProgressBar({
       <button
         onClick={onDismiss}
         className="absolute top-3 end-3 p-1 rounded transition-colors hover:bg-black/5"
-        aria-label="Dismiss"
+        aria-label={t("dashboard:setupProgress.dismissAria")}
       >
         <X className="w-4 h-4" style={{ color: "hsl(var(--muted-foreground))" }} />
       </button>
@@ -97,7 +107,7 @@ function SetupProgressBar({
       <div className="flex items-center gap-3 mb-3">
         <Zap className="w-4 h-4" style={{ color: "hsl(38, 92%, 50%)" }} />
         <p className="text-sm font-semibold" style={{ color: "hsl(var(--foreground))" }}>
-          Activate your AI — {activationScore}% complete
+          {t("dashboard:setupProgress.activateHeadline", { pct: activationScore })}
         </p>
       </div>
 
@@ -154,10 +164,10 @@ function ScoreBadge({ score }: { score: number }) {
       className="text-xs font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
       style={
         isHot
-          ? { backgroundColor: "hsl(21 90% 48% / 0.12)", color: "hsl(21, 90%, 40%)" }
+          ? { backgroundColor: "rgba(249,115,22,0.12)", color: "#fb923c" }
           : isWarm
-          ? { backgroundColor: "hsl(38 92% 50% / 0.12)", color: "hsl(38, 92%, 40%)" }
-          : { backgroundColor: "hsl(215 20% 65% / 0.12)", color: "hsl(215, 20%, 45%)" }
+          ? { backgroundColor: "rgba(200,136,26,0.12)", color: "hsl(38,84%,61%)" }
+          : { backgroundColor: "rgba(255,255,255,0.06)", color: "hsl(228,12%,55%)" }
       }
     >
       {score}
@@ -165,14 +175,14 @@ function ScoreBadge({ score }: { score: number }) {
   );
 }
 
-function RelativeTime({ date }: { date: string }) {
+function RelativeTime({ date, t }: { date: string; t: TFunction }) {
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  if (mins < 60) return <span>{mins}m ago</span>;
-  if (hours < 24) return <span>{hours}h ago</span>;
-  return <span>{days}d ago</span>;
+  if (mins < 60) return <span>{t("dashboard:relativeTime.minsAgo", { count: mins })}</span>;
+  if (hours < 24) return <span>{t("dashboard:relativeTime.hoursAgo", { count: hours })}</span>;
+  return <span>{t("dashboard:relativeTime.daysAgo", { count: days })}</span>;
 }
 
 export default function DashboardPage() {
@@ -236,10 +246,10 @@ export default function DashboardPage() {
         >
           <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: "hsl(142, 76%, 36%)" }} />
           <div className="flex-1">
-            <p className="font-semibold text-sm" style={{ color: "hsl(142, 40%, 20%)" }}>
+            <p className="font-semibold text-sm" style={{ color: "#4ade80" }}>
               {t("dashboard:messages.approvalLiveTitle")}
             </p>
-            <p className="text-sm mt-0.5" style={{ color: "hsl(142, 30%, 35%)" }}>
+            <p className="text-sm mt-0.5" style={{ color: "rgba(74,222,128,0.7)" }}>
               {t("dashboard:messages.approvalLiveBody")}
             </p>
           </div>
@@ -251,6 +261,7 @@ export default function DashboardPage() {
         <SetupProgressBar
           activation={activation}
           onDismiss={() => setSetupDismissed(true)}
+          t={t}
         />
       )}
 
@@ -332,12 +343,12 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Conversion card */}
           <div
-            className="bg-white rounded-xl border p-6 card-hover"
-            style={{ borderColor: "hsl(var(--border))" }}
+            className="rounded-xl p-6 card-hover"
+            style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             <h3
               className="text-sm font-semibold uppercase tracking-wider mb-4"
-              style={{ color: "hsl(var(--muted-foreground))" }}
+              style={{ color: "hsl(228,12%,47%)" }}
             >
               {t("dashboard:conversionCard.title")}
             </h3>
@@ -384,13 +395,13 @@ export default function DashboardPage() {
 
           {/* Recent conversations — wide card */}
           <div
-            className="bg-white rounded-xl border p-6 card-hover"
-            style={{ borderColor: "hsl(var(--border))" }}
+            className="rounded-xl p-6 card-hover"
+            style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             <div className="flex items-center justify-between mb-4">
               <h3
                 className="text-sm font-semibold uppercase tracking-wider"
-                style={{ color: "hsl(var(--muted-foreground))" }}
+                style={{ color: "hsl(228,12%,47%)" }}
               >
                 {t("dashboard:recentConversations.title")}
               </h3>
@@ -421,13 +432,16 @@ export default function DashboardPage() {
               <div className="divide-y" style={{ borderColor: "hsl(var(--border))" }}>
                 {recentConversations.map((conv) => (
                   <Link key={conv.id} href={`/conversations/${conv.id}`} className="block">
-                    <div className="py-3 flex items-center gap-3 hover:bg-slate-50/50 -mx-2 px-2 rounded-lg transition-colors">
+                    <div className="py-3 flex items-center gap-3 -mx-2 px-2 rounded-lg transition-colors"
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
+                    >
                       {/* Avatar */}
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
                         style={{
-                          backgroundColor: "hsl(38 92% 50% / 0.1)",
-                          color: "hsl(38, 92%, 42%)",
+                          backgroundColor: "rgba(200,136,26,0.12)",
+                          color: "hsl(38,84%,61%)",
                         }}
                       >
                         {conv.leadName.charAt(0).toUpperCase()}
@@ -455,7 +469,7 @@ export default function DashboardPage() {
                         className="text-xs flex-shrink-0"
                         style={{ color: "hsl(var(--muted-foreground))" }}
                       >
-                        <RelativeTime date={conv.createdAt} />
+                        <RelativeTime date={conv.createdAt} t={t} />
                       </p>
                     </div>
                   </Link>
@@ -469,12 +483,12 @@ export default function DashboardPage() {
         <div className="space-y-5">
           {/* Quick links */}
           <div
-            className="bg-white rounded-xl border p-5 card-hover"
-            style={{ borderColor: "hsl(var(--border))" }}
+            className="rounded-xl p-5 card-hover"
+            style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             <h3
               className="text-sm font-semibold uppercase tracking-wider mb-3"
-              style={{ color: "hsl(var(--muted-foreground))" }}
+              style={{ color: "hsl(228,12%,47%)" }}
             >
               {t("dashboard:quickLinks.title")}
             </h3>
@@ -488,8 +502,10 @@ export default function DashboardPage() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors hover:bg-slate-50"
-                  style={{ color: "hsl(38, 92%, 44%)" }}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors"
+                  style={{ color: "hsl(38,84%,61%)" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
                 >
                   <span>{link.label}</span>
                   <ChevronRight

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useI18n } from '@/lib/hooks/useI18n';
 import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,6 +35,7 @@ interface SimulationData {
 }
 
 export function SimulationChat({ simulationId }: SimulationChatProps) {
+  const { t } = useI18n(['simulations']);
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -84,7 +86,7 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
       <div className="flex items-center justify-center h-96 bg-white border border-gray-200 rounded-lg">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-          <p className="text-gray-600">Loading simulation...</p>
+          <p className="text-gray-600">{t('simulations:chat.loading')}</p>
         </div>
       </div>
     );
@@ -95,9 +97,9 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
       <div className="flex items-center justify-center h-96 bg-white border border-gray-200 rounded-lg">
         <div className="flex flex-col items-center gap-3 text-center px-4">
           <AlertCircle className="w-8 h-8 text-danger-600" />
-          <p className="text-gray-900 font-medium">Failed to load simulation</p>
+          <p className="text-gray-900 font-medium">{t('simulations:chat.loadErrorTitle')}</p>
           <p className="text-sm text-gray-600">
-            {error instanceof Error ? error.message : 'Please try again'}
+            {error instanceof Error ? error.message : t('simulations:chat.tryAgain')}
           </p>
         </div>
       </div>
@@ -109,7 +111,9 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
       {/* Header with Scenario Info */}
       <div className="bg-primary-50 border-b border-primary-200 p-4">
         <h3 className="font-semibold text-primary-900">
-          Scenario: {simulation.scenarioType.replace(/_/g, ' ')}
+          {t('simulations:chat.scenarioLabel', {
+            type: simulation.scenarioType.replace(/_/g, ' '),
+          })}
         </h3>
         <p className="text-sm text-primary-700 mt-1">
           {simulation.aiPersona.clientType}
@@ -121,9 +125,7 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {simulation.messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-gray-500">
-              No messages yet. Start the conversation below.
-            </p>
+            <p className="text-gray-500">{t('simulations:chat.noMessages')}</p>
           </div>
         ) : (
           <>
@@ -143,7 +145,7 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
         {sendMessage.isPending && (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">AI is thinking...</span>
+            <span className="text-sm">{t('simulations:chat.thinking')}</span>
           </div>
         )}
 
@@ -160,7 +162,7 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
           <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your response to the client..."
+            placeholder={t('simulations:chat.inputPlaceholder')}
             rows={3}
             disabled={sendMessage.isPending}
             className="resize-none"
@@ -174,12 +176,12 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
               {sendMessage.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
+                  {t('simulations:chat.sending')}
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  Send
+                  {t('simulations:chat.send')}
                 </>
               )}
             </Button>
@@ -187,9 +189,7 @@ export function SimulationChat({ simulationId }: SimulationChatProps) {
         </form>
       ) : (
         <div className="border-t border-gray-200 p-4 bg-gray-50">
-          <p className="text-sm text-gray-600 text-center">
-            This simulation is completed. View the feedback above.
-          </p>
+          <p className="text-sm text-gray-600 text-center">{t('simulations:chat.completedHint')}</p>
         </div>
       )}
     </div>

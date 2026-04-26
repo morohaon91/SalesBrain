@@ -5,32 +5,33 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
 }
 
-/**
- * Select component - wrapper around native HTML select
- * Matches styling of Input component for consistency
- */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ className = '', options = [], placeholder, ...props }, ref) => {
     return (
       <select
         ref={ref}
         className={`
-          flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2
-          text-sm text-gray-900 placeholder-gray-400
-          focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
-          disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:border-gray-200
-          transition-colors
+          flex h-10 w-full rounded-lg
+          border border-[hsl(var(--border))]
+          bg-[hsl(var(--input))]
+          px-3 py-2 text-sm
+          text-[hsl(var(--foreground))]
+          focus:border-[hsl(var(--primary)/0.5)]
+          focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring)/0.3)]
+          disabled:cursor-not-allowed disabled:opacity-50
+          transition-colors duration-150
           ${className}
         `}
+        style={{ colorScheme: 'dark' }}
         {...props}
       >
         {placeholder && (
-          <option value="" disabled>
+          <option value="" disabled style={{ background: 'hsl(228,32%,8%)' }}>
             {placeholder}
           </option>
         )}
         {options.map(option => (
-          <option key={option.value} value={option.value}>
+          <option key={option.value} value={option.value} style={{ background: 'hsl(228,32%,8%)' }}>
             {option.label}
           </option>
         ))}

@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { ConversationStatus } from '@prisma/client';
-import { createChatCompletion } from '@/lib/ai/client';
-import { buildLeadAssistantSystemPrompt } from '@/lib/ai/prompts/lead-assistant';
 import { generateCloserResponse, type CloserProgress } from '@/lib/ai/closer-conversation';
 
 const bodySchema = z.object({
@@ -130,13 +128,15 @@ export async function POST(
     const closerResponse = await generateCloserResponse(
       history,
       profileWithBusiness,
-      closerProgress
+      closerProgress,
+      tenant.id,
+      { conversationId }
     );
 
     const ai = {
       content: closerResponse.response,
-      tokensUsed: 0,  // TODO: Track from actual API call
-      latencyMs: 0,   // TODO: Measure actual latency
+      tokensUsed: closerResponse.tokensUsed,
+      latencyMs: closerResponse.latencyMs,
     };
 
     await prisma.conversationMessage.create({

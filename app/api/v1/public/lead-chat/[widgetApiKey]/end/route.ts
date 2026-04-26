@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { createChatCompletion } from '@/lib/ai/client';
+import { createChatCompletion, parseAiJson } from '@/lib/ai/client';
 import { scoreConversation } from '@/lib/scoring/hybrid-scorer';
+import type { ScoringBreakdown } from '@/lib/scoring/hybrid-scorer';
 
 const bodySchema = z.object({
   conversationId: z.string().uuid(),
@@ -82,38 +83,19 @@ export async function POST(
       keyTopics: [] as string[],
     };
 
-    let scoringBreakdown: any = null;
+    let scoringBreakdown: ScoringBreakdown | null = null;
 
     if (conversation.messages.length > 0) {
       try {
         // Use hybrid scorer if business profile exists, otherwise fall back to basic analysis
         if (businessProfile) {
-          scoringBreakdown = await scoreConversation(transcript, businessProfile);
+          scoringBreakdown = await scoreConversation(transcript, businessProfile, tenant.id);
 
-          // Extract basic info for backward compatibility
-          const basicInfoPrompt = `Extract name and email from this conversation.
-
-Transcript:
-${transcript}
-
-Return JSON:
-{
-  "leadName": "name or null",
-  "leadEmail": "email or null"
-}`;
-
-          const basicResponse = await createChatCompletion(
-            [{ role: 'user', content: basicInfoPrompt }],
-            'You are a data extraction assistant.',
-            { maxTokens: 100, temperature: 0.1 }
-          );
-
-          const basicParsed = JSON.parse(basicResponse.content || '{}');
-
+          const ex = scoringBreakdown.extractedInfo;
           analysis = {
-            leadName: basicParsed.leadName ?? null,
-            leadEmail: basicParsed.leadEmail ?? null,
-            summary: `${basicParsed.summary || ''}\n\nScore: ${scoringBreakdown.totalScore}/100 (${scoringBreakdown.temperature.toUpperCase()})`,
+            leadName: ex.leadName,
+            leadEmail: ex.leadEmail,
+            summary: `${scoringBreakdown.recommendation.reasoning} Score: ${scoringBreakdown.totalScore}/100 (${scoringBreakdown.temperature.toUpperCase()}).`,
             leadScore: scoringBreakdown.totalScore,
             qualificationStatus:
               scoringBreakdown.temperature === 'hot' ? 'QUALIFIED' :
@@ -143,10 +125,15 @@ Scoring guide: 80-100 = clearly interested, good fit, ready to move forward; 50-
           const aiResponse = await createChatCompletion(
             [{ role: 'user', content: analysisPrompt }],
             'You are a precise data extraction assistant. Always respond with valid JSON only.',
-            { maxTokens: 400, temperature: 0.2 }
+            {
+              maxTokens: 400,
+              temperature: 0.2,
+              tenantId: tenant.id,
+              operationType: 'lead_analysis',
+            }
           );
 
-          const parsed = JSON.parse(aiResponse.content);
+          const parsed = parseAiJson<any>(aiResponse.content);
           analysis = {
             leadName: parsed.leadName ?? null,
             leadEmail: parsed.leadEmail ?? null,
@@ -190,7 +177,7 @@ Scoring guide: 80-100 = clearly interested, good fit, ready to move forward; 50-
         leadScore: analysis.leadScore,
         qualificationStatus: analysis.qualificationStatus,
         keyTopics: analysis.keyTopics,
-        scoringBreakdown: scoringBreakdown, // PHASE 1: Store full scoring breakdown
+        scoringBreakdown: scoringBreakdown as object, // Json — hybrid breakdown + extractedInfo
       },
     });
 

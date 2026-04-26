@@ -1,70 +1,79 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import './rtl.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design System Tokens ─────────────────────────────────────── */
+/* ─── Design System Tokens — Dark Luxury ─────────────────────── */
 :root {
-  /* Surface */
-  --background: 36 33% 97%;         /* warm off-white */
-  --foreground: 20 14% 10%;         /* warm near-black */
+  /* Surfaces */
+  --background: 228 42% 5%;          /* #07080f near-black */
+  --foreground: 38 25% 90%;          /* #ede9e0 warm white */
 
-  /* Brand — warm amber */
-  --primary: 38 92% 50%;
-  --primary-foreground: 0 0% 100%;
+  /* Card surface */
+  --card: 228 32% 8%;                /* #10121e dark card */
+  --card-foreground: 38 25% 90%;
+
+  /* Brand — burnished gold */
+  --primary: 38 78% 46%;             /* #c8881a */
+  --primary-foreground: 30 10% 5%;   /* near-black on gold */
 
   /* Secondary surface */
-  --secondary: 36 20% 93%;
-  --secondary-foreground: 20 14% 20%;
+  --secondary: 228 30% 11%;          /* slightly lighter */
+  --secondary-foreground: 38 20% 82%;
 
   /* Muted */
-  --muted: 36 15% 92%;
-  --muted-foreground: 20 8% 46%;
+  --muted: 228 28% 11%;
+  --muted-foreground: 228 12% 47%;   /* #6b6f82 */
 
-  /* Accent — teal (secondary accent) */
-  --accent: 174 100% 29%;
-  --accent-foreground: 0 0% 100%;
+  /* Accent = gold (same as primary) */
+  --accent: 38 78% 46%;
+  --accent-foreground: 30 10% 5%;
 
   /* Semantic */
-  --destructive: 350 89% 50%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive: 350 80% 55%;
+  --destructive-foreground: 0 0% 98%;
 
   /* Borders & inputs */
-  --border: 36 18% 88%;
-  --input: 36 18% 88%;
-  --ring: 38 92% 50%;
+  --border: 228 25% 14%;             /* subtle dark border */
+  --input: 228 28% 10%;
+  --ring: 38 78% 46%;
 
   /* Radius scale */
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --radius-sm: 0.375rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
 
   /* Sidebar */
-  --sidebar-bg: 222 47% 7%;         /* slate-950 */
-  --sidebar-border: 222 30% 14%;    /* slate-800 */
-  --sidebar-text: 215 20% 65%;      /* slate-400 */
-  --sidebar-text-active: 0 0% 100%; /* white */
-  --sidebar-accent: 38 92% 50%;     /* amber — active border */
+  --sidebar-bg: 228 42% 5%;
+  --sidebar-border: 228 25% 13%;
+  --sidebar-text: 228 12% 47%;
+  --sidebar-text-active: 38 25% 90%;
+  --sidebar-accent: 38 78% 46%;
 
   /* Score system */
-  --score-cold: 215 20% 65%;
-  --score-warm: 38 92% 50%;
-  --score-hot: 14 89% 52%;
+  --score-cold: 228 12% 47%;
+  --score-warm: 38 78% 46%;
+  --score-hot: 21 90% 55%;
 }
 
 /* ─── Typography system ─────────────────────────────────────────── */
 @layer components {
+  .font-display {
+    font-family: 'Cormorant', Georgia, serif;
+  }
+
   .text-display {
-    @apply text-4xl font-bold tracking-tight;
-    line-height: 1.15;
+    font-family: 'Cormorant', Georgia, serif;
+    @apply text-4xl font-semibold tracking-tight;
+    line-height: 1.1;
   }
 
   .text-heading-1 {
     @apply text-3xl font-semibold tracking-tight;
-    line-height: 1.25;
+    line-height: 1.2;
   }
 
   .text-heading-2 {
@@ -87,24 +96,46 @@
     @apply text-xs;
   }
 
-  /* ─── Card hover: border shift, no shadow ─── */
+  /* ─── Card hover: gold border on hover ─── */
   .card-hover {
-    @apply transition-colors duration-150;
+    @apply transition-colors duration-200;
     border-color: hsl(var(--border));
   }
   .card-hover:hover {
-    border-color: hsl(var(--primary) / 0.4);
+    border-color: hsl(var(--primary) / 0.35);
   }
 
-  /* ─── Score badge system ─── */
+  /* ─── Score badge system — dark theme ─── */
   .score-cold {
-    @apply bg-slate-100 text-slate-600 border border-slate-200;
+    background: rgba(107, 111, 130, 0.12);
+    color: hsl(228, 12%, 60%);
+    border: 1px solid rgba(107, 111, 130, 0.2);
   }
   .score-warm {
-    @apply bg-primary-50 text-primary-700 border border-primary-200;
+    background: rgba(200, 136, 26, 0.12);
+    color: hsl(38, 78%, 60%);
+    border: 1px solid rgba(200, 136, 26, 0.25);
   }
   .score-hot {
-    @apply bg-warning-50 text-warning-700 border border-warning-200;
+    background: rgba(249, 115, 22, 0.12);
+    color: hsl(21, 90%, 65%);
+    border: 1px solid rgba(249, 115, 22, 0.25);
+  }
+
+  /* ─── Gold pill / tag ─── */
+  .gold-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(200, 136, 26, 0.1);
+    border: 1px solid rgba(200, 136, 26, 0.22);
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: hsl(38, 84%, 61%);
   }
 }
 
@@ -120,33 +151,34 @@ html {
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
   font-size: 15px;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: hsl(var(--background));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: hsl(var(--border));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(228 20% 22%);
 }
 
-/* ─── Concierge Wordmark (sidebar) ──────────────────────────────── */
+/* ─── Concierge Wordmark ─────────────────────────────────────────── */
 .concierge-mark {
   display: inline-flex;
   align-items: center;
@@ -177,4 +209,28 @@ body {
 .concierge-mark-icon::after {
   transform: rotate(45deg) scale(0.65);
   opacity: 1;
+}
+
+/* ─── Animations ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 136, 26, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(200, 136, 26, 0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s ease both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease both;
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/hooks/useI18n';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import ApprovalConfirmation from '@/components/profile/ApprovalConfirmation';
 import type { ActivationStatusResponse } from '@/lib/api/client';
 
 export default function ProfileApprovePage() {
+  const { t } = useI18n(['profile', 'common']);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Record<string, any> | null>(null);
@@ -26,15 +28,15 @@ export default function ProfileApprovePage() {
         authFetch('/api/v1/profile'),
         authFetch('/api/v1/profiles/activation-status'),
       ]);
-      if (!profileRes.ok) throw new Error('Failed to load profile');
-      if (!activationRes.ok) throw new Error('Failed to load activation status');
+      if (!profileRes.ok) throw new Error(t('profile:patternApprove.loadFailed'));
+      if (!activationRes.ok) throw new Error(t('profile:patternApprove.loadActivationFailed'));
 
       const profileData = await profileRes.json();
       const activationData = (await activationRes.json()) as ActivationStatusResponse;
       setProfile(profileData.data ?? profileData);
       setReport(activationData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load');
+      setError(err instanceof Error ? err.message : t('profile:patternApprove.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -58,7 +60,7 @@ export default function ProfileApprovePage() {
   }
 
   if (error || !profile || !report) {
-    return <div className="text-center text-red-600 py-12">{error ?? 'Could not load profile'}</div>;
+    return <div className="text-center text-red-600 py-12">{error ?? t('profile:patternApprove.couldNotLoad')}</div>;
   }
 
   return (
@@ -66,11 +68,11 @@ export default function ProfileApprovePage() {
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-          <span>Back</span>
+          <span>{t('common:buttons.back')}</span>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review & Approve Profile</h1>
-          <p className="text-gray-600 text-sm">Review how your AI will represent you to leads</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('profile:patternApprove.title')}</h1>
+          <p className="text-gray-600 text-sm">{t('profile:patternApprove.subtitle')}</p>
         </div>
       </div>
 

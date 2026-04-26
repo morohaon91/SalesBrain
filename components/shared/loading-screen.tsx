@@ -8,41 +8,72 @@ export function LoadingScreen() {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: "hsl(var(--background))" }}
+      style={{ background: "hsl(228, 42%, 5%)" }}
     >
-      <div className="text-center space-y-4">
-        {/* Wordmark */}
-        <div className="flex justify-center items-center gap-2.5 mb-6">
-          <svg
-            width="22"
-            height="28"
-            viewBox="0 0 20 26"
-            fill="hsl(38, 92%, 50%)"
-            aria-hidden="true"
-            className="animate-pulse flex-shrink-0"
+      <div className="text-center space-y-5">
+        {/* Logo mark */}
+        <div className="flex justify-center items-center gap-3 mb-2">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, hsl(38,84%,61%), hsl(38,78%,46%))",
+              color: "#060300",
+              fontFamily: "'Cormorant', Georgia, serif",
+              fontWeight: 700,
+              fontSize: "18px",
+              animation: "pulse 2s ease-in-out infinite",
+            }}
           >
-            <circle cx="10" cy="1.75" r="1.75" />
-            <path d="M10 3.5 C13 3.5 17 7 17 14 H3 C3 7 7 3.5 10 3.5Z" />
-            <rect x="2.5" y="14" width="15" height="2.5" rx="1.25" />
-            <circle cx="10" cy="19" r="1.75" />
-          </svg>
+            ✦
+          </div>
           <span
-            className="text-lg font-semibold"
-            style={{ color: "hsl(var(--foreground))", letterSpacing: "0.08em" }}
+            style={{
+              color: "hsl(38, 25%, 88%)",
+              letterSpacing: "0.1em",
+              fontFamily: "'Cormorant', Georgia, serif",
+              fontWeight: 600,
+              fontSize: "20px",
+            }}
           >
-            CONCIERGE
+            Concierge
           </span>
         </div>
 
-        <div>
-          <p
-            className="text-sm"
-            style={{ color: "hsl(var(--muted-foreground))" }}
-          >
-            {t("loadingScreen.subtitle")}
-          </p>
+        {/* Animated bars */}
+        <div className="flex items-center justify-center gap-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="w-1 rounded-full"
+              style={{
+                background: "hsl(38, 78%, 46%)",
+                height: "20px",
+                animation: `bounce 1.2s ease-in-out infinite`,
+                animationDelay: `${i * 0.15}s`,
+                opacity: 0.7,
+              }}
+            />
+          ))}
         </div>
+
+        <p
+          className="text-sm"
+          style={{ color: "hsl(228, 12%, 47%)" }}
+        >
+          {t("loadingScreen.subtitle")}
+        </p>
       </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scaleY(0.4); }
+          40% { transform: scaleY(1); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -28,30 +28,30 @@ export default function ProfileProgressAnimation({
     return () => clearInterval(interval);
   }, [currentPercentage, previousPercentage]);
 
-  const color = displayValue >= 90 ? 'text-green-600' : displayValue >= 40 ? 'text-yellow-600' : 'text-orange-600';
+  const scoreColor = displayValue >= 90 ? '#4ade80' : displayValue >= 40 ? 'hsl(38,84%,61%)' : '#fb923c';
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <TrendingUp className="h-4 w-4" />
+        <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'hsl(38,25%,90%)' }}>
+          <TrendingUp className="h-4 w-4" style={{ color: 'hsl(38,84%,61%)' }} />
           Profile Completion
         </span>
         <div className="flex items-center gap-2">
           {gain > 0 && (
-            <span className="text-xs font-medium text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ color: '#4ade80', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }}>
               +{gain}%
             </span>
           )}
-          <span className={`text-2xl font-bold ${color}`}>{displayValue}%</span>
+          <span className="text-2xl font-bold" style={{ color: scoreColor }}>{displayValue}%</span>
         </div>
       </div>
-      <Progress value={displayValue} className="h-3" />
+      <Progress value={displayValue} className="h-3" variant={displayValue >= 90 ? 'success' : 'gold'} />
       {displayValue >= 90 && (
-        <p className="text-xs text-green-600 font-medium">You're ready to go live!</p>
+        <p className="text-xs font-medium" style={{ color: '#4ade80' }}>You&apos;re ready to go live!</p>
       )}
       {displayValue < 90 && (
-        <p className="text-xs text-gray-500">{90 - displayValue}% more needed to activate AI</p>
+        <p className="text-xs" style={{ color: 'hsl(228,12%,55%)' }}>{90 - displayValue}% more needed to activate AI</p>
       )}
     </div>
   );

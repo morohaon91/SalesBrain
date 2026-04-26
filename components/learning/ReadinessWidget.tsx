@@ -18,6 +18,14 @@ interface ReadinessWidgetProps {
   className?: string;
 }
 
+const C = {
+  card: 'hsl(228,32%,8%)',
+  border: 'rgba(255,255,255,0.07)',
+  fg: 'hsl(38,25%,90%)',
+  muted: 'hsl(228,12%,47%)',
+  gold: 'hsl(38,84%,61%)',
+};
+
 export function ReadinessWidget({ className }: ReadinessWidgetProps) {
   const { user } = useAuth();
   const { t, isHebrew } = useI18n(["learning", "common"]);
@@ -35,25 +43,23 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
 
   return (
     <div
-      className={cn(
-        "rounded-xl border bg-white p-5 shadow-sm",
-        canRequestGoLive ? "border-success-200" : "border-gray-200",
-        className,
-      )}
+      className={cn("rounded-xl p-5", className)}
+      style={{
+        background: C.card,
+        border: `1px solid ${canRequestGoLive ? 'rgba(74,222,128,0.2)' : C.border}`,
+      }}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-lg",
-              canRequestGoLive
-                ? "bg-success-100 text-success-600"
-                : "bg-primary-50 text-primary-600",
-            )}
+            className="flex h-8 w-8 items-center justify-center rounded-lg"
+            style={canRequestGoLive
+              ? { background: 'rgba(74,222,128,0.12)', color: '#4ade80' }
+              : { background: 'rgba(200,136,26,0.1)', color: C.gold }}
           >
             <GraduationCap className="h-4 w-4" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold" style={{ color: C.fg }}>
             {t("learning:widget.title")}
           </h3>
         </div>
@@ -66,42 +72,29 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
         ) : (
           <Badge variant="secondary" className="gap-1 text-[10px]">
             <Clock className="h-3 w-3" />
-            <span>
-              {breakdown.scenarios.completed}/{breakdown.scenarios.total}
-            </span>
+            <span>{breakdown.scenarios.completed}/{breakdown.scenarios.total}</span>
           </Badge>
         )}
       </div>
 
       <div className="mt-4">
         <div className="mb-1.5 flex items-center justify-between text-xs">
-          <span className="text-gray-500">{t("learning:widget.progressLabel")}</span>
-          <span className="font-semibold text-gray-900 tabular-nums">
-            {activationScore}%
-          </span>
+          <span style={{ color: C.muted }}>{t("learning:widget.progressLabel")}</span>
+          <span className="font-semibold tabular-nums" style={{ color: C.fg }}>{activationScore}%</span>
         </div>
-        <Progress
-          value={activationScore}
-          className={cn(
-            "h-2",
-            canRequestGoLive ? "[&>div]:bg-success-500" : "[&>div]:bg-primary-500",
-          )}
-        />
+        <Progress value={activationScore} variant={canRequestGoLive ? 'success' : 'gold'} className="h-2" />
       </div>
 
       {!canRequestGoLive && next ? (
-        <div className="mt-4 border-t border-gray-100 pt-3">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+        <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
+          <p className="text-[11px] font-medium uppercase tracking-wide" style={{ color: C.muted }}>
             {t("learning:widget.nextLabel")}
           </p>
-          <p className="mt-1 text-sm font-medium text-gray-900 line-clamp-1">{next.name}</p>
+          <p className="mt-1 text-sm font-medium line-clamp-1" style={{ color: C.fg }}>{next.name}</p>
           <Link href="/learning" className="mt-2 block">
-            <Button size="sm" className="w-full bg-primary-600 text-white hover:bg-primary-700">
+            <Button size="sm" className="w-full">
               <span>{t("learning:widget.continue")}</span>
-              <ArrowRight
-                className={rtlMirrorIcon(isHebrew, "ml-1.5 h-3.5 w-3.5 shrink-0")}
-                aria-hidden
-              />
+              <ArrowRight className={rtlMirrorIcon(isHebrew, "ml-1.5 h-3.5 w-3.5 shrink-0")} aria-hidden />
             </Button>
           </Link>
         </div>
@@ -109,7 +102,7 @@ export function ReadinessWidget({ className }: ReadinessWidgetProps) {
 
       {canRequestGoLive ? (
         <Link href="/profile/approve" className="mt-4 block">
-          <Button size="sm" className="w-full bg-success-600 text-white hover:bg-success-700">
+          <Button size="sm" className="w-full">
             {t("learning:overall.activate")}
           </Button>
         </Link>

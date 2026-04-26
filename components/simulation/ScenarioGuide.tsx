@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Target } from 'lucide-react';
 
 interface ScenarioGuideProps {
@@ -76,61 +75,59 @@ export function ScenarioGuide({
   }
 
   return (
-    <Card className="bg-blue-50 border-blue-200">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-blue-600" />
-          {scenario.title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-gray-700">{scenario.description}</p>
+    <div className="rounded-lg p-4 space-y-4" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+      <div className="flex items-center gap-2">
+        <Target className="w-5 h-5" style={{ color: '#60a5fa' }} />
+        <h3 className="font-semibold" style={{ color: 'hsl(38,25%,90%)' }}>{scenario.title}</h3>
+      </div>
 
+      <p className="text-sm" style={{ color: 'hsl(228,12%,65%)' }}>{scenario.description}</p>
+
+      <div>
+        <h4 className="font-medium text-sm mb-2 flex items-center gap-2" style={{ color: 'hsl(38,25%,90%)' }}>
+          <AlertCircle className="w-4 h-4" style={{ color: '#60a5fa' }} />
+          Key Focus Areas
+        </h4>
+        <ul className="space-y-2">
+          {scenario.focus.map((item, i) => (
+            <li key={i} className="flex gap-2 text-sm">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#4ade80' }} />
+              <span style={{ color: 'hsl(228,12%,70%)' }}>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {keyTopics.length > 0 && (
         <div>
-          <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-blue-600" />
-            Key Focus Areas
-          </h4>
-          <ul className="space-y-2">
-            {scenario.focus.map((item, i) => (
-              <li key={i} className="flex gap-2 text-sm">
-                <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700">{item}</span>
+          <h4 className="font-medium text-sm mb-2" style={{ color: 'hsl(38,25%,90%)' }}>Topics to Discuss</h4>
+          <div className="flex flex-wrap gap-2">
+            {keyTopics.map((topic, i) => (
+              <span
+                key={i}
+                className="text-xs px-2 py-1 rounded"
+                style={{ background: 'rgba(59,130,246,0.15)', color: '#93c5fd' }}
+              >
+                {topic}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {guidelines.length > 0 && (
+        <div>
+          <h4 className="font-medium text-sm mb-2" style={{ color: 'hsl(38,25%,90%)' }}>Guidelines</h4>
+          <ul className="space-y-1 text-sm" style={{ color: 'hsl(228,12%,65%)' }}>
+            {guidelines.map((guideline, i) => (
+              <li key={i} className="flex gap-2">
+                <span style={{ color: '#60a5fa' }}>•</span>
+                <span>{guideline}</span>
               </li>
             ))}
           </ul>
         </div>
-
-        {keyTopics.length > 0 && (
-          <div>
-            <h4 className="font-medium text-sm mb-2">Topics to Discuss</h4>
-            <div className="flex flex-wrap gap-2">
-              {keyTopics.map((topic, i) => (
-                <span
-                  key={i}
-                  className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
-                >
-                  {topic}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {guidelines.length > 0 && (
-          <div>
-            <h4 className="font-medium text-sm mb-2">Guidelines</h4>
-            <ul className="space-y-1 text-sm text-gray-700">
-              {guidelines.map((guideline, i) => (
-                <li key={i} className="flex gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>{guideline}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }

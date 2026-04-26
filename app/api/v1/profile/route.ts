@@ -161,7 +161,11 @@ export const GET = withAuth(
             // Progress — use live computed value, not stale DB value
             completionPercentage: liveCompletionPct,
             completionBreakdown: liveCompletion,
-            simulationCount: profile.simulationCount || 0,
+            // completedScenarios.length is authoritative; simulationCount can drift
+            simulationCount: Math.max(
+              profile.completedScenarios?.length || 0,
+              profile.simulationCount || 0
+            ),
             lastExtractedAt: profile.lastExtractedAt?.toISOString() ?? null,
 
             // Shareable lead chat (public /l/[widgetApiKey] — requires go-live)

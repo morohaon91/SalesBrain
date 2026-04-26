@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import type { TFunction } from 'i18next';
+import { useI18n } from '@/lib/hooks/useI18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,16 +25,17 @@ interface ApprovalStatus {
   [key: string]: 'approved' | 'rejected' | 'pending';
 }
 
-const CATEGORIES = [
-  { id: 'communication', label: 'Communication', key: 'communicationStyle' },
-  { id: 'pricing', label: 'Pricing', key: 'pricingLogic' },
-  { id: 'qualification', label: 'Qualification', key: 'qualificationCriteria' },
-  { id: 'objections', label: 'Objections', key: 'objectionHandling' },
-  { id: 'decision', label: 'Decision Making', key: 'decisionMakingPatterns' },
-  { id: 'voice', label: 'Voice Examples', key: 'ownerVoiceExamples' },
+const CATEGORY_DEFS = [
+  { id: 'communication', key: 'communicationStyle' },
+  { id: 'pricing', key: 'pricingLogic' },
+  { id: 'qualification', key: 'qualificationCriteria' },
+  { id: 'objections', key: 'objectionHandling' },
+  { id: 'decision', key: 'decisionMakingPatterns' },
+  { id: 'voice', key: 'ownerVoiceExamples' },
 ] as const;
 
 export default function ValidatePatternsPage() {
+  const { t } = useI18n(['profile', 'common']);
   const router = useRouter();
   const [patterns, setPatterns] = useState<RawExtractionResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,15 +58,15 @@ export default function ValidatePatternsPage() {
       if (data.data) {
         setPatterns(data.data);
         const initial: ApprovalStatus = {};
-        CATEGORIES.forEach((c) => {
+        CATEGORY_DEFS.forEach((c) => {
           if ((data.data as any)[c.key]) initial[c.key] = 'pending';
         });
         setApprovalStatus(initial);
       } else {
-        setError('No pending patterns found');
+        setError(t('profile:patternValidate.noPending'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load patterns');
+      setError(err instanceof Error ? err.message : t('profile:patternValidate.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -77,7 +80,7 @@ export default function ValidatePatternsPage() {
       await instance.post('/profile/validate/approve', { field, value });
       setApprovalStatus((prev) => ({ ...prev, [field]: 'approved' }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve field');
+      setError(err instanceof Error ? err.message : t('profile:patternValidate.approveFailed'));
     } finally {
       setSavingField(null);
     }
@@ -89,7 +92,7 @@ export default function ValidatePatternsPage() {
       await instance.post('/profile/validate/reject', { field });
       setApprovalStatus((prev) => ({ ...prev, [field]: 'rejected' }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reject field');
+      setError(err instanceof Error ? err.message : t('profile:patternValidate.rejectFailed'));
     } finally {
       setSavingField(null);
     }
@@ -104,7 +107,7 @@ export default function ValidatePatternsPage() {
       setApprovalStatus(newStatus);
       setTimeout(() => router.push('/profile'), 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve all patterns');
+      setError(err instanceof Error ? err.message : t('profile:patternValidate.approveAllFailed'));
     } finally {
       setSavingAll(false);
     }
@@ -119,7 +122,7 @@ export default function ValidatePatternsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading pending patterns...</p>
+          <p className="text-gray-600">{t('profile:patternValidate.loading')}</p>
         </div>
       </div>
     );
@@ -130,7 +133,7 @@ export default function ValidatePatternsPage() {
       <div className="space-y-4 p-6">
         <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
-          <span>Back</span>
+          <span>{t('common:buttons.back')}</span>
         </Button>
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
@@ -151,33 +154,33 @@ export default function ValidatePatternsPage() {
       <div className="space-y-4 p-6">
         <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
-          <span>Back</span>
+          <span>{t('common:buttons.back')}</span>
         </Button>
         <Card>
           <CardHeader>
-            <CardTitle>No Pending Patterns</CardTitle>
+            <CardTitle>{t('profile:patternValidate.emptyTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4">All extracted patterns have been reviewed</p>
-            <Button onClick={() => router.push('/profile')}>Return to Profile</Button>
+            <p className="text-gray-600 mb-4">{t('profile:patternValidate.emptyBody')}</p>
+            <Button onClick={() => router.push('/profile')}>{t('profile:patternValidate.returnProfile')}</Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  const categories = CATEGORIES.filter((cat) => (patterns as any)[cat.key]);
+  const categories = CATEGORY_DEFS.filter((cat) => (patterns as any)[cat.key]);
 
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Review Extracted Patterns</h1>
-          <p className="text-gray-600 mt-1">Approve or reject patterns from your simulation</p>
+          <h1 className="text-3xl font-bold">{t('profile:patternValidate.pageTitle')}</h1>
+          <p className="text-gray-600 mt-1">{t('profile:patternValidate.pageSubtitle')}</p>
         </div>
         <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
-          <span>Back</span>
+          <span>{t('common:buttons.back')}</span>
         </Button>
       </div>
 
@@ -186,7 +189,7 @@ export default function ValidatePatternsPage() {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm font-medium text-blue-900">
-                Progress: {approvedCount}/{totalCount} approved
+                {t('profile:patternValidate.progress', { approved: approvedCount, total: totalCount })}
               </p>
               <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
                 <div
@@ -198,7 +201,7 @@ export default function ValidatePatternsPage() {
             {allApproved && (
               <Button onClick={approveAll} disabled={savingAll} className="ml-4 bg-green-600 hover:bg-green-700">
                 {savingAll ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Complete
+                {t('profile:patternValidate.complete')}
               </Button>
             )}
           </div>
@@ -227,7 +230,7 @@ export default function ValidatePatternsPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {cat.label}
+            {t(`profile:patternValidate.categories.${cat.id}`)}
           </button>
         ))}
       </div>
@@ -240,12 +243,13 @@ export default function ValidatePatternsPage() {
           return (
             <div key={cat.id} className="space-y-4">
               <PatternCard
-                title={cat.label}
+                title={t(`profile:patternValidate.categories.${cat.id}`)}
                 pattern={pattern}
                 status={status}
                 onApprove={() => approveField(cat.key)}
                 onReject={() => rejectField(cat.key)}
                 isSaving={savingField === cat.key}
+                t={t}
               />
             </div>
           );
@@ -255,16 +259,16 @@ export default function ValidatePatternsPage() {
       {typeof (patterns as any).overallQuality === 'number' && (
         <Card>
           <CardHeader>
-            <CardTitle>Extraction Quality</CardTitle>
+            <CardTitle>{t('profile:patternValidate.extractionQuality')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Overall Quality</p>
+                <p className="text-sm font-medium text-gray-600">{t('profile:patternValidate.overallQuality')}</p>
                 <p className="text-2xl font-bold">{(patterns as any).overallQuality}/100</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Extraction Confidence</p>
+                <p className="text-sm font-medium text-gray-600">{t('profile:patternValidate.extractionConfidence')}</p>
                 <p className="text-2xl font-bold">{(patterns as any).extractionConfidence ?? 0}/100</p>
               </div>
             </div>
@@ -274,7 +278,7 @@ export default function ValidatePatternsPage() {
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={() => router.back()}>
-          Cancel
+          {t('profile:patternValidate.cancel')}
         </Button>
         <Button
           onClick={approveAll}
@@ -282,7 +286,9 @@ export default function ValidatePatternsPage() {
           className="bg-green-600 hover:bg-green-700"
         >
           {savingAll ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-          {allApproved ? 'Complete Review' : `Approve All (${approvedCount}/${totalCount})`}
+          {allApproved
+            ? t('profile:patternValidate.completeReview')
+            : t('profile:patternValidate.approveAll', { approved: approvedCount, total: totalCount })}
         </Button>
       </div>
     </div>
@@ -296,27 +302,28 @@ interface PatternCardProps {
   onApprove: () => void;
   onReject: () => void;
   isSaving: boolean;
+  t: TFunction;
 }
 
-function PatternCard({ title, pattern, status, onApprove, onReject, isSaving }: PatternCardProps) {
+function PatternCard({ title, pattern, status, onApprove, onReject, isSaving, t }: PatternCardProps) {
   const getStatusBadge = () => {
     switch (status) {
       case 'approved':
         return (
           <Badge className="bg-green-100 text-green-800">
-            <CheckCircle2 className="w-3 h-3 mr-1" /> Approved
+            <CheckCircle2 className="w-3 h-3 mr-1" /> {t('profile:patternValidate.badges.approved')}
           </Badge>
         );
       case 'rejected':
         return (
           <Badge className="bg-red-100 text-red-800">
-            <XCircle className="w-3 h-3 mr-1" /> Rejected
+            <XCircle className="w-3 h-3 mr-1" /> {t('profile:patternValidate.badges.rejected')}
           </Badge>
         );
       default:
         return (
           <Badge variant="outline">
-            <AlertTriangle className="w-3 h-3 mr-1" /> Pending
+            <AlertTriangle className="w-3 h-3 mr-1" /> {t('profile:patternValidate.badges.pending')}
           </Badge>
         );
     }
@@ -339,7 +346,7 @@ function PatternCard({ title, pattern, status, onApprove, onReject, isSaving }: 
         <div className="flex gap-2 justify-end">
           <Button variant="outline" size="sm" onClick={onReject} disabled={isSaving || status === 'rejected'}>
             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Reject
+            {t('profile:patternValidate.reject')}
           </Button>
           <Button
             size="sm"
@@ -348,7 +355,7 @@ function PatternCard({ title, pattern, status, onApprove, onReject, isSaving }: 
             className="bg-green-600 hover:bg-green-700"
           >
             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Approve
+            {t('profile:patternValidate.approve')}
           </Button>
         </div>
       </CardContent>

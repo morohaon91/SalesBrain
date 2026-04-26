@@ -1,4 +1,5 @@
 import { evaluateAllCompetencies } from './competencies';
+import { validateAllGates } from './go-live-gates';
 
 export interface ActivationScore {
   total: number;
@@ -44,6 +45,7 @@ export function calculateActivationScore(profile: any): ActivationScore {
   if (hasCerts) profilePoints += 2;
 
   const total = scenarioPoints + competencyPoints + profilePoints;
+  const allGatesPassed = validateAllGates(profile).every((g) => g.status === 'PASSED');
 
   // --- Blocking Step ---
   let blockingStep: ActivationScore['blockingStep'] = 'ready';
@@ -64,7 +66,7 @@ export function calculateActivationScore(profile: any): ActivationScore {
 
   return {
     total: Math.min(100, total),
-    canRequestGoLive: total >= 90,
+    canRequestGoLive: total >= 90 && allGatesPassed,
     breakdown: {
       scenarios: { earned: scenarioPoints, max: 40, completed: completedCount, total: 8 },
       competencies: { earned: competencyPoints, max: 45, achieved: achievedCount, total: 9 },

@@ -14,7 +14,7 @@ export default function ApprovalSummary({ profile, report }: ApprovalSummaryProp
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Go-Live Gates</h2>
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>Go-Live Gates</h2>
         <p className="text-sm text-gray-600 mb-4">
           {gatesPassed}/{report.gates.length} gates passed ·{' '}
           {report.breakdown.competencies.achieved}/{report.breakdown.competencies.total} competencies achieved ·{' '}
@@ -24,7 +24,7 @@ export default function ApprovalSummary({ profile, report }: ApprovalSummaryProp
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Preview</h2>
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>Profile Preview</h2>
         <p className="text-sm text-gray-600 mb-4">
           This is how your AI will represent you when talking to leads.
         </p>

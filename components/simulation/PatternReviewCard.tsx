@@ -65,7 +65,7 @@ export default function PatternReviewCard({ section, data, onApprove, onReject }
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">{SECTION_LABELS[section] ?? section}</h3>
+        <h3 className="font-semibold" style={{ color: 'hsl(38,25%,90%)' }}>{SECTION_LABELS[section] ?? section}</h3>
         {(onApprove || onReject) && (
           <div className="flex gap-2">
             {onApprove && (
@@ -85,10 +85,10 @@ export default function PatternReviewCard({ section, data, onApprove, onReject }
       <div className="space-y-2">
         {relevantKeys.map(([key, val]) => (
           <div key={key} className="flex gap-3">
-            <span className="text-xs text-gray-500 capitalize w-32 flex-shrink-0 pt-0.5">
+            <span className="text-xs capitalize w-32 flex-shrink-0 pt-0.5" style={{ color: 'hsl(228,12%,47%)' }}>
               {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
             </span>
-            <span className="text-sm text-gray-800">{renderValue(val)}</span>
+            <span className="text-sm" style={{ color: 'hsl(38,25%,90%)' }}>{renderValue(val)}</span>
           </div>
         ))}
       </div>

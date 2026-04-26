@@ -67,10 +67,7 @@ export default function ConversationDetailPage() {
   const handleTakeover = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/v1/conversations/${conversationId}/takeover`, {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Failed to take over");
+      await api.conversations.takeover(conversationId);
       await refetch();
       setOwnerMessage("");
     } catch (err) {
@@ -85,12 +82,7 @@ export default function ConversationDetailPage() {
     if (!ownerMessage.trim()) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/v1/conversations/${conversationId}/owner-message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: ownerMessage }),
-      });
-      if (!res.ok) throw new Error("Failed to send message");
+      await api.conversations.sendOwnerMessage(conversationId, { message: ownerMessage });
       setOwnerMessage("");
       await refetch();
     } catch (err) {
@@ -104,7 +96,7 @@ export default function ConversationDetailPage() {
   if (isQueryLoading || (!conversation && !error)) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'hsl(38,84%,61%)' }} />
       </div>
     );
   }
@@ -115,7 +107,7 @@ export default function ConversationDetailPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="p-2 -ms-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 text-gray-700"
+          className="p-2 -ms-2 rounded-lg transition-colors flex items-center gap-2" style={{ color: 'hsl(38,25%,90%)' }}
         >
           <ArrowLeft className="w-5 h-5" />
           {t("conversations:detail.back")}
@@ -142,15 +134,15 @@ export default function ConversationDetailPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="p-2 -ms-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            className="p-2 -ms-2 rounded-lg transition-colors flex-shrink-0" style={{ color: 'hsl(38,25%,90%)' }}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
+            <h1 className="text-2xl sm:text-3xl font-bold break-words" style={{ color: 'hsl(38,25%,90%)' }}>
               {conversation.leadName}
             </h1>
-            <p className="text-gray-600 text-sm sm:text-base mt-1 break-all">{conversation.leadEmail}</p>
+            <p className="text-sm sm:text-base mt-1 break-all" style={{ color: 'hsl(228,12%,55%)' }}>{conversation.leadEmail}</p>
           </div>
         </div>
 
@@ -168,41 +160,41 @@ export default function ConversationDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+          <div className="rounded-lg p-4 sm:p-6" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
               <div>
-                <p className="text-xs font-medium text-gray-600">{t("conversations:detail.status")}</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1 break-words">
+                <p className="text-xs font-medium" style={{ color: 'hsl(228,12%,55%)' }}>{t("conversations:detail.status")}</p>
+                <p className="text-sm font-semibold mt-1 break-words" style={{ color: 'hsl(38,25%,90%)' }}>
                   {statusLabel(conversation.status)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-600">{t("conversations:detail.duration")}</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">
+                <p className="text-xs font-medium" style={{ color: 'hsl(228,12%,55%)' }}>{t("conversations:detail.duration")}</p>
+                <p className="text-sm font-semibold mt-1" style={{ color: 'hsl(38,25%,90%)' }}>
                   {Math.round(conversation.duration / 60)} {t("common:units.min")}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-600">{t("conversations:detail.messages")}</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{conversation.messageCount}</p>
+                <p className="text-xs font-medium" style={{ color: 'hsl(228,12%,55%)' }}>{t("conversations:detail.messages")}</p>
+                <p className="text-sm font-semibold mt-1" style={{ color: 'hsl(38,25%,90%)' }}>{conversation.messageCount}</p>
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">
+            <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              <h3 className="text-sm font-semibold mb-2" style={{ color: 'hsl(38,25%,90%)' }}>
                 {t("conversations:detail.summary")}
               </h3>
-              <p className="text-sm text-gray-600">{conversation.summary}</p>
+              <p className="text-sm" style={{ color: 'hsl(228,12%,65%)' }}>{conversation.summary}</p>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="rounded-lg p-6 space-y-4" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>
               {t("conversations:detail.conversation")}
             </h3>
 
             {conversation.messages.length === 0 ? (
-              <p className="text-sm text-gray-500">{t("conversations:detail.noMessages")}</p>
+              <p className="text-sm" style={{ color: 'hsl(228,12%,55%)' }}>{t("conversations:detail.noMessages")}</p>
             ) : (
               conversation.messages.map((msg) => (
                 <MessageBubble
@@ -232,7 +224,7 @@ export default function ConversationDetailPage() {
 
           {conversation.scoringBreakdown && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>
                 {t("conversations:detail.scoringDetails")}
               </h3>
               <ScoringBreakdown breakdown={conversation.scoringBreakdown} />
@@ -240,22 +232,22 @@ export default function ConversationDetailPage() {
           )}
 
           {!conversation.scoringBreakdown && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="rounded-lg p-6" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>
                 {t("conversations:detail.leadScore")}
               </h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium" style={{ color: 'hsl(228,12%,55%)' }}>
                       {t("conversations:detail.overall")}
                     </span>
-                    <span className="text-2xl font-bold text-primary-600">{conversation.leadScore}</span>
+                    <span className="text-2xl font-bold" style={{ color: 'hsl(38,84%,61%)' }}>{conversation.leadScore}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
                     <div
-                      className="h-full bg-primary-600"
-                      style={{ width: `${Math.min(100, Math.max(0, conversation.leadScore))}%` }}
+                      className="h-full rounded-full"
+                      style={{ width: `${Math.min(100, Math.max(0, conversation.leadScore))}%`, background: 'hsl(38,84%,61%)' }}
                     />
                   </div>
                 </div>
@@ -263,16 +255,16 @@ export default function ConversationDetailPage() {
             </div>
           )}
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="rounded-lg p-6" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>
               {t("conversations:detail.qualification")}
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">
+                <p className="text-sm font-medium mb-2" style={{ color: 'hsl(228,12%,55%)' }}>
                   {t("conversations:detail.status")}
                 </p>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.08)', color: 'hsl(38,25%,80%)' }}>
                   {qualificationLabel(conversation.qualificationStatus)}
                 </span>
               </div>
@@ -292,11 +284,11 @@ export default function ConversationDetailPage() {
           </div>
 
           {conversation.status === "ACTIVE" && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            <div className="rounded-lg p-6" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'hsl(38,25%,90%)' }}>
                 {t("conversations:detail.takeOverTitle")}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">{t("conversations:detail.takeOverBody")}</p>
+              <p className="text-sm mb-4" style={{ color: 'hsl(228,12%,65%)' }}>{t("conversations:detail.takeOverBody")}</p>
               <Button
                 onClick={handleTakeover}
                 disabled={isLoading}
@@ -310,17 +302,18 @@ export default function ConversationDetailPage() {
           )}
 
           {conversation.status === "MANUAL" && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            <div className="rounded-lg p-6" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'hsl(38,25%,90%)' }}>
                 {t("conversations:detail.inControlTitle")}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">{t("conversations:detail.inControlBody")}</p>
+              <p className="text-sm mb-4" style={{ color: 'hsl(228,12%,65%)' }}>{t("conversations:detail.inControlBody")}</p>
               <textarea
                 value={ownerMessage}
                 onChange={(e) => setOwnerMessage(e.target.value)}
                 placeholder={t("conversations:detail.messagePlaceholder")}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 mb-3"
+                className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 mb-3"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'hsl(38,25%,90%)' }}
               />
               <Button
                 onClick={handleSendMessage}
@@ -332,12 +325,13 @@ export default function ConversationDetailPage() {
             </div>
           )}
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="rounded-lg p-6" style={{ background: 'hsl(228,32%,8%)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>
               {t("conversations:detail.ownerNotes")}
             </h3>
             <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'hsl(38,25%,90%)' }}
               rows={4}
               placeholder={t("conversations:detail.notesPlaceholder")}
             />
