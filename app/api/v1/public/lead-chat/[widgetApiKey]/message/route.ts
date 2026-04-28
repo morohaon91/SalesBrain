@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { ConversationStatus } from '@prisma/client';
 import { generateCloserResponse, type CloserProgress } from '@/lib/ai/closer-conversation';
+import { LEAD_CHAT_MESSAGE_WINDOW } from '@/lib/performance/bounds';
 
 const bodySchema = z.object({
   conversationId: z.string().uuid(),
@@ -62,7 +63,10 @@ export async function POST(
         tenantId: tenant.id,
       },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: LEAD_CHAT_MESSAGE_WINDOW,
+        },
       },
     });
 
@@ -104,8 +108,10 @@ export async function POST(
 
     const profile = tenant.profiles[0] ?? null;
 
+    const messagesChronological = [...conversation.messages].reverse();
+
     // Prepare message history in format expected by generateCloserResponse
-    const history = conversation.messages.map((m) => ({
+    const history = messagesChronological.map((m) => ({
       role: (m.role === 'LEAD' ? 'user' : 'assistant') as 'user' | 'assistant',
       content: m.content,
     }));

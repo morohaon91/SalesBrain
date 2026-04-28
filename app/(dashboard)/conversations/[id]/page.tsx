@@ -21,6 +21,7 @@ type ConversationDetail = {
   qualificationStatus: string;
   leadScore: number;
   messageCount: number;
+  messagesTruncated?: boolean;
   duration: number;
   createdAt: string;
   summary: string;
@@ -52,7 +53,8 @@ export default function ConversationDetailPage() {
     refetch,
   } = useQuery({
     queryKey: ["conversation", conversationId],
-    queryFn: () => api.conversations.get(conversationId) as Promise<ConversationDetail>,
+    queryFn: () =>
+      api.conversations.get(conversationId, { messagesLimit: 500 }) as Promise<ConversationDetail>,
     enabled: !!conversationId,
     staleTime: 0,
     refetchOnMount: "always",
@@ -192,6 +194,12 @@ export default function ConversationDetailPage() {
             <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(38,25%,90%)' }}>
               {t("conversations:detail.conversation")}
             </h3>
+
+            {conversation.messagesTruncated ? (
+              <p className="text-sm rounded-md px-3 py-2 mb-3" style={{ color: 'hsl(45,90%,85%)', background: 'rgba(234,179,8,0.12)' }}>
+                Showing the {conversation.messages.length} most recent messages of {conversation.messageCount} total.
+              </p>
+            ) : null}
 
             {conversation.messages.length === 0 ? (
               <p className="text-sm" style={{ color: 'hsl(228,12%,55%)' }}>{t("conversations:detail.noMessages")}</p>

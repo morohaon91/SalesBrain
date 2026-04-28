@@ -51,11 +51,11 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       <aside
         className={cn(
           "w-64 flex flex-col overflow-hidden h-screen",
-          "fixed inset-y-0 inset-inline-start-0 z-50 transform transition-transform duration-300",
+          "fixed inset-y-0 start-0 z-50 transform transition-transform duration-300",
           "lg:static lg:translate-x-0",
           isOpen
             ? "translate-x-0"
-            : "ltr:-translate-x-full rtl:translate-x-full lg:translate-x-0"
+            : "max-lg:ltr:-translate-x-full max-lg:rtl:translate-x-full"
         )}
         style={{
           background: "hsl(228, 42%, 5%)",

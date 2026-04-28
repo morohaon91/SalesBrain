@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma, setTenantContext, clearTenantContext } from '@/lib/prisma';
 import { withAuth, type AuthenticatedRequest } from '@/lib/auth/middleware';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  CONVERSATION_DETAIL_MESSAGES_DEFAULT,
+  CONVERSATION_DETAIL_MESSAGES_MAX,
+} from '@/lib/performance/bounds';
 
 /**
  * GET /api/v1/conversations/[id]
@@ -29,6 +33,16 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
     try {
       setTenantContext(tenantId);
 
+      const url = req.nextUrl;
+      const rawLimit = parseInt(url.searchParams.get('messagesLimit') || '', 10);
+      const messagesTake = Math.min(
+        CONVERSATION_DETAIL_MESSAGES_MAX,
+        Math.max(
+          1,
+          Number.isFinite(rawLimit) ? rawLimit : CONVERSATION_DETAIL_MESSAGES_DEFAULT
+        )
+      );
+
       const conv = await prisma.conversation.findFirst({
         where: { id, tenantId },
         include: {
@@ -36,8 +50,10 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
             select: { name: true, email: true },
           },
           messages: {
-            orderBy: { createdAt: 'asc' },
+            orderBy: { createdAt: 'desc' },
+            take: messagesTake,
           },
+          _count: { select: { messages: true } },
         },
       });
 
@@ -54,7 +70,8 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
         );
       }
 
-      const messages = conv.messages.map((m) => ({
+      const messagesChronological = [...conv.messages].reverse();
+      const messages = messagesChronological.map((m) => ({
         id: m.id,
         role:
           m.role === 'LEAD'
@@ -66,13 +83,17 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
         createdAt: m.createdAt.toISOString(),
       }));
 
+      const totalMessages = conv._count.messages;
+      const messagesTruncated = totalMessages > messages.length;
+
       const data = {
         id: conv.id,
         createdAt: conv.createdAt.toISOString(),
         status: conv.status,
         qualificationStatus: conv.qualificationStatus,
         leadScore: conv.leadScore ?? 0,
-        messageCount: messages.length,
+        messageCount: totalMessages,
+        messagesTruncated,
         duration: conv.endedAt
           ? Math.round((conv.endedAt.getTime() - conv.createdAt.getTime()) / 1000)
           : Math.round((Date.now() - conv.createdAt.getTime()) / 1000),
@@ -85,7 +106,12 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({
         success: true,
         data,
-        meta: { timestamp, requestId },
+        meta: {
+          timestamp,
+          requestId,
+          messagesReturned: messages.length,
+          messagesLimit: messagesTake,
+        },
       });
     } catch (error) {
       console.error('Error fetching conversation:', error);

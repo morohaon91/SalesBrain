@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth, AuthenticatedRequest } from "@/lib/auth/middleware";
 import { v4 as uuidv4 } from "uuid";
+import { parsePagination } from "@/lib/pagination";
 
 /**
  * Response type
@@ -47,10 +50,8 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
   try {
     const { tenantId } = req.auth;
 
-    // Get query parameters
     const { searchParams } = new URL(req.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const pageSize = Math.min(100, parseInt(searchParams.get("pageSize") || "20"));
+    const { page, pageSize } = parsePagination(searchParams);
     const status = searchParams.get("status");
     const scenarioType = searchParams.get("scenarioType");
 

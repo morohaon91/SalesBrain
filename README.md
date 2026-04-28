@@ -4,16 +4,15 @@ AI-powered lead qualification platform for freelancers and agencies. Uses Claude
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router), React 19, TypeScript
+- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
 - **Backend**: Next.js API routes
 - **Database**: PostgreSQL 14+
-- **Cache**: Redis
+- **Cache**: Redis (optional / future)
 - **ORM**: Prisma
 - **AI**: Anthropic Claude API
 - **Vector DB**: Pinecone
 - **Real-time**: Socket.io
 - **Email**: Resend
-- **Charts**: Recharts
 - **Forms**: React Hook Form + Zod
 - **Styling**: Tailwind CSS
 - **i18n**: react-i18next — strings in `locales/en` and `locales/he`; language in `localStorage` (`language`), Hebrew sets `dir="rtl"` on `<html>` via `I18nProvider`.
@@ -22,7 +21,7 @@ AI-powered lead qualification platform for freelancers and agencies. Uses Claude
 
 - Node.js 18+ installed
 - PostgreSQL 14+ running at `localhost:5432`
-- Redis running at `localhost:6379`
+- Redis running at `localhost:6379` (optional / future)
 - Anthropic API key (from console.anthropic.com)
 
 ## Quick Start

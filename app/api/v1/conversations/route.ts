@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, setTenantContext, clearTenantContext } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/middleware';
 import { v4 as uuidv4 } from 'uuid';
+import { parsePagination } from '@/lib/pagination';
 
 interface ConversationsResponse {
   success: boolean;
@@ -43,10 +46,8 @@ export const GET = withAuth(
     const timestamp = new Date().toISOString();
 
     try {
-      // Get query parameters
       const { searchParams } = new URL(req.url);
-      const page = parseInt(searchParams.get('page') || '1');
-      const pageSize = parseInt(searchParams.get('pageSize') || '20');
+      const { page, pageSize } = parsePagination(searchParams);
       const status = searchParams.get('status');
       const minScore = searchParams.get('minScore')
         ? parseInt(searchParams.get('minScore')!)

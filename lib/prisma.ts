@@ -1,22 +1,22 @@
 import { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 declare global {
   var prisma: PrismaClient | undefined;
   var currentTenantId: string | undefined;
 }
 
-// Create base Prisma client
-const baseClient = new PrismaClient({
-  log:
-    process.env.NODE_ENV === "development"
+const logLevels: Prisma.LogLevel[] =
+  process.env.NODE_ENV === "development"
+    ? ["query", "error", "warn"]
+    : process.env.PRISMA_LOG_QUERIES === "1"
       ? ["query", "error", "warn"]
-      : ["error"],
-});
+      : ["error"];
 
-export const prisma =
-  global.prisma || baseClient;
+// Pin on global in all environments so Next.js dev HMR and serverless-style isolates reuse one client.
+export const prisma = global.prisma ?? new PrismaClient({ log: logLevels });
 
-if (process.env.NODE_ENV !== "production") global.prisma = prisma;
+global.prisma = prisma;
 
 export default prisma;
 

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, setTenantContext, clearTenantContext } from '@/lib/prisma';
 import { withAuth } from '@/lib/auth/middleware';
@@ -49,40 +51,40 @@ export const GET = withAuth(
       // Set tenant context for Prisma middleware
       setTenantContext(tenantId);
 
-      // Count only meaningful conversations (not abandoned, has messages)
-      const totalConversations = await prisma.conversation.count({
-        where: {
-          tenantId,
-          status: { not: 'ABANDONED' },
-          messages: { some: {} },
-        },
-      });
+      const [
+        totalConversations,
+        qualifiedLeads,
+        unqualifiedLeads,
+        maybeLeads,
+        scoredAggregate,
+      ] = await Promise.all([
+        prisma.conversation.count({
+          where: {
+            tenantId,
+            status: { not: 'ABANDONED' },
+            messages: { some: {} },
+          },
+        }),
+        prisma.conversation.count({
+          where: { tenantId, qualificationStatus: 'QUALIFIED' },
+        }),
+        prisma.conversation.count({
+          where: { tenantId, qualificationStatus: 'UNQUALIFIED' },
+        }),
+        prisma.conversation.count({
+          where: { tenantId, qualificationStatus: 'MAYBE' },
+        }),
+        prisma.conversation.aggregate({
+          where: { tenantId, leadScore: { gt: 0 } },
+          _avg: { leadScore: true },
+          _count: { _all: true },
+        }),
+      ]);
 
-      // Count qualification statuses from conversations (source of truth)
-      const qualifiedLeads = await prisma.conversation.count({
-        where: { tenantId, qualificationStatus: 'QUALIFIED' },
-      });
-
-      const unqualifiedLeads = await prisma.conversation.count({
-        where: { tenantId, qualificationStatus: 'UNQUALIFIED' },
-      });
-
-      const maybeLeads = await prisma.conversation.count({
-        where: { tenantId, qualificationStatus: 'MAYBE' },
-      });
-
-      // Average score from scored conversations
-      const scoredConversations = await prisma.conversation.findMany({
-        where: { tenantId, leadScore: { gt: 0 } },
-        select: { leadScore: true },
-      });
-
+      const scoredCount = scoredAggregate._count._all;
       const averageScore =
-        scoredConversations.length > 0
-          ? Math.round(
-              scoredConversations.reduce((sum, c) => sum + (c.leadScore || 0), 0) /
-                scoredConversations.length
-            )
+        scoredCount > 0 && scoredAggregate._avg.leadScore != null
+          ? Math.round(Number(scoredAggregate._avg.leadScore))
           : 0;
 
       // Conversion rate = qualified / all scored conversations

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Tenant {
@@ -25,12 +25,24 @@ interface Analytics {
   revenue: Array<{ tier: string; count: number }>;
 }
 
+interface TenantsPagination {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export default function PlatformAdminDashboard() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenantPagination, setTenantPagination] = useState<TenantsPagination | null>(null);
+  const [tenantPage, setTenantPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
+  const analyticsLoadedRef = useRef(false);
 
   useEffect(() => {
     const token = localStorage.getItem("platformAdminToken");
@@ -39,29 +51,32 @@ export default function PlatformAdminDashboard() {
       return;
     }
 
-    fetchData(token);
-  }, [router]);
+    fetchData(token, tenantPage);
+  }, [router, tenantPage]);
 
-  const fetchData = async (token: string) => {
+  const fetchData = async (token: string, page: number) => {
     try {
-      setLoading(true);
+      if (!analyticsLoadedRef.current) {
+        setLoading(true);
+        const analyticsRes = await fetch("/api/v1/platform-admin/analytics", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      // Fetch analytics
-      const analyticsRes = await fetch("/api/v1/platform-admin/analytics", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        if (!analyticsRes.ok) {
+          throw new Error("Failed to fetch analytics");
+        }
 
-      if (!analyticsRes.ok) {
-        throw new Error("Failed to fetch analytics");
+        const analyticsData = await analyticsRes.json();
+        setAnalytics(analyticsData.data);
+        analyticsLoadedRef.current = true;
       }
 
-      const analyticsData = await analyticsRes.json();
-      setAnalytics(analyticsData.data);
-
-      // Fetch tenants
-      const tenantsRes = await fetch("/api/v1/platform-admin/tenants", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const tenantsRes = await fetch(
+        `/api/v1/platform-admin/tenants?page=${page}&pageSize=25`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (!tenantsRes.ok) {
         throw new Error("Failed to fetch tenants");
@@ -69,13 +84,14 @@ export default function PlatformAdminDashboard() {
 
       const tenantsData = await tenantsRes.json();
       setTenants(tenantsData.data);
-
-      setLoading(false);
+      setTenantPagination(tenantsData.pagination ?? null);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       setError("Failed to load dashboard");
       localStorage.removeItem("platformAdminToken");
       router.push("/admin/login");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -171,7 +187,9 @@ export default function PlatformAdminDashboard() {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
-              All Tenants ({tenants.length})
+              All Tenants (
+              {tenantPagination?.total ?? tenants.length}
+              )
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -236,6 +254,31 @@ export default function PlatformAdminDashboard() {
               </tbody>
             </table>
           </div>
+          {tenantPagination && tenantPagination.totalPages > 1 ? (
+            <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between gap-4">
+              <p className="text-sm text-gray-600">
+                Page {tenantPagination.page} of {tenantPagination.totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={!tenantPagination.hasPrev}
+                  onClick={() => setTenantPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={!tenantPagination.hasNext}
+                  onClick={() => setTenantPage((p) => p + 1)}
+                  className="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Revenue Breakdown */}

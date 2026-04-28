@@ -328,8 +328,13 @@ export const api = {
       return response.data;
     },
 
-    get: async (id: string) => {
-      const response = await instance.get<ApiResponse<unknown>>(`/conversations/${id}`);
+    get: async (id: string, params?: { messagesLimit?: number }) => {
+      const response = await instance.get<ApiResponse<unknown>>(`/conversations/${id}`, {
+        params:
+          params?.messagesLimit != null
+            ? { messagesLimit: params.messagesLimit }
+            : undefined,
+      });
       return response.data.data;
     },
 

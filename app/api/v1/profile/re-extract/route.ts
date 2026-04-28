@@ -14,6 +14,7 @@ import { RE_EXTRACT_OUTER_TIMEOUT_MS } from '@/lib/extraction/timeouts';
 import { calculateProfileCompletion } from '@/lib/extraction/completion';
 import { getScenarioById, getScenarioByType, type ScenarioType } from '@/lib/scenarios/mandatory-scenarios';
 import { v4 as uuidv4 } from 'uuid';
+import { RE_EXTRACT_SIMULATION_BATCH_SIZE } from '@/lib/performance/bounds';
 
 /** Normalize a raw DB value ('HOT_LEAD' or 'hot_lead_universal') to the canonical scenario id. */
 function normalizeScenarioId(raw: string): string {
@@ -52,13 +53,11 @@ async function handler(req: AuthenticatedRequest) {
   const timestamp = new Date().toISOString();
 
   try {
-    const completedSimulations = await prisma.simulation.findMany({
+    const simulationsTotal = await prisma.simulation.count({
       where: { tenantId, status: 'COMPLETED' },
-      include: { messages: { orderBy: { createdAt: 'asc' } } },
-      orderBy: { createdAt: 'asc' },
     });
 
-    if (completedSimulations.length === 0) {
+    if (simulationsTotal === 0) {
       return NextResponse.json(
         {
           success: true,
@@ -88,20 +87,27 @@ async function handler(req: AuthenticatedRequest) {
       );
     }
 
-    // Filter to sims with enough messages to be worth extracting
-    const eligible = completedSimulations.filter((s) => s.messages.length >= 4);
-
-    // Run extractions in parallel batches (MAX_CONCURRENT at a time).
-    // Each sim is extracted independently (no accumulated context passed) so
-    // they can run concurrently. The merge step below combines all results.
+    // Load completed simulations in bounded DB batches (never all rows + messages at once).
     const results: Array<{ raw: any; scenarioType: string }> = [];
-    for (let i = 0; i < eligible.length; i += MAX_CONCURRENT) {
-      const batch = eligible.slice(i, i + MAX_CONCURRENT);
-      const batchResults = await Promise.all(
-        batch.map((sim) => extractWithTimeout(sim.messages, sim.scenarioType, tenantId))
-      );
-      for (const r of batchResults) {
-        if (r) results.push(r);
+    for (let skip = 0; skip < simulationsTotal; skip += RE_EXTRACT_SIMULATION_BATCH_SIZE) {
+      const completedBatch = await prisma.simulation.findMany({
+        where: { tenantId, status: 'COMPLETED' },
+        include: { messages: { orderBy: { createdAt: 'asc' } } },
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: RE_EXTRACT_SIMULATION_BATCH_SIZE,
+      });
+
+      const eligible = completedBatch.filter((s) => s.messages.length >= 4);
+
+      for (let i = 0; i < eligible.length; i += MAX_CONCURRENT) {
+        const batch = eligible.slice(i, i + MAX_CONCURRENT);
+        const batchResults = await Promise.all(
+          batch.map((sim) => extractWithTimeout(sim.messages, sim.scenarioType, tenantId))
+        );
+        for (const r of batchResults) {
+          if (r) results.push(r);
+        }
       }
     }
 
@@ -173,7 +179,7 @@ async function handler(req: AuthenticatedRequest) {
           completionBreakdown: breakdown,
           simulationCount: finalScenarios.length,
           simulationsProcessed: results.length,
-          simulationsTotal: completedSimulations.length,
+          simulationsTotal,
         },
         meta: { timestamp, requestId },
       },

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { createChatCompletion, parseAiJson } from '@/lib/ai/client';
+import { REANALYZE_MESSAGE_CAP } from '@/lib/performance/bounds';
 
 /**
  * POST /api/v1/conversations/[id]/reanalyze
@@ -14,7 +15,9 @@ async function handler(req: AuthenticatedRequest) {
 
   const conversation = await prisma.conversation.findFirst({
     where: { id, tenantId },
-    include: { messages: { orderBy: { createdAt: 'asc' } } },
+    include: {
+      messages: { orderBy: { createdAt: 'desc' }, take: REANALYZE_MESSAGE_CAP },
+    },
   });
 
   if (!conversation) {
@@ -31,7 +34,9 @@ async function handler(req: AuthenticatedRequest) {
     );
   }
 
-  const transcript = conversation.messages
+  const messagesChronological = [...conversation.messages].reverse();
+
+  const transcript = messagesChronological
     .map((m) => `${m.role === 'LEAD' ? 'Lead' : 'Assistant'}: ${m.content}`)
     .join('\n');
 

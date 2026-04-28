@@ -10,6 +10,17 @@ import { getScenarioById } from "@/lib/scenarios/mandatory-scenarios";
 import { generateLiveFeedback } from "@/lib/simulations/live-feedback-generator";
 import { calculateLiveQualityScore } from "@/lib/simulations/quality-scorer";
 import { v4 as uuidv4 } from "uuid";
+import { SIMULATION_MESSAGE_WINDOW } from "@/lib/performance/bounds";
+
+const simulationBusinessProfileSelect = {
+  id: true,
+  industry: true,
+  serviceDescription: true,
+  targetClientType: true,
+  typicalBudgetRange: true,
+  communicationStyle: true,
+  qualificationCriteria: true,
+} as const;
 
 // Legacy enum types — anything not in this list is treated as a new-style scenarioId
 const LEGACY_SCENARIO_TYPES = new Set(['PRICE_SENSITIVE', 'INDECISIVE', 'DEMANDING', 'TIME_PRESSURED', 'HIGH_BUDGET']);
@@ -97,11 +108,12 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       where: { id: simulationId },
       include: {
         messages: {
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
+          take: SIMULATION_MESSAGE_WINDOW,
         },
         tenant: {
           include: {
-            profiles: true,
+            profiles: { take: 1, select: simulationBusinessProfileSelect },
           },
         },
       },
@@ -235,8 +247,10 @@ CRITICAL RULES:
 - React naturally to the business owner's last message`;
     }
 
+    const messagesChronological = [...simulation.messages].reverse();
+
     // Build conversation history for API
-    const conversationHistory = simulation.messages.map((msg) => ({
+    const conversationHistory = messagesChronological.map((msg) => ({
       role: (msg.role === "AI_CLIENT" ? "assistant" : "user") as "user" | "assistant",
       content: msg.content,
     }));
@@ -283,7 +297,7 @@ CRITICAL RULES:
 
     // Calculate updated quality score
     const allMessages = [
-      ...simulation.messages,
+      ...messagesChronological,
       { role: 'BUSINESS_OWNER', content: data.content },
       { role: 'AI_CLIENT', content: aiResponse.content },
     ];
